@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO | Envíos a toda Nicaragua</title>
+    <title>KURA STUDIO | Dark Japan Punk</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,12 +19,12 @@
                     animation: {
                         'progress': 'progress 5s linear infinite',
                         'slideUp': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        'toast': 'toastSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+                        'marquee': 'marquee 15s linear infinite'
                     },
                     keyframes: {
                         progress: { '0%': { width: '0%' }, '100%': { width: '100%' } },
                         slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } },
-                        toastSlide: { '0%': { transform: 'translateY(100%)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }
+                        marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } }
                     }
                 }
             }
@@ -57,15 +57,19 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .text-outline { -webkit-text-stroke: 1px #ff003c; color: transparent; }
         
-        /* Efecto Glitch sutil */
-        .glitch-hover:hover { animation: glitch-skew 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite; }
-        @keyframes glitch-skew {
-            0% { transform: skew(0deg); }
-            20% { transform: skew(-5deg); }
-            40% { transform: skew(5deg); }
-            60% { transform: skew(-2deg); }
-            80% { transform: skew(2deg); }
-            100% { transform: skew(0deg); }
+        /* Contenedor del letrero LED */
+        .marquee-container {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            background-color: #ff003c;
+            color: #000;
+            padding: 4px 0;
+            position: relative;
+        }
+        .marquee-content {
+            display: inline-block;
+            min-width: 100%;
         }
     </style>
 </head>
@@ -78,24 +82,22 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
 
-        // --- 2. DATA DE PRUEBA AVANZADA (Múltiples fotos por producto) ---
+        // --- 2. DATA DE PRUEBA LIMPIA (Sin "Cyber", puro Streetwear/Japan Punk) ---
         const MOCK_PRODUCTS = [
-            { id: '1', title: 'T-SHIRT AKIRA', price: 850, category: 'T-SHIRTS', sizes: ['M', 'L', 'XL', 'XXL'], description: 'Nuestra pieza insignia. Algodón pesado de alta densidad. Corte cuadrado japonés perfecto para un look urbano y agresivo.', details: ['100% Algodón 240gsm', 'Corte Boxy', 'Estampado serigráfico'], images: ['https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&q=80&w=800'] },
-            { id: '2', title: 'TOKYO PUNK TEE', price: 900, category: 'T-SHIRTS', sizes: ['L', 'XL'], description: 'Corte super oversize. Lavado ácido negro para un look vintage destructivo. Gráfico de mecha en la espalda.', details: ['Algodón 100% lavado ácido', 'Costuras expuestas', 'Gráfico trasero'], images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=800'] },
-            { id: '3', title: 'CYBER ONI HOODIE', price: 1200, category: 'HOODIES', sizes: ['M', 'L', 'XL'], description: 'Corte japonés, mangas extra anchas. Logo Kura en rojo sangre bordado en el pecho. Capucha profunda para ocultarte del sistema.', details: ['French Terry 350gsm', 'Bordado 3D', 'Drop Shoulder'], images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb1?auto=format&fit=crop&q=80&w=800'] },
-            { id: '4', title: 'MECHA CARGO PANTS', price: 1400, category: 'PANTS', sizes: ['S', 'M', 'L'], description: 'Pantalones cargo anchos con cintas utilitarias y bolsillos 3D. Estilo techwear puro, listos para el asfalto.', details: ['Nylon Ripstop', 'Correas ajustables', 'Múltiples bolsillos'], images: ['https://images.unsplash.com/photo-1628718484930-1c9535eb009f?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1550246140-5119ae4790b8?auto=format&fit=crop&q=80&w=800'] }
+            { id: '1', title: 'T-SHIRT AKIRA', price: 850, category: 'T-SHIRTS', sizes: ['M', 'L', 'XL', 'XXL'], description: 'Nuestra pieza insignia. Algodón pesado de alta densidad. Corte cuadrado japonés perfecto para un look urbano y rebelde.', details: ['100% Algodón 240gsm', 'Corte Boxy Oversize', 'Estampado serigráfico de alta durabilidad'], images: ['https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&q=80&w=800'] },
+            { id: '2', title: 'TOKYO PUNK TEE', price: 900, category: 'T-SHIRTS', sizes: ['L', 'XL'], description: 'Corte super oversize. Lavado ácido negro para un look vintage destructivo. Gráfico de anime clásico en la espalda.', details: ['Algodón 100% lavado ácido', 'Costuras expuestas', 'Gráfico trasero gigante'], images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=800'] },
+            { id: '3', title: 'ONI HOODIE', price: 1200, category: 'HOODIES', sizes: ['M', 'L', 'XL'], description: 'Corte japonés, mangas extra anchas. Logo Kura en rojo sangre bordado en el pecho. Capucha profunda para las noches en la ciudad.', details: ['French Terry 350gsm', 'Bordado 3D de precisión', 'Hombros caídos (Drop Shoulder)'], images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb1?auto=format&fit=crop&q=80&w=800'] },
+            { id: '4', title: 'RONIN CARGO PANTS', price: 1400, category: 'PANTS', sizes: ['S', 'M', 'L'], description: 'Pantalones cargo anchos con cintas utilitarias y bolsillos 3D. Estilo urbano puro, listos para el asfalto y el skate.', details: ['Nylon resistente', 'Correas ajustables', 'Múltiples bolsillos laterales'], images: ['https://images.unsplash.com/photo-1628718484930-1c9535eb009f?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1550246140-5119ae4790b8?auto=format&fit=crop&q=80&w=800'] }
         ];
 
         const HERO_SLIDES = [
-            { id: 1, image: 'https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?auto=format&fit=crop&q=80&w=1600', subtitle: 'NUEVA COLECCIÓN', title: 'CYBER PUNK // VOL. 1', cta: 'VER HOODIES' },
+            { id: 1, image: 'https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?auto=format&fit=crop&q=80&w=1600', subtitle: 'NUEVA COLECCIÓN', title: 'DARK PUNK // VOL. 1', cta: 'VER HOODIES' },
             { id: 2, image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&q=80&w=1600', subtitle: 'BÁSICOS ESENCIALES', title: 'TOKYO STREETWEAR', cta: 'VER T-SHIRTS' }
         ];
 
         // --- 3. COMPONENTES UI SECUNDARIOS ---
-
-        // A. Notificación Toast
         const Toast = ({ message, isVisible }) => (
             <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
                 <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3 shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
@@ -104,7 +106,6 @@
             </div>
         );
 
-        // B. Acordeón para info del producto
         const Accordion = ({ title, children }) => {
             const [isOpen, setIsOpen] = useState(false);
             return (
@@ -122,24 +123,20 @@
 
         // --- 4. APLICACIÓN PRINCIPAL ---
         function KuraStudio() {
-            // Estados Globales
             const [products, setProducts] = useState([]);
             const [filteredProducts, setFilteredProducts] = useState([]);
             const [selectedProduct, setSelectedProduct] = useState(null);
             const [activeCategory, setActiveCategory] = useState('ALL');
             const [sortBy, setSortBy] = useState('NEWEST');
             
-            // Estados de Vista de Producto
             const [selectedSize, setSelectedSize] = useState('');
             const [mainImageIndex, setMainImageIndex] = useState(0);
             
-            // Estados de Carrito y UX
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [toastMsg, setToastMsg] = useState('');
             const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
             const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
-            // Init Cart con LocalStorage
             const [cart, setCart] = useState(() => {
                 try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } 
                 catch (e) { return []; }
@@ -147,7 +144,6 @@
 
             useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-            // Cargar datos
             useEffect(() => {
                 const fetchProducts = async () => {
                     try {
@@ -165,16 +161,14 @@
                 fetchProducts();
             }, []);
 
-            // Lógica Hero Slider Auto
             useEffect(() => {
-                if (selectedProduct) return; // Pausar slider si hay un producto abierto
+                if (selectedProduct) return;
                 const timer = setInterval(() => {
                     setCurrentHeroSlide((prev) => (prev + 1) % HERO_SLIDES.length);
-                }, 5000); // Cambia cada 5 seg
+                }, 5000);
                 return () => clearInterval(timer);
             }, [selectedProduct]);
 
-            // Filtrado y Ordenamiento
             useEffect(() => {
                 let result = [...products];
                 if (activeCategory !== 'ALL') {
@@ -214,7 +208,6 @@
                 const newItem = { ...product, selectedSize, cartId: Date.now() };
                 setCart([...cart, newItem]);
                 showToast(`AGREGADO: ${product.title} [${selectedSize}]`);
-                // No abrimos el carrito de golpe para no interrumpir la navegación
             };
 
             const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
@@ -242,14 +235,17 @@
                     <Toast message={toastMsg} isVisible={!!toastMsg} />
 
                     <div className="relative z-10 w-full flex-1 flex flex-col">
-                        {/* NAVBAR TOP BAR */}
-                        <div className="bg-kuraRed text-black text-center text-[10px] md:text-xs font-bold py-1 tracking-widest uppercase">
-                            ENVÍOS A TODA NICARAGUA // 100% SECURE CHECKOUT
+                        
+                        {/* ANIMATED MARQUEE TOP BAR (Letrero LED) */}
+                        <div className="marquee-container font-bebas text-lg tracking-[0.2em]">
+                            <div className="marquee-content animate-marquee">
+                                ENVÍOS A TODA NICARAGUA // PAGO CONTRA ENTREGA // KURA STUDIO // CALIDAD PREMIUM // ENVÍOS A TODA NICARAGUA // PAGO CONTRA ENTREGA // KURA STUDIO // CALIDAD PREMIUM //
+                            </div>
                         </div>
 
                         {/* MAIN NAVBAR STICKY */}
                         <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/90 backdrop-blur-md sticky top-0 z-50">
-                            <div className="cursor-pointer glitch-hover" onClick={closeProduct}>
+                            <div className="cursor-pointer" onClick={closeProduct}>
                                 <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">
                                     KURA<span className="text-outline">STUDIO</span>
                                 </h1>
@@ -291,7 +287,7 @@
                                         </div>
                                     </div>
 
-                                    {/* FILTROS Y ORDENAMIENTO ESTILO SHOPIFY */}
+                                    {/* FILTROS Y ORDENAMIENTO */}
                                     <div className="px-4 md:px-8 py-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-900 sticky top-[72px] bg-black/95 z-40">
                                         <div className="flex gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-2 md:pb-0">
                                             {categories.map(cat => (
@@ -316,7 +312,7 @@
                                         {filteredProducts.map(product => (
                                             <div key={product.id} className="brutalist-card flex flex-col group cursor-pointer" onClick={() => openProduct(product)}>
                                                 <div className="relative w-full aspect-[4/5] bg-kuraGrey overflow-hidden border-b border-zinc-800">
-                                                    {/* Hover Switch Image (Shopify Style) */}
+                                                    {/* Hover Switch Image */}
                                                     <img src={product.images[0]} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0" />
                                                     {product.images[1] && <img src={product.images[1]} className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
                                                     
@@ -388,7 +384,7 @@
                                                 {selectedSize ? 'AGREGAR AL ARSENAL' : 'SELECCIONA TALLA'}
                                             </button>
 
-                                            {/* Acordeones de Info Extra (Estilo Shopify) */}
+                                            {/* Acordeones de Info Extra */}
                                             <div className="border-t border-zinc-800 pt-4">
                                                 <Accordion title="ESPECIFICACIONES TÉCNICAS">
                                                     <ul className="list-disc pl-4 space-y-1">
@@ -396,7 +392,7 @@
                                                     </ul>
                                                 </Accordion>
                                                 <Accordion title="ENVÍOS Y ENTREGAS">
-                                                    Entregas en Managua en 24h. Envíos a departamentos por CargoTrans (2-3 días hábiles). Pago contra entrega disponible en zona céntrica.
+                                                    Entregas en Managua en 24h. Envíos a departamentos por CargoTrans (2-3 días hábiles). Pago contra entrega disponible.
                                                 </Accordion>
                                                 <Accordion title="CUIDADO DE LA PRENDA">
                                                     Lavar a máquina con agua fría. Voltear al revés antes de lavar. No usar plancha sobre el gráfico serigráfico. Secar a la sombra.
@@ -405,7 +401,7 @@
                                         </div>
                                     </div>
 
-                                    {/* STICKY BOTÓN ADD TO CART EN MÓVIL (Solo visible en cel cuando haces scroll hacia abajo) */}
+                                    {/* STICKY BOTÓN ADD TO CART EN MÓVIL */}
                                     <div className="fixed bottom-0 left-0 w-full p-4 bg-black/90 border-t border-zinc-800 backdrop-blur-md z-40 md:hidden animate-slideUp">
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="font-bebas text-xl truncate">{selectedProduct.title}</span>
@@ -481,3 +477,4 @@
     </style>
 </body>
 </html>
+ 
