@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KURA STUDIO | Dark Japan Punk</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { 
+            background-color: #050505; 
+            color: #f3f4f6; 
+            font-family: 'Courier New', Courier, monospace; 
+        }
+        .punk-border { 
+            border: 2px solid #dc2626; 
+            box-shadow: 4px 4px 0px 0px #991b1b; 
+            transition: all 0.2s ease-in-out; 
+            background-color: #09090b;
+        }
+        .punk-border:hover { 
+            transform: translate(-2px, -2px); 
+            box-shadow: 6px 6px 0px 0px #dc2626; 
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #dc2626; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- 1. CONFIGURACIÓN DE FIREBASE ---
+        // Aquí pegarás tus datos cuando crees el proyecto en Firebase
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "tu-proyecto.firebaseapp.com",
+            projectId: "tu-proyecto",
+            storageBucket: "tu-proyecto.appspot.com",
+            messagingSenderId: "TU_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // --- 2. LÓGICA DE LA APLICACIÓN (REACT) ---
+        const { useState, useEffect } = React;
+
+        function KuraStudio() {
+            const [products, setProducts] = useState([]);
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+
+            // Cargar productos y revisar si hay un link dinámico
+            useEffect(() => {
+                const fetchProducts = async () => {
+                    try {
+                        const snapshot = await db.collection("products").get();
+                        if (!snapshot.empty) {
+                            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                            setProducts(items);
+                            checkDynamicLink(items);
+                            return;
+                        }
+                    } catch (error) {
+                        console.log("Aún no hay conexión a Firebase. Usando datos de muestra.");
+                    }
+                    
+                    // Datos de prueba mientras conectas Firebase
+                    const mockData = [
+                        { id: '1', title: 'T-Shirt AKIRA', price: 850, size: 'XL', description: 'Oversize. Algodón pesado 100%. Estampado frontal y espalda.', image: 'https://i.ibb.co/VvZqR6g/placeholder-akira.jpg' },
+                        { id: '2', title: 'Cyber Oni Hoodie', price: 1200, size: 'L', description: 'Corte japonés, mangas anchas. Logo Kura en rojo sangre.', image: 'https://i.ibb.co/LtbY9J0/placeholder-oni.jpg' }
+                    ];
+                    setProducts(mockData);
+                    checkDynamicLink(mockData);
+                };
+
+                fetchProducts();
+            }, []);
+
+            // Revisar si alguien entró con un link dinámico (ej: ?product=1)
+            const checkDynamicLink = (items) => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = urlParams.get('product');
+                if (productId) {
+                    const product = items.find(p => p.id === productId);
+                    if (product) setSelectedProduct(product);
+                }
+            };
+
+            const openProduct = (product) => {
+                setSelectedProduct(product);
+                window.history.pushState(null, '', `?product=${product.id}`);
+            };
+
+            const closeProduct = () => {
+                setSelectedProduct(null);
+                window.history.pushState(null, '', window.location.pathname);
+            };
+
+            const addToCart = (product) => {
+                setCart([...cart, { ...product, cartId: Date.now() }]);
+                setIsCartOpen(true);
+                closeProduct();
+            };
+
+            const removeFromCart = (cartId) => {
+                setCart(cart.filter(item => item.cartId !== cartId));
+            };
+
+            const totalCart = cart.reduce((acc, item) => acc + item.price, 0);
+
+            const handleWhatsAppCheckout = (e) => {
+                e.preventDefault();
+                if (cart.length === 0) return alert('Tu carrito está vacío.');
+
+                let message = `*NUEVO PEDIDO - KURA STUDIO* 🩸%0A%0A`;
+                message += `*Cliente:* ${formData.name}%0A`;
+                message += `*Teléfono:* ${formData.phone}%0A`;
+                message += `*Dirección:* ${formData.address}%0A%0A`;
+                message += `*TUS PRENDAS:*%0A`;
+                
+                cart.forEach(item => {
+                    message += `▪️ ${item.title} (Talla: ${item.size}) - NIO ${item.price}%0A`;
+                });
+
+                message += `%0A*TOTAL: NIO ${totalCart}*`;
+
+                window.open(`https://wa.me/50587091008?text=${message}`, '_blank');
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    {/* Header */}
+                    <header className="flex justify-between items-center mb-12 border-b-2 border-red-600 pb-4">
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-red-600">KURA<span className="text-white">STUDIO</span></h1>
+                        <button 
+                            onClick={() => setIsCartOpen(true)}
+                            className="punk-border text-red-500 px-4 py-2 font-bold uppercase text-sm md:text-base"
+                        >
+                            Cart [{cart.length}]
+                        </button>
+                    </header>
+
+                    {/* Grilla de Productos */}
+                    <main className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {products.map(product => (
+                            <div key={product.id} className="punk-border p-4 flex flex-col items-center">
+                                <div className="w-full h-64 bg-zinc-900 mb-4 flex items-center justify-center border border-red-900/50 overflow-hidden">
+                                    {product.image ? (
+                                        <img src={product.image} alt={product.title} className="object-cover w-full h-full" />
+                                    ) : (
+                                        <span className="text-zinc-600">SIN IMAGEN</span>
+                                    )}
+                                </div>
+                                <h2 className="text-xl font-bold mb-2 text-center">{product.title}</h2>
+                                <p className="text-red-500 font-bold text-lg mb-4">NIO {product.price}</p>
+                                <button 
+                                    onClick={() => openProduct(product)}
+                                    className="w-full bg-red-600 text-black font-black py-2 hover:bg-red-500 transition-colors uppercase"
+                                >
+                                    Ver Detalles
+                                </button>
+                            </div>
+                        ))}
+                    </main>
+
+                    {/* Modal del Producto (Link Dinámico) */}
+                    {selectedProduct && (
+                        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4">
+                            <div className="punk-border max-w-lg w-full p-6 relative">
+                                <button onClick={closeProduct} className="absolute top-2 right-4 text-red-600 text-2xl font-bold">X</button>
+                                <h2 className="text-3xl font-black mb-2 text-red-600 uppercase mt-4">{selectedProduct.title}</h2>
+                                <p className="text-gray-400 mb-4">{selectedProduct.description}</p>
+                                <div className="flex justify-between items-center mb-6">
+                                    <span className="bg-red-900/30 text-red-500 px-3 py-1 border border-red-600">Talla: {selectedProduct.size}</span>
+                                    <span className="text-2xl font-bold">NIO {selectedProduct.price}</span>
+                                </div>
+                                <button 
+                                    onClick={() => addToCart(selectedProduct)}
+                                    className="w-full bg-red-600 text-black font-black py-3 uppercase hover:bg-red-500 transition"
+                                >
+                                    Añadir al arsenal
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Sidebar del Carrito */}
+                    {isCartOpen && (
+                        <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-zinc-950 border-l-2 border-red-600 z-50 flex flex-col p-6 overflow-y-auto">
+                            <div className="flex justify-between items-center mb-8 border-b border-red-900 pb-2">
+                                <h2 className="text-2xl font-black text-red-600 uppercase">Checkout</h2>
+                                <button onClick={() => setIsCartOpen(false)} className="text-white font-bold text-xl">X</button>
+                            </div>
+
+                            <div className="flex-1">
+                                {cart.length === 0 ? (
+                                    <p className="text-gray-500 text-center mt-10">Tu carrito está vacío.</p>
+                                ) : (
+                                    cart.map(item => (
+                                        <div key={item.cartId} className="flex justify-between items-center mb-4 bg-black p-3 border border-red-900/50">
+                                            <div>
+                                                <p className="font-bold text-sm">{item.title}</p>
+                                                <p className="text-red-500 text-xs">NIO {item.price}</p>
+                                            </div>
+                                            <button onClick={() => removeFromCart(item.cartId)} className="text-zinc-600 hover:text-red-500 text-xl font-bold">X</button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+
+                            <div className="mt-8 border-t border-red-900 pt-4">
+                                <div className="flex justify-between text-xl font-bold mb-6">
+                                    <span>TOTAL:</span>
+                                    <span className="text-red-500">NIO {totalCart}</span>
+                                </div>
+
+                                <form onSubmit={handleWhatsAppCheckout} className="space-y-4">
+                                    <input required type="text" placeholder="Nombre o Alias" className="w-full bg-black border border-red-900 text-white p-3 focus:outline-none focus:border-red-500" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+                                    <input required type="tel" placeholder="Tu Teléfono" className="w-full bg-black border border-red-900 text-white p-3 focus:outline-none focus:border-red-500" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                                    <textarea required placeholder="Punto de entrega / Dirección" className="w-full bg-black border border-red-900 text-white p-3 focus:outline-none focus:border-red-500 h-24" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                                    <button type="submit" className="w-full bg-red-600 text-black font-black py-4 uppercase hover:bg-red-500 transition mt-4">
+                                        Pedir por WhatsApp
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<KuraStudio />);
+    </script>
+</body>
+</html>
+
