@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO | Dark Japan Punk</title>
+    <title>KURA STUDIO | Envíos a toda Nicaragua</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,7 +63,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        /* Animación suave para cambio de página */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -87,9 +86,28 @@
             const [products, setProducts] = useState([]);
             const [selectedProduct, setSelectedProduct] = useState(null);
             const [selectedSize, setSelectedSize] = useState('');
-            const [cart, setCart] = useState([]);
+            
+            // CARRITO CON MEMORIA (localStorage)
+            const [cart, setCart] = useState(() => {
+                try {
+                    const savedCart = localStorage.getItem('kura_cart');
+                    return savedCart ? JSON.parse(savedCart) : [];
+                } catch (error) {
+                    return [];
+                }
+            });
+            
             const [isCartOpen, setIsCartOpen] = useState(false);
             const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+
+            // GUARDAR CARRITO CUANDO CAMBIA
+            useEffect(() => {
+                try {
+                    localStorage.setItem('kura_cart', JSON.stringify(cart));
+                } catch (error) {
+                    console.error("Error guardando el carrito", error);
+                }
+            }, [cart]);
 
             useEffect(() => {
                 const fetchProducts = async () => {
@@ -103,7 +121,6 @@
                         }
                     } catch (error) { console.log("Usando mock data."); }
                     
-                    // MOCK DATA AMPLIADA CON CATEGORÍAS Y DETALLES
                     const mockData = [
                         { id: '1', title: 'T-SHIRT AKIRA', price: 850, category: 'T-SHIRTS', sizes: ['M', 'L', 'XL', 'XXL'], description: 'Nuestra pieza insignia. Algodón pesado de alta densidad. Corte cuadrado japonés perfecto para un look urbano y agresivo.', details: ['100% Algodón 240gsm', 'Corte Boxy / Oversize', 'Estampado serigráfico de alta durabilidad', 'Lavado en frío, no usar secadora'], image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800' },
                         { id: '2', title: 'TOKYO PUNK TEE', price: 900, category: 'T-SHIRTS', sizes: ['L', 'XL'], description: 'Corte super oversize. Lavado ácido negro para un look vintage destructivo. Gráfico de mecha en la espalda.', details: ['Algodón 100% lavado ácido', 'Costuras expuestas', 'Gráfico trasero gigante'], image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800' },
@@ -133,7 +150,7 @@
                 setSelectedProduct(product);
                 setSelectedSize('');
                 window.history.pushState(null, '', `?product=${product.id}`);
-                window.scrollTo(0, 0); // Sube al inicio al abrir
+                window.scrollTo(0, 0); 
             };
 
             const closeProduct = () => {
@@ -158,10 +175,15 @@
                 message += `*Cliente:* ${formData.name}%0A*Teléfono:* ${formData.phone}%0A*Entrega:* ${formData.address}%0A%0A*ARSENAL SELECCIONADO:*%0A`;
                 cart.forEach(item => { message += `▪️ ${item.title} (Talla: ${item.selectedSize}) - NIO ${item.price}%0A`; });
                 message += `%0A*TOTAL ESTIMADO: NIO ${totalCart}*`;
+                
+                // Limpiar carrito después de enviar a WhatsApp
+                setCart([]);
+                localStorage.removeItem('kura_cart');
+                setIsCartOpen(false);
+
                 window.open(`https://wa.me/50587091008?text=${message}`, '_blank');
             };
 
-            // Filtrar productos relacionados por categoría
             const relatedProducts = selectedProduct 
                 ? products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 3)
                 : [];
@@ -176,7 +198,7 @@
                         {/* NAVBAR CONSTANTE */}
                         <header className="p-4 md:p-8 flex justify-between items-end border-b border-zinc-900 bg-black/80 backdrop-blur-md sticky top-0 z-40">
                             <div className="cursor-pointer" onClick={closeProduct}>
-                                <p className="text-kuraRed text-[10px] md:text-xs tracking-[0.3em] mb-1 font-bold">DARK JAPAN PUNK</p>
+                                <p className="text-kuraRed text-[10px] md:text-xs tracking-[0.3em] mb-1 font-bold">ENVÍOS A TODA NICARAGUA</p>
                                 <h1 className="text-4xl md:text-5xl font-bebas tracking-wider leading-none">KURA<span className="text-outline">STUDIO</span></h1>
                             </div>
                             <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold uppercase text-xs md:text-sm tracking-widest flex items-center gap-2">
@@ -297,7 +319,7 @@
                         </div>
                     </div>
 
-                    {/* SLIDE-OVER CARRITO (Igual que antes) */}
+                    {/* SLIDE-OVER CARRITO */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-[100] flex justify-end bg-black/80 backdrop-blur-sm">
                             <div className="absolute inset-0 z-0" onClick={() => setIsCartOpen(false)}></div>
