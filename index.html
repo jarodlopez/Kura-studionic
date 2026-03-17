@@ -3,239 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO | Backoffice</title>
+    <title>KURA STUDIO | Dark Japan Punk</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { kuraRed: '#ff003c', kuraDark: '#050505' }, fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] } } } }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { kuraRed: '#ff003c', kuraDark: '#050505', kuraGrey: '#111' }, 
+                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] }, 
+                    animation: { 'slideUp': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', 'marquee': 'marquee 15s linear infinite' }, 
+                    keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }, marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } } } 
+                } 
+            } 
+        }
     </script>
+    
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; }
-        .brutalist-input { width: 100%; background: #050505; border: 1px solid #333; color: white; padding: 0.75rem; font-size: 0.875rem; margin-top: 0.25rem; outline: none; }
-        .brutalist-input:focus { border-color: #ff003c; }
-        .brutalist-btn { background: #ff003c; color: black; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; text-transform: uppercase; border: none; }
-        .brutalist-btn:hover { background: white; }
+        body { background-color: #000; color: #fff; background-image: linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px); background-size: 40px 40px; overscroll-behavior-y: none; }
+        .brutalist-card { border: 2px solid #222; background: #050505; transition: all 0.2s ease; }
+        .brutalist-card:hover { border-color: #ff003c; transform: translate(-4px, -4px); box-shadow: 6px 6px 0px 0px #ff003c; }
+        .brutalist-btn { background: #ff003c; color: #000; border: 2px solid #ff003c; transition: all 0.2s ease; text-transform: uppercase; }
+        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 2px solid #333; transition: all 0.2s ease; }
+        .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .text-outline { -webkit-text-stroke: 1px #ff003c; color: transparent; }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #ff003c; color: #000; padding: 4px 0; position: relative; }
+        .marquee-content { display: inline-block; min-width: 100%; }
+        
+        /* Imagenes que aparecen suavemente */
+        .img-fade { opacity: 0; transition: opacity 0.5s ease-in-out; }
+        .img-loaded { opacity: 1; }
     </style>
 </head>
-<body>
+<body class="font-mono">
     <div id="root"></div>
     <script type="text/babel">
         const firebaseConfig = {
             apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
             authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034",
-            storageBucket: "kuranic-b1034.firebasestorage.app"
+            projectId: "kuranic-b1034"
         };
-        const IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
-
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect } = React;
 
-        function AdminPanel() {
-            const [view, setView] = useState('INVENTORY'); // INVENTORY o DESIGN
-            
-            // Estados Inventario
+        const Toast = ({ message, isVisible }) => (
+            <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+                <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3"><span className="text-2xl">✓</span> {message}</div>
+            </div>
+        );
+
+        // Componente de Imagen con Fade-In (Para evitar que se vea feo mientras carga)
+        const SmoothImage = ({ src, className }) => {
+            return (
+                <img 
+                    src={src} 
+                    className={`img-fade ${className}`} 
+                    onLoad={(e) => e.target.classList.add('img-loaded')} 
+                    alt="Kura Studio"
+                />
+            );
+        };
+
+        function KuraStudio() {
             const [products, setProducts] = useState([]);
-            const [formData, setFormData] = useState({ title: '', price: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
-            const [editingId, setEditingId] = useState(null);
+            const [filteredProducts, setFilteredProducts] = useState([]);
+            const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: null });
+            const [isLoading, setIsLoading] = useState(true);
             
-            // Estados Diseño
-            const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: '' });
-            const [slideForm, setSlideForm] = useState({ subtitle: '', title: '', cta: '' });
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const [activeCategory, setActiveCategory] = useState('ALL');
+            const [selectedSize, setSelectedSize] = useState('');
+            const [mainImageIndex, setMainImageIndex] = useState(0);
             
-            const [isSaving, setIsSaving] = useState(false);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+            const [toastMsg, setToastMsg] = useState('');
+            const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+            const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
-            // Cargar Datos Iniciales
+            const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
+            useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
+
+            // CARGAR DATOS 100% DINÁMICOS DESDE FIREBASE
             useEffect(() => {
-                fetchProducts();
-                fetchStoreConfig();
+                const fetchData = async () => {
+                    setIsLoading(true);
+                    try {
+                        const prodSnap = await db.collection("products").get();
+                        const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setProducts(items); setFilteredProducts(items);
+                        
+                        const confSnap = await db.collection("settings").doc("store").get();
+                        if(confSnap.exists) setStoreConfig(confSnap.data());
+
+                        checkDynamicLink(items);
+                    } catch (error) { console.error("Error conectando al sistema", error); }
+                    setIsLoading(false);
+                };
+                fetchData();
             }, []);
 
-            const fetchProducts = async () => {
-                const snapshot = await db.collection("products").get();
-                setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            useEffect(() => {
+                if (selectedProduct || !storeConfig.heroSlides || storeConfig.heroSlides.length <= 1) return;
+                const timer = setInterval(() => setCurrentHeroSlide((prev) => (prev + 1) % storeConfig.heroSlides.length), 5000);
+                return () => clearInterval(timer);
+            }, [selectedProduct, storeConfig.heroSlides]);
+
+            useEffect(() => {
+                let result = [...products];
+                if (activeCategory !== 'ALL') result = result.filter(p => p.category === activeCategory);
+                setFilteredProducts(result);
+            }, [activeCategory, products]);
+
+            const checkDynamicLink = (items) => {
+                const id = new URLSearchParams(window.location.search).get('product');
+                if (id) { const found = items.find(p => p.id === id); if (found) openProduct(found); }
             };
 
-            const fetchStoreConfig = async () => {
-                const doc = await db.collection("settings").doc("store").get();
-                if (doc.exists) setStoreConfig(doc.data());
+            const openProduct = (product) => {
+                setSelectedProduct(product); setSelectedSize(''); setMainImageIndex(0);
+                window.history.pushState(null, '', `?product=${product.id}`); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
-            // Utilidad para subir a ImgBB
-            const uploadToImgBB = async (file) => {
-                const fd = new FormData();
-                fd.append("image", file);
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
-                const data = await res.json();
-                if (data.success) return data.data.url;
-                throw new Error("Error subiendo imagen");
+            const closeProduct = () => { setSelectedProduct(null); window.history.pushState(null, '', window.location.pathname); };
+
+            const addToCart = (product) => {
+                if (!selectedSize && product.sizes?.length > 0) return alert('SELECCIONA UNA TALLA PARA CONTINUAR');
+                const sizeToSave = selectedSize || 'ÚNICA';
+                setCart([...cart, { ...product, selectedSize: sizeToSave, cartId: Date.now() }]);
+                setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
-            /* === LÓGICA DE INVENTARIO === */
-            const handleProductSubmit = async (e) => {
-                e.preventDefault(); setIsSaving(true);
-                const data = { ...formData, price: Number(formData.price), stock: Number(formData.stock), details: formData.details.split('\n').filter(d=>d) };
-                if (editingId) await db.collection("products").doc(editingId).update(data);
-                else await db.collection("products").add(data);
-                setFormData({ title: '', price: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
-                setEditingId(null); fetchProducts(); setIsSaving(false);
+            const handleCheckout = (e) => {
+                e.preventDefault(); if (cart.length === 0) return;
+                let m = `*PEDIDO KURA STUDIO* 🩸%0A%0A*Cliente:* ${formData.name}%0A*Tel:* ${formData.phone}%0A*Dirección:* ${formData.address}%0A%0A*ARSENAL:*%0A`;
+                cart.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}%0A`; });
+                m += `%0A*TOTAL ESTIMADO: NIO ${cart.reduce((a, b) => a + b.price, 0)}*`;
+                setCart([]); localStorage.removeItem('kura_cart'); setIsCartOpen(false);
+                window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
             };
 
-            const handleProductImage = async (e) => {
-                setIsSaving(true);
-                for (const file of e.target.files) {
-                    const url = await uploadToImgBB(file);
-                    setFormData(p => ({ ...p, images: [...p.images, url] }));
-                }
-                setIsSaving(false);
-            };
-
-            /* === LÓGICA DE DISEÑO (PORTADAS Y GUÍA) === */
-            const saveStoreConfig = async (newConfig) => {
-                await db.collection("settings").doc("store").set(newConfig, { merge: true });
-                setStoreConfig(newConfig);
-            };
-
-            const handleSizeGuideUpload = async (e) => {
-                if(!e.target.files[0]) return;
-                setIsSaving(true);
-                const url = await uploadToImgBB(e.target.files[0]);
-                await saveStoreConfig({ ...storeConfig, sizeGuide: url });
-                setIsSaving(false);
-            };
-
-            const handleSlideAdd = async (e) => {
-                if(!e.target.files[0]) return;
-                setIsSaving(true);
-                const url = await uploadToImgBB(e.target.files[0]);
-                const newSlide = { id: Date.now(), image: url, subtitle: slideForm.subtitle.toUpperCase(), title: slideForm.title.toUpperCase(), cta: slideForm.cta.toUpperCase() || 'VER MÁS' };
-                await saveStoreConfig({ ...storeConfig, heroSlides: [...(storeConfig.heroSlides || []), newSlide] });
-                setSlideForm({ subtitle: '', title: '', cta: '' });
-                setIsSaving(false);
-            };
-
-            const removeSlide = async (id) => {
-                const newSlides = storeConfig.heroSlides.filter(s => s.id !== id);
-                await saveStoreConfig({ ...storeConfig, heroSlides: newSlides });
-            };
+            const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
+            const relatedProducts = selectedProduct ? products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 3) : [];
 
             return (
-                <div className="min-h-screen flex flex-col">
-                    {/* TABS NAVEGACIÓN */}
-                    <header className="bg-kuraDark border-b border-zinc-800 p-4 flex gap-4">
-                        <button onClick={() => setView('INVENTORY')} className={`font-bebas text-2xl ${view === 'INVENTORY' ? 'text-kuraRed' : 'text-zinc-500'}`}>INVENTARIO DE PRENDAS</button>
-                        <button onClick={() => setView('DESIGN')} className={`font-bebas text-2xl ${view === 'DESIGN' ? 'text-kuraRed' : 'text-zinc-500'}`}>PORTADAS Y GUÍA DE TALLAS</button>
+                <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
+                    <Toast message={toastMsg} isVisible={!!toastMsg} />
+
+                    {/* MARQUEE SUPERIOR */}
+                    <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
+                        <div className="marquee-content animate-marquee">ENVÍOS A TODA NICARAGUA // PAGO CONTRA ENTREGA // KURA STUDIO // CALIDAD PREMIUM // ENVÍOS A TODA NICARAGUA //</div>
+                    </div>
+
+                    {/* HEADER */}
+                    <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
+                        <div className="cursor-pointer" onClick={closeProduct}>
+                            <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
+                        </div>
+                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CART [{cart.length}]
+                        </button>
                     </header>
 
-                    <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
-                        {isSaving && <div className="fixed top-4 right-4 bg-kuraRed text-black font-bebas px-4 py-2 z-50 animate-pulse">GUARDANDO EN SERVIDOR...</div>}
-
-                        {view === 'INVENTORY' ? (
-                            <div className="flex flex-col md:flex-row gap-8">
-                                {/* FORMULARIO INVENTARIO */}
-                                <form onSubmit={handleProductSubmit} className="w-full md:w-1/3 space-y-4 bg-zinc-950 p-6 border border-zinc-800">
-                                    <h2 className="font-bebas text-2xl text-kuraRed">NUEVA PRENDA</h2>
-                                    <input required placeholder="TÍTULO" className="brutalist-input" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value.toUpperCase()})} />
-                                    <div className="flex gap-2">
-                                        <input required type="number" placeholder="PRECIO (NIO)" className="brutalist-input" value={formData.price} onChange={e=>setFormData({...formData, price: e.target.value})} />
-                                        <input required placeholder="CATEGORÍA (Ej: T-SHIRT)" className="brutalist-input" value={formData.category} onChange={e=>setFormData({...formData, category: e.target.value.toUpperCase()})} />
-                                    </div>
-                                    <textarea required placeholder="DESCRIPCIÓN" className="brutalist-input h-16" value={formData.description} onChange={e=>setFormData({...formData, description: e.target.value})} />
-                                    <textarea placeholder="DETALLES (UNO POR LÍNEA)" className="brutalist-input h-16" value={formData.details} onChange={e=>setFormData({...formData, details: e.target.value})} />
-                                    
-                                    <div>
-                                        <p className="text-xs text-zinc-500 mb-2">TALLAS</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {['S','M','L','XL','XXL'].map(s => (
-                                                <button key={s} type="button" onClick={() => setFormData(p => ({...p, sizes: p.sizes.includes(s) ? p.sizes.filter(x=>x!==s) : [...p.sizes, s]}))}
-                                                    className={`px-3 py-1 font-bebas border ${formData.sizes.includes(s) ? 'bg-kuraRed text-black' : 'border-zinc-700'}`}>{s}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-zinc-700 p-2">
-                                        <p className="text-xs text-zinc-500 mb-2">FOTOS (Sube varias)</p>
-                                        <input type="file" multiple onChange={handleProductImage} className="text-xs w-full mb-2" />
-                                        <div className="flex gap-2">
-                                            {formData.images.map((img, i) => <img key={i} src={img} className="w-10 h-10 object-cover border border-zinc-600" />)}
-                                            {formData.images.length > 0 && <button type="button" onClick={()=>setFormData({...formData, images:[]})} className="text-red-500 text-xs">Limpiar fotos</button>}
-                                        </div>
-                                    </div>
-                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full">GUARDAR PRENDA</button>
-                                </form>
-
-                                {/* LISTA INVENTARIO */}
-                                <div className="w-full md:w-2/3 grid grid-cols-2 md:grid-cols-3 gap-4 h-max">
-                                    {products.map(p => (
-                                        <div key={p.id} className="border border-zinc-800 p-2 flex flex-col bg-zinc-950">
-                                            <img src={p.images?.[0]} className="w-full h-40 object-cover mb-2" />
-                                            <p className="font-bebas text-xl truncate">{p.title}</p>
-                                            <p className="text-kuraRed font-mono text-xs mb-2">NIO {p.price}</p>
-                                            <button onClick={async () => { await db.collection('products').doc(p.id).delete(); fetchProducts(); }} className="text-xs border border-red-900 text-red-500 py-1 hover:bg-red-900">ELIMINAR</button>
-                                        </div>
-                                    ))}
-                                </div>
+                    <div className="flex-1 w-full max-w-[1440px] mx-auto">
+                        {isLoading ? (
+                            /* PANTALLA DE CARGA NEGRA Y LIMPIA */
+                            <div className="flex flex-col items-center justify-center h-[70vh] bg-black">
+                                <h1 className="text-4xl md:text-6xl font-bebas text-zinc-800 animate-pulse">CARGANDO SISTEMA...</h1>
                             </div>
-                        ) : (
-                            <div className="flex flex-col md:flex-row gap-8">
-                                {/* GESTOR DE PORTADAS (HERO SLIDES) */}
-                                <div className="w-full md:w-1/2 border border-zinc-800 p-6 bg-zinc-950">
-                                    <h2 className="font-bebas text-3xl text-kuraRed mb-4">AÑADIR PORTADA (HERO SLIDER)</h2>
-                                    <div className="space-y-2 mb-4">
-                                        <input placeholder="SUBTÍTULO (Ej: NUEVA COLECCIÓN)" className="brutalist-input" value={slideForm.subtitle} onChange={e=>setSlideForm({...slideForm, subtitle: e.target.value})} />
-                                        <input placeholder="TÍTULO PRINCIPAL" className="brutalist-input" value={slideForm.title} onChange={e=>setSlideForm({...slideForm, title: e.target.value})} />
-                                        <input placeholder="TEXTO DEL BOTÓN (Ej: VER T-SHIRTS)" className="brutalist-input" value={slideForm.cta} onChange={e=>setSlideForm({...slideForm, cta: e.target.value})} />
-                                        <div className="pt-2">
-                                            <p className="text-xs text-zinc-500 mb-1">SELECCIONA LA IMAGEN DE PORTADA</p>
-                                            <input type="file" onChange={handleSlideAdd} className="text-xs border border-zinc-700 p-2 w-full bg-black" />
-                                        </div>
-                                    </div>
-                                    
-                                    <h3 className="font-bebas text-xl mt-8 mb-2 border-t border-zinc-800 pt-4">PORTADAS ACTIVAS</h3>
-                                    <div className="space-y-2">
-                                        {storeConfig.heroSlides?.map(slide => (
-                                            <div key={slide.id} className="flex gap-4 border border-zinc-800 p-2 items-center bg-black">
-                                                <img src={slide.image} className="w-20 h-10 object-cover" />
-                                                <div className="flex-1">
-                                                    <p className="font-bebas leading-none">{slide.title}</p>
-                                                    <p className="text-[10px] text-zinc-500">{slide.subtitle}</p>
+                        ) : !selectedProduct ? (
+                            
+                            /* ================= VISTA: CATÁLOGO PRINCIPAL ================= */
+                            <div className="animate-slideUp pb-20">
+                                
+                                {/* HERO SLIDER (Se alimenta del Admin) */}
+                                {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
+                                    <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
+                                        {storeConfig.heroSlides.map((slide, index) => (
+                                            <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
+                                                <SmoothImage src={slide.image} className="w-full h-full object-cover scale-105" />
+                                                <div className="absolute bottom-10 left-4 md:left-12 z-20">
+                                                    <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
+                                                    <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>
+                                                    <button onClick={() => window.scrollTo({top: window.innerHeight * 0.7, behavior: 'smooth'})} className="brutalist-btn px-8 py-3">{slide.cta || 'VER COLECCIÓN'}</button>
                                                 </div>
-                                                <button onClick={() => removeSlide(slide.id)} className="text-red-500 font-bold px-2">X</button>
                                             </div>
                                         ))}
                                     </div>
+                                )}
+
+                                {/* FILTROS DE CATEGORÍA */}
+                                {products.length > 0 && (
+                                    <div className="px-4 md:px-8 py-6 flex overflow-x-auto no-scrollbar gap-2 border-b border-zinc-900 sticky top-[72px] bg-black/95 z-30">
+                                        {categories.map(cat => (
+                                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`brutalist-btn-outline px-4 py-1 text-xs whitespace-nowrap ${activeCategory === cat ? 'active' : ''}`}>{cat}</button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* GRILLA DE PRENDAS */}
+                                <main className="p-4 md:p-8 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                                    {filteredProducts.map(product => (
+                                        <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
+                                            <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
+                                                <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
+                                            </div>
+                                            <div className="p-4 flex flex-col flex-1">
+                                                <h2 className="text-xl md:text-2xl font-bebas tracking-wide leading-tight mb-1">{product.title}</h2>
+                                                <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">NIO {product.price}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {filteredProducts.length === 0 && (
+                                        <div className="col-span-full text-center py-20 text-zinc-600 font-bebas text-2xl">
+                                            CATÁLOGO VACÍO. SUBE PRENDAS DESDE EL ADMIN.
+                                        </div>
+                                    )}
+                                </main>
+                            </div>
+                        ) : (
+                            
+                            /* ================= VISTA: PRODUCTO INDIVIDUAL ================= */
+                            <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
+                                <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
+                                    <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
                                 </div>
 
-                                {/* GESTOR DE GUÍA DE TALLAS */}
-                                <div className="w-full md:w-1/2 border border-zinc-800 p-6 bg-zinc-950 h-max">
-                                    <h2 className="font-bebas text-3xl text-kuraRed mb-4">GUÍA DE TALLAS GLOBAL</h2>
-                                    <p className="text-xs text-zinc-400 mb-4">Sube una imagen con la tabla de medidas. Aparecerá cuando el cliente toque "Guía de Medidas" al comprar.</p>
-                                    <input type="file" onChange={handleSizeGuideUpload} className="text-xs border border-zinc-700 p-2 w-full bg-black mb-4" />
+                                <div className="flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 mb-20">
                                     
-                                    {storeConfig.sizeGuide ? (
-                                        <div className="border border-zinc-800 p-2">
-                                            <p className="text-xs text-zinc-500 mb-2">GUÍA ACTUAL:</p>
-                                            <img src={storeConfig.sizeGuide} className="w-full h-auto" />
+                                    {/* FOTOS DEL PRODUCTO */}
+                                    <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4">
+                                        {selectedProduct.images?.length > 1 && (
+                                            <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
+                                                {selectedProduct.images.map((img, idx) => (
+                                                    <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
+                                                        <SmoothImage src={img} className="w-full h-full object-cover" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="w-full border border-zinc-800 bg-zinc-950 relative">
+                                            <SmoothImage src={selectedProduct.images?.[mainImageIndex]} className="w-full h-auto aspect-[4/5] object-cover" />
                                         </div>
-                                    ) : (
-                                        <p className="text-red-500 text-xs">NO HAY GUÍA DE TALLAS CONFIGURADA.</p>
-                                    )}
+                                    </div>
+
+                                    {/* INFO Y BOTÓN DE COMPRA */}
+                                    <div className="w-full md:w-[45%] flex flex-col">
+                                        <h2 className="text-4xl md:text-6xl font-bebas mb-2 leading-none">{selectedProduct.title}</h2>
+                                        <p className="text-2xl font-mono text-kuraRed mb-6">NIO {selectedProduct.price}</p>
+                                        <p className="text-zinc-400 text-sm leading-relaxed mb-8">{selectedProduct.description}</p>
+
+                                        {selectedProduct.sizes?.length > 0 && (
+                                            <div className="mb-8">
+                                                <div className="flex justify-between items-end mb-3">
+                                                    <span className="text-xs text-zinc-300">SELECCIONA TALLA</span>
+                                                    <button onClick={() => { if(storeConfig.sizeGuide) setIsSizeModalOpen(true); else alert("Guía no subida aún."); }} className="text-[10px] text-zinc-500 underline hover:text-white">GUÍA DE MEDIDAS</button>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    {selectedProduct.sizes.map(size => (
+                                                        <button key={size} onClick={() => setSelectedSize(size)} className={`py-3 font-bebas text-xl border transition-colors ${selectedSize === size ? 'bg-white text-black border-white' : 'border-zinc-700 hover:border-kuraRed text-zinc-300'}`}>{size}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <button onClick={() => addToCart(selectedProduct)} className="brutalist-btn w-full font-bebas text-2xl md:text-3xl py-4 mb-8">
+                                            AGREGAR AL ARSENAL
+                                        </button>
+                                        
+                                        {selectedProduct.details?.length > 0 && (
+                                            <div className="border-t border-zinc-800 pt-4">
+                                                <p className="font-mono text-xs text-zinc-500 mb-2">ESPECIFICACIONES:</p>
+                                                <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-xs md:text-sm">{selectedProduct.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* SECCIÓN DINÁMICA: COMPLETA EL LOOK */}
+                                {relatedProducts.length > 0 && (
+                                    <div className="border-t border-zinc-900 pt-10">
+                                        <h3 className="font-bebas text-3xl mb-6">COMPLETA EL LOOK</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {relatedProducts.map(p => (
+                                                <div key={p.id} onClick={() => openProduct(p)} className="cursor-pointer border border-zinc-800 bg-black hover:border-kuraRed transition-colors">
+                                                    <SmoothImage src={p.images?.[0]} className="w-full aspect-square object-cover" />
+                                                    <div className="p-3">
+                                                        <p className="font-bebas text-lg truncate">{p.title}</p>
+                                                        <p className="text-kuraRed font-mono text-xs">NIO {p.price}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
+
+                    {/* MODAL GUÍA DE TALLAS */}
+                    {isSizeModalOpen && (
+                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4">
+                            <div className="relative max-w-2xl w-full border border-zinc-800 bg-zinc-950 p-2 animate-slideUp">
+                                <button onClick={() => setIsSizeModalOpen(false)} className="absolute -top-10 right-0 text-white font-mono text-xl hover:text-kuraRed">CERRAR ✕</button>
+                                <SmoothImage src={storeConfig.sizeGuide} className="w-full h-auto" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CARRITO SLIDE-OVER */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-[200] flex justify-end">
+                            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+                            <div className="h-full w-full md:w-[400px] bg-kuraDark border-l border-zinc-800 flex flex-col relative">
+                                <div className="p-5 border-b border-zinc-800 flex justify-between bg-black">
+                                    <h2 className="text-2xl font-bebas">ARSENAL ACTUAL</h2>
+                                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white">✕ CERRAR</button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+                                    {cart.length === 0 ? (
+                                        <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
+                                    ) : (
+                                        cart.map(item => (
+                                            <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 bg-black relative">
+                                                <img src={item.images?.[0]} className="w-16 h-20 object-cover" />
+                                                <div className="flex-1">
+                                                    <p className="font-bebas text-lg pr-6 leading-tight">{item.title}</p>
+                                                    <p className="text-[10px] text-zinc-500 mt-1">TALLA: {item.selectedSize}</p>
+                                                    <p className="text-kuraRed text-xs mt-1 font-bold">NIO {item.price}</p>
+                                                </div>
+                                                <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500">✕</button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                {cart.length > 0 && (
+                                    <div className="p-5 bg-black border-t border-zinc-800">
+                                        <div className="flex justify-between items-end mb-4">
+                                            <span className="text-xs text-zinc-500">TOTAL ESTIMADO</span>
+                                            <span className="font-bebas text-3xl text-white">NIO {cart.reduce((a,b)=>a+b.price,0)}</span>
+                                        </div>
+                                        <form onSubmit={handleCheckout} className="space-y-2">
+                                            <input required placeholder="NOMBRE" className="brutalist-input text-xs p-3" onChange={e=>setFormData({...formData, name: e.target.value})} />
+                                            <input required type="tel" placeholder="TELÉFONO" className="brutalist-input text-xs p-3" onChange={e=>setFormData({...formData, phone: e.target.value})} />
+                                            <textarea required placeholder="DIRECCIÓN DE ENTREGA" className="brutalist-input text-xs p-3 h-16 resize-none" onChange={e=>setFormData({...formData, address: e.target.value})} />
+                                            <button type="submit" className="brutalist-btn w-full mt-2">CONFIRMAR POR WHATSAPP</button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AdminPanel />);
+        root.render(<KuraStudio />);
     </script>
 </body>
-</html>
+</html> 
