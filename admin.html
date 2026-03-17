@@ -3,372 +3,378 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO | Backoffice Admin</title>
+    <title>KURA STUDIO | Dark Japan Punk</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: { kuraRed: '#ff003c', kuraDark: '#050505', kuraGrey: '#111' },
-                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] }
-                }
-            }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { kuraRed: '#ff003c', kuraDark: '#050505', kuraGrey: '#111' }, 
+                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] }, 
+                    animation: { 'slideUp': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)', 'marquee': 'marquee 15s linear infinite' }, 
+                    keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } }, marquee: { '0%': { transform: 'translateX(100%)' }, '100%': { transform: 'translateX(-100%)' } } } 
+                } 
+            } 
         }
     </script>
     
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
+    
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; overscroll-behavior-y: none; }
-        .brutalist-input { width: 100%; background: #050505; border: 1px solid #333; color: white; padding: 0.75rem; font-size: 0.875rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; }
-        .brutalist-input:focus { border-color: #ff003c; }
-        .brutalist-btn { background: #ff003c; color: black; border: none; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
-        .brutalist-btn:hover:not(:disabled) { background: white; color: black; }
-        .brutalist-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
-        .brutalist-card { border: 1px solid #333; background: #050505; padding: 1rem; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #ff003c; }
+        body { background-color: #000; color: #fff; background-image: linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px); background-size: 40px 40px; overscroll-behavior-y: none; }
+        .brutalist-card { border: 2px solid #222; background: #050505; transition: all 0.2s ease; }
+        .brutalist-card:hover { border-color: #ff003c; transform: translate(-4px, -4px); box-shadow: 6px 6px 0px 0px #ff003c; }
+        .brutalist-btn { background: #ff003c; color: #000; border: 2px solid #ff003c; transition: all 0.2s ease; text-transform: uppercase; }
+        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 2px solid #333; transition: all 0.2s ease; }
+        .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .text-outline { -webkit-text-stroke: 1px #ff003c; color: transparent; }
+        .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #ff003c; color: #000; padding: 4px 0; position: relative; }
+        .marquee-content { display: inline-block; min-width: 100%; }
+        
+        /* Imagenes que aparecen suavemente */
+        .img-fade { opacity: 0; transition: opacity 0.5s ease-in-out; }
+        .img-loaded { opacity: 1; }
     </style>
 </head>
-<body>
+<body class="font-mono">
     <div id="root"></div>
-
     <script type="text/babel">
-        // --- 1. CONFIGURACIÓN FIREBASE Y IMGBB ---
         const firebaseConfig = {
             apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
             authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034",
-            storageBucket: "kuranic-b1034.firebasestorage.app",
-            messagingSenderId: "875987360513",
-            appId: "1:875987360513:web:cd51507c7b33f302949900"
+            projectId: "kuranic-b1034"
         };
-        
-        // API KEY DE IMGBB INTEGRADA
-        const IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
-
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
+        const { useState, useEffect } = React;
 
-        const { useState, useEffect, useRef } = React;
+        const Toast = ({ message, isVisible }) => (
+            <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
+                <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3"><span className="text-2xl">✓</span> {message}</div>
+            </div>
+        );
 
-        const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL', 'ÚNICA'];
+        // Componente de Imagen con Fade-In (Para evitar que se vea feo mientras carga)
+        const SmoothImage = ({ src, className }) => {
+            return (
+                <img 
+                    src={src} 
+                    className={`img-fade ${className}`} 
+                    onLoad={(e) => e.target.classList.add('img-loaded')} 
+                    alt="Kura Studio"
+                />
+            );
+        };
 
-        function AdminPanel() {
+        function KuraStudio() {
             const [products, setProducts] = useState([]);
+            const [filteredProducts, setFilteredProducts] = useState([]);
+            const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: null });
             const [isLoading, setIsLoading] = useState(true);
-            const [isSaving, setIsSaving] = useState(false);
-            const [editingId, setEditingId] = useState(null);
-            const fileInputRef = useRef(null);
+            
+            const [selectedProduct, setSelectedProduct] = useState(null);
+            const [activeCategory, setActiveCategory] = useState('ALL');
+            const [selectedSize, setSelectedSize] = useState('');
+            const [mainImageIndex, setMainImageIndex] = useState(0);
+            
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
+            const [toastMsg, setToastMsg] = useState('');
+            const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+            const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
-            // Estado del Formulario
-            const [formData, setFormData] = useState({
-                title: '',
-                price: '',
-                category: '',
-                description: '',
-                details: '', // Separado por saltos de línea
-                sizes: [],
-                stock: '',
-                images: [] // Array de URLs
-            });
+            const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
+            useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-            // Cargar Productos
-            const fetchProducts = async () => {
-                setIsLoading(true);
-                try {
-                    const snapshot = await db.collection("products").get();
-                    const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setProducts(items);
-                } catch (error) {
-                    console.error("Error cargando productos", error);
-                    alert("Error conectando a la base de datos.");
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-
-            useEffect(() => { fetchProducts(); }, []);
-
-            // Manejar Cambios en el Formulario
-            const handleChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
-            };
-
-            const toggleSize = (size) => {
-                setFormData(prev => {
-                    const sizes = prev.sizes.includes(size)
-                        ? prev.sizes.filter(s => s !== size)
-                        : [...prev.sizes, size];
-                    return { ...prev, sizes };
-                });
-            };
-
-            // Eliminar imagen subida
-            const removeImage = (index) => {
-                setFormData(prev => ({
-                    ...prev,
-                    images: prev.images.filter((_, i) => i !== index)
-                }));
-            };
-
-            // Subir Imágenes a ImgBB
-            const handleImageUpload = async (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length === 0) return;
-                
-                setIsSaving(true);
-                const uploadedUrls = [];
-
-                try {
-                    for (const file of files) {
-                        const formData = new FormData();
-                        formData.append("image", file);
-                        
-                        const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        const data = await response.json();
-                        if (data.success) {
-                            uploadedUrls.push(data.data.url);
-                        } else {
-                            throw new Error(data.error.message);
-                        }
-                    }
-
-                    setFormData(prev => ({
-                        ...prev,
-                        images: [...prev.images, ...uploadedUrls]
-                    }));
-                } catch (error) {
-                    console.error("Error subiendo imagen:", error);
-                    alert("Error subiendo la imagen a ImgBB. Revisa tu conexión.");
-                } finally {
-                    setIsSaving(false);
-                    if(fileInputRef.current) fileInputRef.current.value = ""; // Limpiar input
-                }
-            };
-
-            // Guardar o Actualizar Producto en Firestore
-            const handleSubmit = async (e) => {
-                e.preventDefault();
-                setIsSaving(true);
-
-                // Preparar datos (convertir texto de detalles a array)
-                const productData = {
-                    title: formData.title.toUpperCase(),
-                    price: Number(formData.price),
-                    category: formData.category.toUpperCase(),
-                    description: formData.description,
-                    details: formData.details.split('\n').filter(d => d.trim() !== ''),
-                    sizes: formData.sizes,
-                    stock: Number(formData.stock),
-                    images: formData.images,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                try {
-                    if (editingId) {
-                        await db.collection("products").doc(editingId).update(productData);
-                        alert("¡Prenda actualizada con éxito!");
-                    } else {
-                        productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                        await db.collection("products").add(productData);
-                        alert("¡Nueva prenda subida al sistema!");
-                    }
-                    resetForm();
-                    fetchProducts();
-                } catch (error) {
-                    console.error("Error guardando:", error);
-                    alert("Error al guardar en Firebase.");
-                } finally {
-                    setIsSaving(false);
-                }
-            };
-
-            // Cargar datos para editar
-            const handleEdit = (product) => {
-                setEditingId(product.id);
-                setFormData({
-                    title: product.title,
-                    price: product.price,
-                    category: product.category,
-                    description: product.description,
-                    details: product.details ? product.details.join('\n') : '',
-                    sizes: product.sizes || [],
-                    stock: product.stock || 0,
-                    images: product.images || (product.image ? [product.image] : [])
-                });
-                window.scrollTo(0, 0);
-            };
-
-            // Eliminar Producto
-            const handleDelete = async (id) => {
-                if (window.confirm("¿Seguro que quieres eliminar esta prenda de la existencia?")) {
+            // CARGAR DATOS 100% DINÁMICOS DESDE FIREBASE
+            useEffect(() => {
+                const fetchData = async () => {
+                    setIsLoading(true);
                     try {
-                        await db.collection("products").doc(id).delete();
-                        fetchProducts();
-                    } catch (error) {
-                        alert("Error eliminando.");
-                    }
-                }
+                        const prodSnap = await db.collection("products").get();
+                        const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        setProducts(items); setFilteredProducts(items);
+                        
+                        const confSnap = await db.collection("settings").doc("store").get();
+                        if(confSnap.exists) setStoreConfig(confSnap.data());
+
+                        checkDynamicLink(items);
+                    } catch (error) { console.error("Error conectando al sistema", error); }
+                    setIsLoading(false);
+                };
+                fetchData();
+            }, []);
+
+            useEffect(() => {
+                if (selectedProduct || !storeConfig.heroSlides || storeConfig.heroSlides.length <= 1) return;
+                const timer = setInterval(() => setCurrentHeroSlide((prev) => (prev + 1) % storeConfig.heroSlides.length), 5000);
+                return () => clearInterval(timer);
+            }, [selectedProduct, storeConfig.heroSlides]);
+
+            useEffect(() => {
+                let result = [...products];
+                if (activeCategory !== 'ALL') result = result.filter(p => p.category === activeCategory);
+                setFilteredProducts(result);
+            }, [activeCategory, products]);
+
+            const checkDynamicLink = (items) => {
+                const id = new URLSearchParams(window.location.search).get('product');
+                if (id) { const found = items.find(p => p.id === id); if (found) openProduct(found); }
             };
 
-            const resetForm = () => {
-                setEditingId(null);
-                setFormData({ title: '', price: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+            const openProduct = (product) => {
+                setSelectedProduct(product); setSelectedSize(''); setMainImageIndex(0);
+                window.history.pushState(null, '', `?product=${product.id}`); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
+
+            const closeProduct = () => { setSelectedProduct(null); window.history.pushState(null, '', window.location.pathname); };
+
+            const addToCart = (product) => {
+                if (!selectedSize && product.sizes?.length > 0) return alert('SELECCIONA UNA TALLA PARA CONTINUAR');
+                const sizeToSave = selectedSize || 'ÚNICA';
+                setCart([...cart, { ...product, selectedSize: sizeToSave, cartId: Date.now() }]);
+                setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
+            };
+
+            const handleCheckout = (e) => {
+                e.preventDefault(); if (cart.length === 0) return;
+                let m = `*PEDIDO KURA STUDIO* 🩸%0A%0A*Cliente:* ${formData.name}%0A*Tel:* ${formData.phone}%0A*Dirección:* ${formData.address}%0A%0A*ARSENAL:*%0A`;
+                cart.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}%0A`; });
+                m += `%0A*TOTAL ESTIMADO: NIO ${cart.reduce((a, b) => a + b.price, 0)}*`;
+                setCart([]); localStorage.removeItem('kura_cart'); setIsCartOpen(false);
+                window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
+            };
+
+            const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
+            const relatedProducts = selectedProduct ? products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 3) : [];
 
             return (
-                <div className="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
-                    
-                    {/* PANEL IZQUIERDO: FORMULARIO */}
-                    <div className="w-full md:w-1/3 bg-kuraDark border-b md:border-b-0 md:border-r border-zinc-800 p-6 md:h-screen md:overflow-y-auto">
-                        <div className="mb-8">
-                            <p className="text-kuraRed text-xs tracking-widest font-bold">BACKOFFICE SYSTEM</p>
-                            <h1 className="text-4xl font-bebas text-white">KURA <span className="text-outline">ADMIN</span></h1>
-                        </div>
+                <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
+                    <Toast message={toastMsg} isVisible={!!toastMsg} />
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-xl font-bebas text-kuraRed">{editingId ? 'EDITANDO PRENDA' : 'NUEVA PRENDA'}</h2>
-                                {editingId && <button type="button" onClick={resetForm} className="text-xs text-zinc-500 hover:text-white underline">CANCELAR</button>}
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-zinc-500">TÍTULO DE LA PRENDA</label>
-                                <input required type="text" name="title" value={formData.title} onChange={handleChange} className="brutalist-input" placeholder="Ej: TOKYO PUNK TEE" />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="text-xs text-zinc-500">PRECIO (NIO)</label>
-                                    <input required type="number" name="price" value={formData.price} onChange={handleChange} className="brutalist-input" placeholder="0" />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-zinc-500">STOCK (CANTIDAD)</label>
-                                    <input required type="number" name="stock" value={formData.stock} onChange={handleChange} className="brutalist-input" placeholder="0" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-zinc-500">CATEGORÍA</label>
-                                <input required type="text" name="category" value={formData.category} onChange={handleChange} className="brutalist-input" placeholder="Ej: T-SHIRTS, HOODIES, PANTS" />
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-zinc-500">DESCRIPCIÓN COMERCIAL</label>
-                                <textarea required name="description" value={formData.description} onChange={handleChange} className="brutalist-input h-20 resize-none" placeholder="Corte oversize japonés..."></textarea>
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-zinc-500">ESPECIFICACIONES (UNA POR LÍNEA)</label>
-                                <textarea name="details" value={formData.details} onChange={handleChange} className="brutalist-input h-20 resize-none" placeholder="100% Algodón&#10;Lavado ácido&#10;Estampado en serigrafía"></textarea>
-                            </div>
-
-                            <div>
-                                <label className="text-xs text-zinc-500 mb-2 block">TALLAS DISPONIBLES</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {AVAILABLE_SIZES.map(size => (
-                                        <button 
-                                            key={size} type="button" 
-                                            onClick={() => toggleSize(size)}
-                                            className={`px-3 py-1 text-sm border font-bebas transition-colors ${formData.sizes.includes(size) ? 'bg-kuraRed border-kuraRed text-black' : 'bg-transparent border-zinc-700 text-zinc-400'}`}
-                                        >
-                                            {size}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* GESTIÓN DE IMÁGENES CON IMGBB */}
-                            <div className="pt-2 border-t border-zinc-800">
-                                <label className="text-xs text-zinc-500 block mb-2">FOTOGRAFÍAS (IMGBB)</label>
-                                
-                                <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    multiple 
-                                    onChange={handleImageUpload} 
-                                    ref={fileInputRef}
-                                    className="block w-full text-xs text-zinc-400 file:mr-4 file:py-2 file:px-4 file:rounded-none file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700 mb-4 cursor-pointer"
-                                />
-                                
-                                {isSaving && <p className="text-kuraRed text-xs mb-2 animate-pulse">SUBIENDO IMÁGENES AL SERVIDOR...</p>}
-
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.images.map((url, idx) => (
-                                        <div key={idx} className="relative w-16 h-20 border border-zinc-700 group">
-                                            <img src={url} className="w-full h-full object-cover" />
-                                            <button type="button" onClick={() => removeImage(idx)} className="absolute top-0 right-0 bg-red-600 text-white w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">X</button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4">
-                                {isSaving ? 'GUARDANDO...' : (editingId ? 'ACTUALIZAR PRENDA' : 'AGREGAR AL CATÁLOGO')}
-                            </button>
-                        </form>
+                    {/* MARQUEE SUPERIOR */}
+                    <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
+                        <div className="marquee-content animate-marquee">ENVÍOS A TODA NICARAGUA // PAGO CONTRA ENTREGA // KURA STUDIO // CALIDAD PREMIUM // ENVÍOS A TODA NICARAGUA //</div>
                     </div>
 
-                    {/* PANEL DERECHO: LISTADO DE PRODUCTOS */}
-                    <div className="w-full md:w-2/3 bg-black p-4 md:p-8 md:h-screen md:overflow-y-auto">
-                        <div className="flex justify-between items-end mb-6 border-b border-zinc-900 pb-2">
-                            <h2 className="text-2xl font-bebas text-white">INVENTARIO ACTUAL ({products.length})</h2>
-                            <button onClick={fetchProducts} className="text-xs text-zinc-500 hover:text-white underline">ACTUALIZAR DATOS</button>
+                    {/* HEADER */}
+                    <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
+                        <div className="cursor-pointer" onClick={closeProduct}>
+                            <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                         </div>
+                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2">
+                            <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CART [{cart.length}]
+                        </button>
+                    </header>
 
+                    <div className="flex-1 w-full max-w-[1440px] mx-auto">
                         {isLoading ? (
-                            <p className="text-zinc-500 animate-pulse">CARGANDO BASE DE DATOS...</p>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {products.map(product => (
-                                    <div key={product.id} className="brutalist-card flex gap-4">
-                                        <div className="w-20 h-24 bg-zinc-900 shrink-0 border border-zinc-800">
-                                            {product.images && product.images.length > 0 ? (
-                                                <img src={product.images[0]} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[10px] text-zinc-600">NO IMG</div>
-                                            )}
+                            /* PANTALLA DE CARGA NEGRA Y LIMPIA */
+                            <div className="flex flex-col items-center justify-center h-[70vh] bg-black">
+                                <h1 className="text-4xl md:text-6xl font-bebas text-zinc-800 animate-pulse">CARGANDO SISTEMA...</h1>
+                            </div>
+                        ) : !selectedProduct ? (
+                            
+                            /* ================= VISTA: CATÁLOGO PRINCIPAL ================= */
+                            <div className="animate-slideUp pb-20">
+                                
+                                {/* HERO SLIDER (Se alimenta del Admin) */}
+                                {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
+                                    <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
+                                        {storeConfig.heroSlides.map((slide, index) => (
+                                            <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
+                                                <SmoothImage src={slide.image} className="w-full h-full object-cover scale-105" />
+                                                <div className="absolute bottom-10 left-4 md:left-12 z-20">
+                                                    <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
+                                                    <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>
+                                                    <button onClick={() => window.scrollTo({top: window.innerHeight * 0.7, behavior: 'smooth'})} className="brutalist-btn px-8 py-3">{slide.cta || 'VER COLECCIÓN'}</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* FILTROS DE CATEGORÍA */}
+                                {products.length > 0 && (
+                                    <div className="px-4 md:px-8 py-6 flex overflow-x-auto no-scrollbar gap-2 border-b border-zinc-900 sticky top-[72px] bg-black/95 z-30">
+                                        {categories.map(cat => (
+                                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`brutalist-btn-outline px-4 py-1 text-xs whitespace-nowrap ${activeCategory === cat ? 'active' : ''}`}>{cat}</button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* GRILLA DE PRENDAS */}
+                                <main className="p-4 md:p-8 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                                    {filteredProducts.map(product => (
+                                        <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
+                                            <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
+                                                <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
+                                            </div>
+                                            <div className="p-4 flex flex-col flex-1">
+                                                <h2 className="text-xl md:text-2xl font-bebas tracking-wide leading-tight mb-1">{product.title}</h2>
+                                                <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">NIO {product.price}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col justify-between w-full">
-                                            <div>
-                                                <p className="text-xs text-kuraRed mb-1">[{product.category}]</p>
-                                                <h3 className="font-bebas text-xl leading-none truncate w-32">{product.title}</h3>
-                                                <p className="text-xs text-zinc-500 mt-1">NIO {product.price} | Stock: {product.stock}</p>
+                                    ))}
+                                    {filteredProducts.length === 0 && (
+                                        <div className="col-span-full text-center py-20 text-zinc-600 font-bebas text-2xl">
+                                            CATÁLOGO VACÍO. SUBE PRENDAS DESDE EL ADMIN.
+                                        </div>
+                                    )}
+                                </main>
+                            </div>
+                        ) : (
+                            
+                            /* ================= VISTA: PRODUCTO INDIVIDUAL ================= */
+                            <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
+                                <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
+                                    <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
+                                </div>
+
+                                <div className="flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 mb-20">
+                                    
+                                    {/* FOTOS DEL PRODUCTO */}
+                                    <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4">
+                                        {selectedProduct.images?.length > 1 && (
+                                            <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
+                                                {selectedProduct.images.map((img, idx) => (
+                                                    <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
+                                                        <SmoothImage src={img} className="w-full h-full object-cover" />
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <div className="flex gap-2 mt-2">
-                                                <button onClick={() => handleEdit(product)} className="flex-1 bg-zinc-800 text-white text-xs py-1 hover:bg-white hover:text-black transition-colors font-bold">EDITAR</button>
-                                                <button onClick={() => handleDelete(product.id)} className="flex-1 bg-red-900/30 text-red-500 text-xs py-1 border border-red-900 hover:bg-red-600 hover:text-white transition-colors font-bold">BORRAR</button>
-                                            </div>
+                                        )}
+                                        <div className="w-full border border-zinc-800 bg-zinc-950 relative">
+                                            <SmoothImage src={selectedProduct.images?.[mainImageIndex]} className="w-full h-auto aspect-[4/5] object-cover" />
                                         </div>
                                     </div>
-                                ))}
+
+                                    {/* INFO Y BOTÓN DE COMPRA */}
+                                    <div className="w-full md:w-[45%] flex flex-col">
+                                        <h2 className="text-4xl md:text-6xl font-bebas mb-2 leading-none">{selectedProduct.title}</h2>
+                                        <p className="text-2xl font-mono text-kuraRed mb-6">NIO {selectedProduct.price}</p>
+                                        <p className="text-zinc-400 text-sm leading-relaxed mb-8">{selectedProduct.description}</p>
+
+                                        {selectedProduct.sizes?.length > 0 && (
+                                            <div className="mb-8">
+                                                <div className="flex justify-between items-end mb-3">
+                                                    <span className="text-xs text-zinc-300">SELECCIONA TALLA</span>
+                                                    <button onClick={() => { if(storeConfig.sizeGuide) setIsSizeModalOpen(true); else alert("Guía no subida aún."); }} className="text-[10px] text-zinc-500 underline hover:text-white">GUÍA DE MEDIDAS</button>
+                                                </div>
+                                                <div className="grid grid-cols-4 gap-2">
+                                                    {selectedProduct.sizes.map(size => (
+                                                        <button key={size} onClick={() => setSelectedSize(size)} className={`py-3 font-bebas text-xl border transition-colors ${selectedSize === size ? 'bg-white text-black border-white' : 'border-zinc-700 hover:border-kuraRed text-zinc-300'}`}>{size}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <button onClick={() => addToCart(selectedProduct)} className="brutalist-btn w-full font-bebas text-2xl md:text-3xl py-4 mb-8">
+                                            AGREGAR AL ARSENAL
+                                        </button>
+                                        
+                                        {selectedProduct.details?.length > 0 && (
+                                            <div className="border-t border-zinc-800 pt-4">
+                                                <p className="font-mono text-xs text-zinc-500 mb-2">ESPECIFICACIONES:</p>
+                                                <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-xs md:text-sm">{selectedProduct.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* SECCIÓN DINÁMICA: COMPLETA EL LOOK */}
+                                {relatedProducts.length > 0 && (
+                                    <div className="border-t border-zinc-900 pt-10">
+                                        <h3 className="font-bebas text-3xl mb-6">COMPLETA EL LOOK</h3>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {relatedProducts.map(p => (
+                                                <div key={p.id} onClick={() => openProduct(p)} className="cursor-pointer border border-zinc-800 bg-black hover:border-kuraRed transition-colors">
+                                                    <SmoothImage src={p.images?.[0]} className="w-full aspect-square object-cover" />
+                                                    <div className="p-3">
+                                                        <p className="font-bebas text-lg truncate">{p.title}</p>
+                                                        <p className="text-kuraRed font-mono text-xs">NIO {p.price}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
+
+                    {/* MODAL GUÍA DE TALLAS */}
+                    {isSizeModalOpen && (
+                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4">
+                            <div className="relative max-w-2xl w-full border border-zinc-800 bg-zinc-950 p-2 animate-slideUp">
+                                <button onClick={() => setIsSizeModalOpen(false)} className="absolute -top-10 right-0 text-white font-mono text-xl hover:text-kuraRed">CERRAR ✕</button>
+                                <SmoothImage src={storeConfig.sizeGuide} className="w-full h-auto" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CARRITO SLIDE-OVER */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-[200] flex justify-end">
+                            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+                            <div className="h-full w-full md:w-[400px] bg-kuraDark border-l border-zinc-800 flex flex-col relative">
+                                <div className="p-5 border-b border-zinc-800 flex justify-between bg-black">
+                                    <h2 className="text-2xl font-bebas">ARSENAL ACTUAL</h2>
+                                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white">✕ CERRAR</button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+                                    {cart.length === 0 ? (
+                                        <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
+                                    ) : (
+                                        cart.map(item => (
+                                            <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 bg-black relative">
+                                                <img src={item.images?.[0]} className="w-16 h-20 object-cover" />
+                                                <div className="flex-1">
+                                                    <p className="font-bebas text-lg pr-6 leading-tight">{item.title}</p>
+                                                    <p className="text-[10px] text-zinc-500 mt-1">TALLA: {item.selectedSize}</p>
+                                                    <p className="text-kuraRed text-xs mt-1 font-bold">NIO {item.price}</p>
+                                                </div>
+                                                <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500">✕</button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                {cart.length > 0 && (
+                                    <div className="p-5 bg-black border-t border-zinc-800">
+                                        <div className="flex justify-between items-end mb-4">
+                                            <span className="text-xs text-zinc-500">TOTAL ESTIMADO</span>
+                                            <span className="font-bebas text-3xl text-white">NIO {cart.reduce((a,b)=>a+b.price,0)}</span>
+                                        </div>
+                                        <form onSubmit={handleCheckout} className="space-y-2">
+                                            <input required placeholder="NOMBRE" className="brutalist-input text-xs p-3" onChange={e=>setFormData({...formData, name: e.target.value})} />
+                                            <input required type="tel" placeholder="TELÉFONO" className="brutalist-input text-xs p-3" onChange={e=>setFormData({...formData, phone: e.target.value})} />
+                                            <textarea required placeholder="DIRECCIÓN DE ENTREGA" className="brutalist-input text-xs p-3 h-16 resize-none" onChange={e=>setFormData({...formData, address: e.target.value})} />
+                                            <button type="submit" className="brutalist-btn w-full mt-2">CONFIRMAR POR WHATSAPP</button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<AdminPanel />);
+        root.render(<KuraStudio />);
     </script>
 </body>
 </html>
-
