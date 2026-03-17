@@ -19,7 +19,8 @@
                     animation: {
                         'progress': 'progress 5s linear infinite',
                         'slideUp': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                        'marquee': 'marquee 15s linear infinite'
+                        'marquee': 'marquee 15s linear infinite',
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                     },
                     keyframes: {
                         progress: { '0%': { width: '0%' }, '100%': { width: '100%' } },
@@ -57,47 +58,38 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .text-outline { -webkit-text-stroke: 1px #ff003c; color: transparent; }
         
-        /* Contenedor del letrero LED */
         .marquee-container {
-            width: 100%;
-            overflow: hidden;
-            white-space: nowrap;
-            background-color: #ff003c;
-            color: #000;
-            padding: 4px 0;
-            position: relative;
+            width: 100%; overflow: hidden; white-space: nowrap; background-color: #ff003c; color: #000; padding: 4px 0; position: relative;
         }
-        .marquee-content {
-            display: inline-block;
-            min-width: 100%;
-        }
+        .marquee-content { display: inline-block; min-width: 100%; }
     </style>
 </head>
 <body class="font-mono">
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 1. CONFIGURACIÓN FIREBASE ---
-        const firebaseConfig = { apiKey: "API_KEY", authDomain: "kura.firebaseapp.com", projectId: "kura-studio" };
+        // --- 1. CONFIGURACIÓN FIREBASE REAL (Tu Proyecto) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
+            authDomain: "kuranic-b1034.firebaseapp.com",
+            projectId: "kuranic-b1034",
+            storageBucket: "kuranic-b1034.firebasestorage.app",
+            messagingSenderId: "875987360513",
+            appId: "1:875987360513:web:cd51507c7b33f302949900"
+        };
+        
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
         const { useState, useEffect } = React;
 
-        // --- 2. DATA DE PRUEBA LIMPIA (Sin "Cyber", puro Streetwear/Japan Punk) ---
-        const MOCK_PRODUCTS = [
-            { id: '1', title: 'T-SHIRT AKIRA', price: 850, category: 'T-SHIRTS', sizes: ['M', 'L', 'XL', 'XXL'], description: 'Nuestra pieza insignia. Algodón pesado de alta densidad. Corte cuadrado japonés perfecto para un look urbano y rebelde.', details: ['100% Algodón 240gsm', 'Corte Boxy Oversize', 'Estampado serigráfico de alta durabilidad'], images: ['https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?auto=format&fit=crop&q=80&w=800'] },
-            { id: '2', title: 'TOKYO PUNK TEE', price: 900, category: 'T-SHIRTS', sizes: ['L', 'XL'], description: 'Corte super oversize. Lavado ácido negro para un look vintage destructivo. Gráfico de anime clásico en la espalda.', details: ['Algodón 100% lavado ácido', 'Costuras expuestas', 'Gráfico trasero gigante'], images: ['https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=800'] },
-            { id: '3', title: 'ONI HOODIE', price: 1200, category: 'HOODIES', sizes: ['M', 'L', 'XL'], description: 'Corte japonés, mangas extra anchas. Logo Kura en rojo sangre bordado en el pecho. Capucha profunda para las noches en la ciudad.', details: ['French Terry 350gsm', 'Bordado 3D de precisión', 'Hombros caídos (Drop Shoulder)'], images: ['https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1611312449408-fcece27cdbb1?auto=format&fit=crop&q=80&w=800'] },
-            { id: '4', title: 'RONIN CARGO PANTS', price: 1400, category: 'PANTS', sizes: ['S', 'M', 'L'], description: 'Pantalones cargo anchos con cintas utilitarias y bolsillos 3D. Estilo urbano puro, listos para el asfalto y el skate.', details: ['Nylon resistente', 'Correas ajustables', 'Múltiples bolsillos laterales'], images: ['https://images.unsplash.com/photo-1628718484930-1c9535eb009f?auto=format&fit=crop&q=80&w=800', 'https://images.unsplash.com/photo-1550246140-5119ae4790b8?auto=format&fit=crop&q=80&w=800'] }
-        ];
-
+        // --- HERO SLIDES (Estos se pueden dejar estáticos o mover a Firebase después) ---
         const HERO_SLIDES = [
             { id: 1, image: 'https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?auto=format&fit=crop&q=80&w=1600', subtitle: 'NUEVA COLECCIÓN', title: 'DARK PUNK // VOL. 1', cta: 'VER HOODIES' },
             { id: 2, image: 'https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&q=80&w=1600', subtitle: 'BÁSICOS ESENCIALES', title: 'TOKYO STREETWEAR', cta: 'VER T-SHIRTS' }
         ];
 
-        // --- 3. COMPONENTES UI SECUNDARIOS ---
+        // --- COMPONENTES SECUNDARIOS ---
         const Toast = ({ message, isVisible }) => (
             <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
                 <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3 shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
@@ -121,10 +113,12 @@
             );
         };
 
-        // --- 4. APLICACIÓN PRINCIPAL ---
+        // --- APLICACIÓN PRINCIPAL ---
         function KuraStudio() {
             const [products, setProducts] = useState([]);
             const [filteredProducts, setFilteredProducts] = useState([]);
+            const [isLoading, setIsLoading] = useState(true); // Nuevo estado de carga
+            
             const [selectedProduct, setSelectedProduct] = useState(null);
             const [activeCategory, setActiveCategory] = useState('ALL');
             const [sortBy, setSortBy] = useState('NEWEST');
@@ -144,19 +138,29 @@
 
             useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
+            // LECTURA DE FIREBASE REAL
             useEffect(() => {
                 const fetchProducts = async () => {
+                    setIsLoading(true);
                     try {
                         const snapshot = await db.collection("products").get();
                         if (!snapshot.empty) {
                             const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                            setProducts(items); setFilteredProducts(items);
-                            checkDynamicLink(items); return;
+                            setProducts(items); 
+                            setFilteredProducts(items);
+                            checkDynamicLink(items);
+                        } else {
+                            // Base de datos conectada pero vacía
+                            setProducts([]);
+                            setFilteredProducts([]);
                         }
-                    } catch (error) { console.log("Usando Mocks."); }
-                    
-                    setProducts(MOCK_PRODUCTS); setFilteredProducts(MOCK_PRODUCTS);
-                    checkDynamicLink(MOCK_PRODUCTS);
+                    } catch (error) { 
+                        console.error("Error conectando a Firebase:", error);
+                        setProducts([]);
+                        setFilteredProducts([]);
+                    } finally {
+                        setIsLoading(false);
+                    }
                 };
                 fetchProducts();
             }, []);
@@ -181,7 +185,10 @@
 
             const checkDynamicLink = (items) => {
                 const id = new URLSearchParams(window.location.search).get('product');
-                if (id) openProduct(items.find(p => p.id === id));
+                if (id) {
+                    const found = items.find(p => p.id === id);
+                    if (found) openProduct(found);
+                }
             };
 
             const openProduct = (product) => {
@@ -223,7 +230,8 @@
                 window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
             };
 
-            const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category)))];
+            // Evitar crash si no hay categorías aún
+            const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
 
             return (
                 <div className="min-h-screen relative flex flex-col font-mono text-sm">
@@ -257,7 +265,14 @@
                         </header>
 
                         <div className="flex-1 w-full max-w-[1440px] mx-auto">
-                            {!selectedProduct ? (
+                            {isLoading ? (
+                                /* PANTALLA DE CARGA BRUTALISTA */
+                                <div className="flex flex-col items-center justify-center h-[60vh]">
+                                    <div className="text-kuraRed text-6xl mb-4 animate-pulse-fast">⚡</div>
+                                    <p className="font-bebas text-3xl tracking-widest text-white">CONECTANDO AL SERVIDOR...</p>
+                                    <p className="text-zinc-600 text-xs mt-2">CARGANDO DATOS DE KURA STUDIO</p>
+                                </div>
+                            ) : !selectedProduct ? (
                                 /* ===================== VISTA: HOME & CATÁLOGO ===================== */
                                 <div className="animate-slideUp pb-20">
                                     
@@ -276,7 +291,6 @@
                                                 </div>
                                             </div>
                                         ))}
-                                        {/* Barras de progreso del slider */}
                                         <div className="absolute bottom-0 left-0 w-full flex h-1 z-30 bg-zinc-900">
                                             {HERO_SLIDES.map((_, i) => (
                                                 <div key={i} className="flex-1 relative">
@@ -312,9 +326,9 @@
                                         {filteredProducts.map(product => (
                                             <div key={product.id} className="brutalist-card flex flex-col group cursor-pointer" onClick={() => openProduct(product)}>
                                                 <div className="relative w-full aspect-[4/5] bg-kuraGrey overflow-hidden border-b border-zinc-800">
-                                                    {/* Hover Switch Image */}
-                                                    <img src={product.images[0]} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0" />
-                                                    {product.images[1] && <img src={product.images[1]} className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
+                                                    {/* Soporte para arrays de imágenes o imagen única string */}
+                                                    <img src={Array.isArray(product.images) ? product.images[0] : (product.image || '')} className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-0" />
+                                                    {(Array.isArray(product.images) && product.images[1]) && <img src={product.images[1]} className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100" />}
                                                     
                                                     <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
                                                 </div>
@@ -324,7 +338,12 @@
                                                 </div>
                                             </div>
                                         ))}
-                                        {filteredProducts.length === 0 && <p className="col-span-full text-center text-zinc-500 py-20">NO SE ENCONTRARON PRENDAS.</p>}
+                                        {filteredProducts.length === 0 && (
+                                            <div className="col-span-full text-center py-20">
+                                                <p className="font-bebas text-3xl text-zinc-600 mb-2">BASE DE DATOS ESPERANDO DATOS</p>
+                                                <p className="text-zinc-500 text-xs">Carga prendas desde el panel de administración para verlas aquí.</p>
+                                            </div>
+                                        )}
                                     </main>
                                 </div>
 
@@ -342,17 +361,19 @@
                                         
                                         {/* LADO IZQUIERDO: GALERÍA DE IMÁGENES */}
                                         <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4">
-                                            {/* Miniaturas */}
-                                            <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
-                                                {selectedProduct.images.map((img, idx) => (
-                                                    <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full md:h-32 shrink-0 border-2 transition-colors overflow-hidden ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800 hover:border-zinc-500'}`}>
-                                                        <img src={img} className="w-full h-full object-cover" />
-                                                    </button>
-                                                ))}
-                                            </div>
+                                            {/* Miniaturas (si es array) */}
+                                            {Array.isArray(selectedProduct.images) && selectedProduct.images.length > 1 && (
+                                                <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
+                                                    {selectedProduct.images.map((img, idx) => (
+                                                        <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full md:h-32 shrink-0 border-2 transition-colors overflow-hidden ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800 hover:border-zinc-500'}`}>
+                                                            <img src={img} className="w-full h-full object-cover" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
                                             {/* Imagen Principal */}
                                             <div className="w-full bg-kuraGrey border border-zinc-800 relative">
-                                                <img src={selectedProduct.images[mainImageIndex]} alt={selectedProduct.title} className="w-full h-auto aspect-[4/5] object-cover" />
+                                                <img src={Array.isArray(selectedProduct.images) ? selectedProduct.images[mainImageIndex] : selectedProduct.image} alt={selectedProduct.title} className="w-full h-auto aspect-[4/5] object-cover" />
                                             </div>
                                         </div>
 
@@ -364,38 +385,41 @@
                                             <p className="text-zinc-400 text-sm leading-relaxed mb-8">{selectedProduct.description}</p>
 
                                             {/* Selección de Talla */}
-                                            <div className="mb-8">
-                                                <div className="flex justify-between items-end mb-3">
-                                                    <span className="text-xs text-zinc-300">TALLA // SIZE</span>
-                                                    <span className="text-[10px] text-zinc-500 underline cursor-pointer hover:text-white">GUÍA DE MEDIDAS</span>
+                                            {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                                                <div className="mb-8">
+                                                    <div className="flex justify-between items-end mb-3">
+                                                        <span className="text-xs text-zinc-300">TALLA // SIZE</span>
+                                                        <span className="text-[10px] text-zinc-500 underline cursor-pointer hover:text-white">GUÍA DE MEDIDAS</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {selectedProduct.sizes.map(size => (
+                                                            <button key={size} onClick={() => setSelectedSize(size)}
+                                                                className={`py-3 font-bebas text-xl border transition-all ${selectedSize === size ? 'bg-white text-black border-white' : 'bg-transparent border-zinc-700 hover:border-kuraRed'}`}>
+                                                                {size}
+                                                            </button>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="grid grid-cols-4 gap-2">
-                                                    {selectedProduct.sizes.map(size => (
-                                                        <button key={size} onClick={() => setSelectedSize(size)}
-                                                            className={`py-3 font-bebas text-xl border transition-all ${selectedSize === size ? 'bg-white text-black border-white' : 'bg-transparent border-zinc-700 hover:border-kuraRed'}`}>
-                                                            {size}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            )}
 
-                                            {/* Botón Principal (Oculto en móvil al scrollear abajo) */}
                                             <button onClick={() => addToCart(selectedProduct)} className="brutalist-btn w-full font-bebas text-2xl md:text-3xl py-4 mb-8">
-                                                {selectedSize ? 'AGREGAR AL ARSENAL' : 'SELECCIONA TALLA'}
+                                                {selectedSize || !selectedProduct.sizes ? 'AGREGAR AL ARSENAL' : 'SELECCIONA TALLA'}
                                             </button>
 
                                             {/* Acordeones de Info Extra */}
                                             <div className="border-t border-zinc-800 pt-4">
-                                                <Accordion title="ESPECIFICACIONES TÉCNICAS">
-                                                    <ul className="list-disc pl-4 space-y-1">
-                                                        {selectedProduct.details.map((d, i) => <li key={i}>{d}</li>)}
-                                                    </ul>
-                                                </Accordion>
+                                                {selectedProduct.details && selectedProduct.details.length > 0 && (
+                                                    <Accordion title="ESPECIFICACIONES TÉCNICAS">
+                                                        <ul className="list-disc pl-4 space-y-1">
+                                                            {selectedProduct.details.map((d, i) => <li key={i}>{d}</li>)}
+                                                        </ul>
+                                                    </Accordion>
+                                                )}
                                                 <Accordion title="ENVÍOS Y ENTREGAS">
                                                     Entregas en Managua en 24h. Envíos a departamentos por CargoTrans (2-3 días hábiles). Pago contra entrega disponible.
                                                 </Accordion>
                                                 <Accordion title="CUIDADO DE LA PRENDA">
-                                                    Lavar a máquina con agua fría. Voltear al revés antes de lavar. No usar plancha sobre el gráfico serigráfico. Secar a la sombra.
+                                                    Lavar a máquina con agua fría. Voltear al revés antes de lavar. No usar plancha sobre el gráfico. Secar a la sombra.
                                                 </Accordion>
                                             </div>
                                         </div>
@@ -435,7 +459,7 @@
                                     ) : (
                                         cart.map(item => (
                                             <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 relative group bg-black">
-                                                <img src={item.images[0]} className="w-20 h-24 object-cover" />
+                                                <img src={Array.isArray(item.images) ? item.images[0] : item.image} className="w-20 h-24 object-cover" />
                                                 <div className="flex flex-col justify-center">
                                                     <p className="font-bebas text-xl leading-none mb-1 pr-6">{item.title}</p>
                                                     <p className="text-zinc-500 text-[10px]">TALLA: {item.selectedSize}</p>
@@ -477,4 +501,3 @@
     </style>
 </body>
 </html>
- 
