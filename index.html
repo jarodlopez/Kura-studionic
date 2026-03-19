@@ -163,7 +163,7 @@
 
                     {/* MARQUEE SUPERIOR */}
                     <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
-                        <div className="marquee-content animate-marquee">ENVÍOS A TODA NICARAGUA // PAGO CONTRA ENTREGA // KURA STUDIO // CALIDAD PREMIUM // ENVÍOS A TODA NICARAGUA //</div>
+                        <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS //</div>
                     </div>
 
                     {/* HEADER */}
@@ -172,7 +172,7 @@
                             <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                         </div>
                         <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2">
-                            <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CART [{cart.length}]
+                            <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CARRITO [{cart.length}]
                         </button>
                     </header>
 
@@ -225,7 +225,7 @@
                                     ))}
                                     {filteredProducts.length === 0 && (
                                         <div className="col-span-full text-center py-20 text-zinc-600 font-bebas text-2xl">
-                                            CATÁLOGO VACÍO. SUBE PRENDAS DESDE EL ADMIN.
+                                            CATÁLOGO VACÍO.
                                         </div>
                                     )}
                                 </main>
@@ -291,7 +291,7 @@
                                         )}
 
                                         <button onClick={() => addToCart(selectedProduct)} className="brutalist-btn w-full font-bebas text-2xl md:text-3xl py-4 mb-8">
-                                            AGREGAR AL ARSENAL
+                                            AGREGAR AL CARRITO 
                                         </button>
                                         
                                         {selectedProduct.details?.length > 0 && (
@@ -393,7 +393,7 @@
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
                             <div className="h-full w-full md:w-[400px] bg-kuraDark border-l border-zinc-800 flex flex-col relative">
                                 <div className="p-5 border-b border-zinc-800 flex justify-between bg-black">
-                                    <h2 className="text-2xl font-bebas">ARSENAL ACTUAL</h2>
+                                    <h2 className="text-2xl font-bebas">CARRITO ACTUAL</h2>
                                     <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white">✕ CERRAR</button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
