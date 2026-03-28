@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO</title>
+    <title>KURA STUDIO | Dark Japan Punk</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +26,7 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
@@ -34,7 +35,8 @@
         .brutalist-card { border: 2px solid #222; background: #050505; transition: all 0.2s ease; }
         .brutalist-card:hover { border-color: #ff003c; transform: translate(-4px, -4px); box-shadow: 6px 6px 0px 0px #ff003c; }
         .brutalist-btn { background: #ff003c; color: #000; border: 2px solid #ff003c; transition: all 0.2s ease; text-transform: uppercase; }
-        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
+        .brutalist-btn:hover:not(:disabled) { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
+        .brutalist-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .brutalist-btn-outline { background: #000; color: #fff; border: 2px solid #333; transition: all 0.2s ease; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
@@ -53,11 +55,25 @@
         const firebaseConfig = {
             apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
             authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034"
+            projectId: "kuranic-b1034",
+            storageBucket: "kuranic-b1034.firebasestorage.app"
         };
+        const IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
+
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
+        
         const { useState, useEffect } = React;
+
+        // Utilidad para subir a ImgBB
+        const uploadToImgBB = async (file) => {
+            const fd = new FormData();
+            fd.append("image", file);
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) return data.data.url;
+            throw new Error("Error subiendo imagen a ImgBB");
+        };
 
         const Toast = ({ message, isVisible }) => (
             <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
@@ -93,8 +109,27 @@
             const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
             const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
+            // ESTADOS DE ENVÍO Y PAGO
+            const [shippingZone, setShippingZone] = useState('managua'); 
+            const [receiptFile, setReceiptFile] = useState(null);
+            const [isUploading, setIsUploading] = useState(false);
+
+            // CACHÉ DEL CARRITO
             const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
             useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
+
+            // CACHÉ DE LA ORDEN PENDIENTE
+            const [pendingOrder, setPendingOrder] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_pending_order')) || null; } catch (e) { return null; } });
+            useEffect(() => { 
+                if(pendingOrder) localStorage.setItem('kura_pending_order', JSON.stringify(pendingOrder)); 
+                else localStorage.removeItem('kura_pending_order');
+            }, [pendingOrder]);
+
+            // LÓGICA DE PRECIOS
+            const shippingRates = { managua: 100, departamentos: 165 };
+            const currentShippingCost = shippingRates[shippingZone] || 0;
+            const cartSubtotal = cart.reduce((a, b) => a + b.price, 0);
+            const cartTotal = cartSubtotal + (cart.length > 0 ? currentShippingCost : 0);
 
             useEffect(() => {
                 const fetchData = async () => {
@@ -145,13 +180,67 @@
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
-            const handleCheckout = (e) => {
-                e.preventDefault(); if (cart.length === 0) return;
-                let m = `*PEDIDO KURA STUDIO* 🩸%0A%0A*Cliente:* ${formData.name}%0A*Tel:* ${formData.phone}%0A*Dirección:* ${formData.address}%0A%0A*ARSENAL:*%0A`;
-                cart.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}%0A`; });
-                m += `%0A*TOTAL ESTIMADO: NIO ${cart.reduce((a, b) => a + b.price, 0)}*`;
-                setCart([]); localStorage.removeItem('kura_cart'); setIsCartOpen(false);
-                window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
+            // PASO 1: GENERAR ORDEN Y CACHÉ
+            const handleProceedToPayment = (e) => {
+                e.preventDefault();
+                if (cart.length === 0) return;
+                
+                const orderNum = `KURA-${Math.floor(100000 + Math.random() * 900000)}`;
+                const orderData = {
+                    orderNumber: orderNum,
+                    customer: formData,
+                    items: cart,
+                    subtotal: cartSubtotal,
+                    shippingZone: shippingZone === 'managua' ? 'Managua' : 'Departamentos',
+                    shippingCost: currentShippingCost,
+                    total: cartTotal,
+                    date: new Date().toISOString()
+                };
+                setPendingOrder(orderData);
+            };
+
+            // PASO 2: SUBIR COMPROBANTE A IMGBB Y MANDAR A WHATSAPP
+            const handleFinalizeOrder = async () => {
+                if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
+                setIsUploading(true);
+
+                try {
+                    // Subir a ImgBB en lugar de Firebase Storage
+                    const receiptUrl = await uploadToImgBB(receiptFile);
+
+                    // Opcional: Guardar la orden en Firestore para historial
+                    await db.collection("orders").doc(pendingOrder.orderNumber).set({
+                        ...pendingOrder,
+                        receiptUrl,
+                        status: 'paid_pending_verification'
+                    });
+
+                    // Construir el mensaje de WhatsApp
+                    let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸%0A%0A`;
+                    m += `*Cliente:* ${pendingOrder.customer.name}%0A`;
+                    m += `*Tel:* ${pendingOrder.customer.phone}%0A`;
+                    m += `*Dirección:* ${pendingOrder.customer.address} (${pendingOrder.shippingZone})%0A%0A`;
+                    m += `*ARSENAL:*%0A`;
+                    pendingOrder.items.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}%0A`; });
+                    m += `%0A*Subtotal:* NIO ${pendingOrder.subtotal}%0A`;
+                    m += `*Envío:* NIO ${pendingOrder.shippingCost}%0A`;
+                    m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}%0A%0A`;
+                    m += `*Comprobante Adjunto:* ${receiptUrl}`;
+
+                    // Limpiar caché y estados
+                    setCart([]);
+                    setPendingOrder(null);
+                    setReceiptFile(null);
+                    setIsCartOpen(false);
+                    
+                    // Abrir WhatsApp
+                    window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
+                    
+                } catch (error) {
+                    console.error("Error al finalizar:", error);
+                    alert("Ocurrió un error al cargar el pago. Verifica tu conexión e intenta de nuevo.");
+                }
+                setIsUploading(false);
             };
 
             const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
@@ -161,17 +250,16 @@
                 <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
                     <Toast message={toastMsg} isVisible={!!toastMsg} />
 
-                    {/* MARQUEE SUPERIOR */}
                     <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
                         <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS // REAL DROP FOR REAL FANS //</div>
                     </div>
 
-                    {/* HEADER */}
                     <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
                         <div className="cursor-pointer" onClick={closeProduct}>
                             <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                         </div>
-                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2">
+                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2 relative">
+                            {pendingOrder && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-kuraRed"></span></span>}
                             <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CARRITO [{cart.length}]
                         </button>
                     </header>
@@ -183,9 +271,8 @@
                             </div>
                         ) : !selectedProduct ? (
                             
-                            /* ================= VISTA: CATÁLOGO PRINCIPAL ================= */
+                            /* ================= CATÁLOGO ================= */
                             <div className="animate-slideUp pb-20">
-                                
                                 {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
                                     <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
                                         {storeConfig.heroSlides.map((slide, index) => (
@@ -223,24 +310,17 @@
                                             </div>
                                         </div>
                                     ))}
-                                    {filteredProducts.length === 0 && (
-                                        <div className="col-span-full text-center py-20 text-zinc-600 font-bebas text-2xl">
-                                            CATÁLOGO VACÍO.
-                                        </div>
-                                    )}
                                 </main>
                             </div>
                         ) : (
                             
-                            /* ================= VISTA: PRODUCTO INDIVIDUAL ================= */
+                            /* ================= PRODUCTO ================= */
                             <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
                                 <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
                                     <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
                                 </div>
 
                                 <div className="flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 mb-20">
-                                    
-                                    {/* FOTOS DEL PRODUCTO */}
                                     <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4">
                                         {selectedProduct.images?.length > 1 && (
                                             <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
@@ -256,10 +336,7 @@
                                         </div>
                                     </div>
 
-                                    {/* INFO Y COMPRA */}
                                     <div className="w-full md:w-[45%] flex flex-col">
-                                        
-                                        {/* DISEÑO MEJORADO BASADO EN LA IMAGEN 1 DE REFERENCIA */}
                                         <p className="text-kuraRed font-mono text-sm tracking-widest mb-2 font-bold uppercase">OVERSIZE FIT</p>
                                         <h2 className="text-5xl md:text-7xl font-bebas mb-6 leading-none tracking-wide">{selectedProduct.title}</h2>
                                         
@@ -293,138 +370,152 @@
                                         <button onClick={() => addToCart(selectedProduct)} className="brutalist-btn w-full font-bebas text-2xl md:text-3xl py-4 mb-8">
                                             AGREGAR AL CARRITO 
                                         </button>
-                                        
-                                        {selectedProduct.details?.length > 0 && (
-                                            <div className="border-t border-zinc-800 pt-4">
-                                                <p className="font-mono text-xs text-zinc-500 mb-2">ESPECIFICACIONES:</p>
-                                                <ul className="list-disc pl-4 space-y-1 text-zinc-400 text-xs md:text-sm">{selectedProduct.details.map((d, i) => <li key={i}>{d}</li>)}</ul>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
-
-                                {/* SECCIÓN DINÁMICA: COMPLETA EL LOOK */}
-                                {relatedProducts.length > 0 && (
-                                    <div className="border-t border-zinc-900 pt-10">
-                                        <h3 className="font-bebas text-3xl mb-6 flex items-center gap-3"><span className="w-3 h-3 bg-kuraRed block"></span> COMPLETA EL LOOK</h3>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {relatedProducts.map(p => (
-                                                <div key={p.id} onClick={() => openProduct(p)} className="cursor-pointer border border-zinc-800 bg-black hover:border-kuraRed transition-colors">
-                                                    <SmoothImage src={p.images?.[0]} className="w-full aspect-square object-cover" />
-                                                    <div className="p-3">
-                                                        <p className="font-bebas text-lg truncate">{p.title}</p>
-                                                        <p className="text-kuraRed font-mono text-xs">NIO {p.price}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>
 
-                    {/* MODAL CON TABLA DE TALLAS CODIFICADA (BASADA EN IMAGEN 2) */}
+                    {/* MODAL DE TALLAS DINÁMICO */}
                     {isSizeModalOpen && (
-                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4">
-                            <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] no-scrollbar shadow-[0_0_50px_rgba(255,0,60,0.1)]">
+                        <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsSizeModalOpen(false)}>
+                            <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] no-scrollbar" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-white font-mono text-xl hover:text-kuraRed z-10">✕</button>
+                                <h3 className="font-bebas text-4xl text-center mb-8 text-zinc-200">TABLA DE MEDIDAS</h3>
                                 
-                                <h3 className="font-bebas text-4xl md:text-5xl text-center mb-8 tracking-widest text-zinc-200" style={{ fontWeight: 'normal' }}>TABLA DE MEDIDAS</h3>
-                                
-                                <div className="overflow-x-auto">
-                                    <table className="w-full border-collapse border border-zinc-500 text-center font-mono text-xs md:text-sm text-zinc-300">
-                                        <thead>
-                                            <tr className="font-bebas tracking-wider text-base md:text-lg bg-zinc-900/50">
-                                                <th className="border border-zinc-500 p-3" colSpan="5">TABLA DE TALLAS</th>
-                                            </tr>
-                                            <tr className="font-bold">
-                                                <th className="border border-zinc-500 p-3 text-left">Tallas</th>
-                                                <th className="border border-zinc-500 p-3">XS</th>
-                                                <th className="border border-zinc-500 p-3">S</th>
-                                                <th className="border border-zinc-500 p-3">M</th>
-                                                <th className="border border-zinc-500 p-3">L</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Pecho</td>
-                                                <td className="border border-zinc-500 p-3">42</td><td className="border border-zinc-500 p-3">47</td><td className="border border-zinc-500 p-3">52</td><td className="border border-zinc-500 p-3">58</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Hombro a hombro</td>
-                                                <td className="border border-zinc-500 p-3">45</td><td className="border border-zinc-500 p-3">49</td><td className="border border-zinc-500 p-3">54.5</td><td className="border border-zinc-500 p-3">57.4</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Largo total</td>
-                                                <td className="border border-zinc-500 p-3">69</td><td className="border border-zinc-500 p-3">70</td><td className="border border-zinc-500 p-3">73.5</td><td className="border border-zinc-500 p-3">76</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Abertura Manga</td>
-                                                <td className="border border-zinc-500 p-3">18</td><td className="border border-zinc-500 p-3">19</td><td className="border border-zinc-500 p-3">22</td><td className="border border-zinc-500 p-3">22.2</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Largo Manga</td>
-                                                <td className="border border-zinc-500 p-3">22</td><td className="border border-zinc-500 p-3">23</td><td className="border border-zinc-500 p-3">25</td><td className="border border-zinc-500 p-3">26</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Ancho cuello</td>
-                                                <td className="border border-zinc-500 p-3">3</td><td className="border border-zinc-500 p-3">3</td><td className="border border-zinc-500 p-3">3</td><td className="border border-zinc-500 p-3">3</td>
-                                            </tr>
-                                            <tr className="hover:bg-zinc-900 transition-colors">
-                                                <td className="border border-zinc-500 p-3 font-bold text-left">Prof. Escote</td>
-                                                <td className="border border-zinc-500 p-3">9</td><td className="border border-zinc-500 p-3">10</td><td className="border border-zinc-500 p-3">11</td><td className="border border-zinc-500 p-3">12</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <div className="mt-8 flex justify-between items-end">
-                                    <span className="font-bold tracking-widest text-zinc-300 text-lg md:text-xl">完全版 EDITION</span>
-                                    <span className="font-bebas text-4xl text-white leading-none">72 <span className="inline-block w-4 h-4 bg-white align-middle ml-1"></span></span>
-                                </div>
+                                {storeConfig.sizeGuide ? (
+                                    <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-800" alt="Guía de Tallas" />
+                                ) : (
+                                    <div className="text-center text-zinc-400 p-10 border border-zinc-800">TABLA DE TALLAS NO DISPONIBLE</div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* CARRITO SLIDE-OVER */}
+                    {/* CARRITO Y CHECKOUT SLIDE-OVER */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-[200] flex justify-end">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
-                            <div className="h-full w-full md:w-[400px] bg-kuraDark border-l border-zinc-800 flex flex-col relative">
+                            <div className="h-full w-full md:w-[450px] bg-kuraDark border-l border-zinc-800 flex flex-col relative shadow-2xl">
                                 <div className="p-5 border-b border-zinc-800 flex justify-between bg-black">
-                                    <h2 className="text-2xl font-bebas">CARRITO ACTUAL</h2>
+                                    <h2 className="text-2xl font-bebas">{pendingOrder ? 'COMPLETAR PAGO' : 'CARRITO ACTUAL'}</h2>
                                     <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white">✕ CERRAR</button>
                                 </div>
+                                
                                 <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
-                                    {cart.length === 0 ? (
-                                        <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
-                                    ) : (
-                                        cart.map(item => (
-                                            <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 bg-black relative">
-                                                <img src={item.images?.[0]} className="w-16 h-20 object-cover" />
-                                                <div className="flex-1">
-                                                    <p className="font-bebas text-lg pr-6 leading-tight">{item.title}</p>
-                                                    <p className="text-[10px] text-zinc-500 mt-1">TALLA: {item.selectedSize}</p>
-                                                    <p className="text-kuraRed text-xs mt-1 font-bold">NIO {item.price}</p>
+                                    {!pendingOrder ? (
+                                        // VISTA 1: LISTADO DEL CARRITO
+                                        cart.length === 0 ? (
+                                            <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
+                                        ) : (
+                                            cart.map(item => (
+                                                <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 bg-black relative">
+                                                    <img src={item.images?.[0]} className="w-16 h-20 object-cover border border-zinc-900" />
+                                                    <div className="flex-1">
+                                                        <p className="font-bebas text-lg pr-6 leading-tight">{item.title}</p>
+                                                        <p className="text-[10px] text-zinc-500 mt-1">TALLA: {item.selectedSize}</p>
+                                                        <p className="text-kuraRed text-xs mt-1 font-bold">NIO {item.price}</p>
+                                                    </div>
+                                                    <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500">✕</button>
                                                 </div>
-                                                <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500">✕</button>
+                                            ))
+                                        )
+                                    ) : (
+                                        // VISTA 2: FORMULARIO DE PAGO
+                                        <div className="flex flex-col gap-4 animate-slideUp">
+                                            <div className="bg-zinc-950 border-2 border-kuraRed p-5 relative overflow-hidden">
+                                                {/* Cyberpunk accent lines */}
+                                                <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45"></div>
+                                                
+                                                <p className="text-zinc-500 text-[10px] uppercase mb-1">ORDEN RESERVADA</p>
+                                                <h3 className="text-white font-bebas text-3xl mb-4 tracking-wider">#{pendingOrder.orderNumber}</h3>
+                                                
+                                                <div className="space-y-2 text-xs font-mono mb-6 pb-4 border-b border-zinc-800 text-zinc-400">
+                                                    <div className="flex justify-between"><span>SUBTOTAL:</span><span>NIO {pendingOrder.subtotal}</span></div>
+                                                    <div className="flex justify-between"><span>ENVÍO ({pendingOrder.shippingZone}):</span><span>NIO {pendingOrder.shippingCost}</span></div>
+                                                    <div className="flex justify-between text-kuraRed font-bold text-lg mt-2 pt-2 border-t border-zinc-800/50">
+                                                        <span>TOTAL A PAGAR:</span><span>NIO {pendingOrder.total}</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-black border border-zinc-800 p-4 text-xs text-zinc-300 mb-6 font-mono">
+                                                    <p className="font-bold text-white mb-3 text-sm flex items-center gap-2">
+                                                        <span className="w-2 h-2 bg-green-500 inline-block"></span> DATOS DE TRANSFERENCIA
+                                                    </p>
+                                                    <p className="mb-1"><span className="text-zinc-500">BAC CÓRDOBAS:</span> 123456789</p>
+                                                    <p className="mb-1"><span className="text-zinc-500">LAFISE CÓRDOBAS:</span> 987654321</p>
+                                                    <p><span className="text-zinc-500">BENEFICIARIO:</span> KURA STUDIO</p>
+                                                </div>
+
+                                                <div className="border-2 border-dashed border-zinc-700 p-6 text-center hover:border-kuraRed transition-colors relative bg-black group">
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        onChange={(e) => setReceiptFile(e.target.files[0])}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                                    />
+                                                    {receiptFile ? (
+                                                        <div>
+                                                            <div className="text-kuraRed mb-2 text-2xl">✓</div>
+                                                            <p className="text-white font-bold text-xs truncate px-2">{receiptFile.name}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div>
+                                                            <div className="text-zinc-600 group-hover:text-kuraRed mb-2 text-2xl transition-colors">+</div>
+                                                            <p className="text-zinc-500 text-xs group-hover:text-white transition-colors">ADJUNTAR COMPROBANTE DE PAGO</p>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        ))
+                                        </div>
                                     )}
                                 </div>
-                                {cart.length > 0 && (
+
+                                {/* FOOTER ACTIONS */}
+                                {!pendingOrder && cart.length > 0 && (
                                     <div className="p-5 bg-black border-t border-zinc-800">
-                                        <div className="flex justify-between items-end mb-4">
-                                            <span className="text-xs text-zinc-500">TOTAL ESTIMADO</span>
-                                            <span className="font-bebas text-3xl text-white">NIO {cart.reduce((a,b)=>a+b.price,0)}</span>
+                                        <div className="mb-6">
+                                            <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => setShippingZone('managua')} className={`flex-1 py-3 text-xs font-bold transition-all ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>MANAGUA<br/><span className="font-normal text-[10px]">C$100</span></button>
+                                                <button onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 text-xs font-bold transition-all ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>OTROS DEPTS<br/><span className="font-normal text-[10px]">C$165</span></button>
+                                            </div>
                                         </div>
-                                        <form onSubmit={handleCheckout} className="space-y-2">
-                                            <input required placeholder="NOMBRE / ALIAS" className="w-full bg-kuraDark border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed" onChange={e=>setFormData({...formData, name: e.target.value})} />
-                                            <input required type="tel" placeholder="TELÉFONO" className="w-full bg-kuraDark border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed" onChange={e=>setFormData({...formData, phone: e.target.value})} />
-                                            <textarea required placeholder="DIRECCIÓN DE ENTREGA" className="w-full bg-kuraDark border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed h-16 resize-none" onChange={e=>setFormData({...formData, address: e.target.value})} />
-                                            <button type="submit" className="brutalist-btn w-full mt-2">CONFIRMAR POR WHATSAPP</button>
+                                        
+                                        <div className="flex justify-between items-end mb-4 border-b border-zinc-800 pb-4">
+                                            <span className="text-xs text-zinc-500">TOTAL ESTIMADO</span>
+                                            <span className="font-bebas text-4xl text-white leading-none">NIO {cartTotal}</span>
+                                        </div>
+                                        
+                                        <form onSubmit={handleProceedToPayment} className="space-y-3">
+                                            <input required placeholder="NOMBRE / ALIAS" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, name: e.target.value})} />
+                                            <input required type="tel" placeholder="TELÉFONO" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, phone: e.target.value})} />
+                                            <textarea required placeholder="DIRECCIÓN EXACTA" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed h-16 resize-none transition-colors" onChange={e=>setFormData({...formData, address: e.target.value})} />
+                                            <button type="submit" className="brutalist-btn w-full py-4 text-xl mt-2">PROCEDER AL PAGO</button>
                                         </form>
+                                    </div>
+                                )}
+
+                                {pendingOrder && (
+                                    <div className="p-5 bg-black border-t border-zinc-800">
+                                        <button 
+                                            onClick={handleFinalizeOrder} 
+                                            disabled={!receiptFile || isUploading}
+                                            className="brutalist-btn w-full py-4 text-xl flex justify-center items-center gap-2"
+                                        >
+                                            {isUploading ? (
+                                                <><span className="animate-spin text-lg">⚙</span> PROCESANDO...</>
+                                            ) : (
+                                                'ENVIAR Y CONFIRMAR'
+                                            )}
+                                        </button>
+                                        <button 
+                                            onClick={() => {setPendingOrder(null); setReceiptFile(null);}} 
+                                            disabled={isUploading}
+                                            className="w-full mt-4 text-xs text-zinc-600 hover:text-white transition-colors"
+                                        >
+                                            ← CANCELAR ORDEN Y VOLVER AL CARRITO
+                                        </button>
                                     </div>
                                 )}
                             </div>
