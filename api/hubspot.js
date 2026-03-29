@@ -3,16 +3,20 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    const { name, phone, address, total, orderNumber, orderDetails } = req.body;
+    // Recibimos los datos y el mensaje formateado para Telegram (telegramMsg)
+    const { name, phone, address, total, orderNumber, orderDetails, telegramMsg } = req.body;
     
     const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
     if (!HUBSPOT_TOKEN) {
-        return res.status(500).json({ error: 'Falta el token de configuración en Vercel' });
+        return res.status(500).json({ error: 'Falta el token de HubSpot en Vercel' });
     }
 
     try {
-        const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
+        // 1. GUARDAR EN HUBSPOT
+        const hubspotResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${HUBSPOT_TOKEN}`,
@@ -31,14 +35,24 @@ export default async function handler(req, res) {
             })
         });
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-            console.error("Fallo enviando a HubSpot:", data);
-            throw new Error(data.message || 'Error guardando en HubSpot');
+        if (!hubspotResponse.ok) {
+            console.error("Fallo enviando a HubSpot");
         }
 
-        return res.status(200).json({ success: true, message: 'Lead guardado con todos sus datos!' });
+        // 2. ENVIAR NOTIFICACIÓN A TELEGRAM CON FORMATO HTML
+        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID && telegramMsg) {
+            await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chat_id: TELEGRAM_CHAT_ID,
+                    text: telegramMsg,
+                    parse_mode: 'HTML'
+                })
+            });
+        }
+
+        return res.status(200).json({ success: true, message: '¡Lead guardado y notificado a Telegram!' });
         
     } catch (error) {
         console.error("Error en API:", error);
