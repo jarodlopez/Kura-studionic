@@ -55,8 +55,7 @@
         const firebaseConfig = {
             apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
             authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034",
-            storageBucket: "kuranic-b1034.firebasestorage.app"
+            projectId: "kuranic-b1034"
         };
         const IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
 
@@ -180,7 +179,7 @@
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
-            // PASO 1: GENERAR ORDEN Y CACHÉ
+            // GENERAR ORDEN Y CACHÉ
             const handleProceedToPayment = (e) => {
                 e.preventDefault();
                 if (cart.length === 0) return;
@@ -199,23 +198,46 @@
                 setPendingOrder(orderData);
             };
 
-            // PASO 2: SUBIR COMPROBANTE A IMGBB Y MANDAR A WHATSAPP
+            // LLAMADO A LA API DE VERCEL PARA HUBSPOT
+            const syncToHubSpot = async (orderData) => {
+                try {
+                    await fetch('/api/hubspot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            orderNumber: orderData.orderNumber,
+                            name: orderData.customer.name,
+                            phone: orderData.customer.phone,
+                            address: orderData.customer.address,
+                            total: orderData.total
+                        })
+                    });
+                    console.log("Sincronizado con HubSpot vía Vercel");
+                } catch (error) {
+                    console.error("Error silencioso al sincronizar con HubSpot:", error);
+                }
+            };
+
+            // SUBIR COMPROBANTE, GUARDAR EN DB Y MANDAR A WHATSAPP
             const handleFinalizeOrder = async () => {
                 if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
                 setIsUploading(true);
 
                 try {
-                    // Subir a ImgBB en lugar de Firebase Storage
+                    // 1. Subir a ImgBB
                     const receiptUrl = await uploadToImgBB(receiptFile);
 
-                    // Opcional: Guardar la orden en Firestore para historial
+                    // 2. Guardar en Firestore
                     await db.collection("orders").doc(pendingOrder.orderNumber).set({
                         ...pendingOrder,
                         receiptUrl,
                         status: 'paid_pending_verification'
                     });
 
-                    // Construir el mensaje de WhatsApp
+                    // 3. Sincronizar con HubSpot (Backend Vercel)
+                    syncToHubSpot(pendingOrder);
+
+                    // 4. Construir el mensaje de WhatsApp
                     let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸%0A%0A`;
                     m += `*Cliente:* ${pendingOrder.customer.name}%0A`;
                     m += `*Tel:* ${pendingOrder.customer.phone}%0A`;
@@ -404,7 +426,6 @@
                                 
                                 <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
                                     {!pendingOrder ? (
-                                        // VISTA 1: LISTADO DEL CARRITO
                                         cart.length === 0 ? (
                                             <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
                                         ) : (
@@ -421,10 +442,8 @@
                                             ))
                                         )
                                     ) : (
-                                        // VISTA 2: FORMULARIO DE PAGO
                                         <div className="flex flex-col gap-4 animate-slideUp">
                                             <div className="bg-zinc-950 border-2 border-kuraRed p-5 relative overflow-hidden">
-                                                {/* Cyberpunk accent lines */}
                                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45"></div>
                                                 
                                                 <p className="text-zinc-500 text-[10px] uppercase mb-1">ORDEN RESERVADA</p>
@@ -471,7 +490,6 @@
                                     )}
                                 </div>
 
-                                {/* FOOTER ACTIONS */}
                                 {!pendingOrder && cart.length > 0 && (
                                     <div className="p-5 bg-black border-t border-zinc-800">
                                         <div className="mb-6">
@@ -529,3 +547,4 @@
     </script>
 </body>
 </html>
+ 
