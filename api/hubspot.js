@@ -3,19 +3,19 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    // Recibimos los datos y el mensaje formateado para Telegram (telegramMsg)
-    const { name, phone, address, total, orderNumber, orderDetails, telegramMsg } = req.body;
+    const { name, phone, address, total, orderNumber, orderDetails } = req.body;
     
+    // Sacamos las llaves secretas de Vercel
     const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
     if (!HUBSPOT_TOKEN) {
-        return res.status(500).json({ error: 'Falta el token de HubSpot en Vercel' });
+        return res.status(500).json({ error: 'Falta el token de configuración en Vercel' });
     }
 
     try {
-        // 1. GUARDAR EN HUBSPOT
+        // 1. GUARDAR EN HUBSPOT (El CRM)
         const hubspotResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
             method: 'POST',
             headers: {
@@ -39,23 +39,26 @@ export default async function handler(req, res) {
             console.error("Fallo enviando a HubSpot");
         }
 
-        // 2. ENVIAR NOTIFICACIÓN A TELEGRAM CON FORMATO HTML
-        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID && telegramMsg) {
+        // 2. ENVIAR NOTIFICACIÓN A TELEGRAM
+        if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+            const mensajeTelegram = `🚨 *NUEVA ORDEN EN KURA STUDIO* 🚨\n\n👤 *Cliente:* ${name}\n📱 *Tel:* ${phone}\n📍 *Zona/Dir:* ${address}\n\n🛒 *Arsenal:* ${orderDetails}\n\n💰 *Total:* NIO ${total}\n📦 *Orden:* #${orderNumber}`;
+            
             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     chat_id: TELEGRAM_CHAT_ID,
-                    text: telegramMsg,
-                    parse_mode: 'HTML'
+                    text: mensajeTelegram,
+                    parse_mode: 'Markdown'
                 })
             });
         }
 
-        return res.status(200).json({ success: true, message: '¡Lead guardado y notificado a Telegram!' });
+        return res.status(200).json({ success: true, message: '¡Lead guardado y notificado!' });
         
     } catch (error) {
         console.error("Error en API:", error);
         return res.status(500).json({ error: 'Error interno del servidor' });
     }
 }
+ 
