@@ -189,7 +189,7 @@
                 setPendingOrder(orderData);
             };
 
-            // PASO 2: Sincronización API HubSpot
+            // PASO 2: Sincronización API (HubSpot + Telegram)
             const syncToHubSpot = async (orderData) => {
                 try {
                     const detalles = orderData.items.map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
@@ -201,16 +201,16 @@
                             orderNumber: orderData.orderNumber,
                             name: orderData.customer.name,
                             phone: orderData.customer.phone,
-                            address: orderData.customer.address,
+                            address: `${orderData.customer.address} (${orderData.shippingZone})`, // Combinamos dir + zona para ser más específicos
                             total: orderData.total,
                             orderDetails: detalles
                         })
                     });
-                    console.log("Sincronizado con HubSpot correctamente");
-                } catch (error) { console.error("Error conectando con HubSpot", error); }
+                    console.log("Sincronizado con APIs correctamente");
+                } catch (error) { console.error("Error conectando con API", error); }
             };
 
-            // PASO 3: Finalizar compra y mandar a WhatsApp
+            // PASO 3: Finalizar compra
             const handleFinalizeOrder = async () => {
                 if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
                 setIsUploading(true);
@@ -219,15 +219,17 @@
                     // Subir recibo
                     const receiptUrl = await uploadToImgBB(receiptFile);
 
-                    // Guardar en DB
-                    await db.collection("orders").doc(pendingOrder.orderNumber).set({
+                    const finalOrder = {
                         ...pendingOrder,
                         receiptUrl,
                         status: 'paid_pending_verification'
-                    });
+                    };
 
-                    // Sincronizar CRM
-                    syncToHubSpot(pendingOrder);
+                    // Guardar en DB
+                    await db.collection("orders").doc(pendingOrder.orderNumber).set(finalOrder);
+
+                    // Sincronizar CRM y disparar Telegram
+                    syncToHubSpot(finalOrder);
 
                     // Construir mensaje limpio con saltos de línea (\n)
                     let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸\n\n`;
@@ -241,7 +243,6 @@
                     m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
                     m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
-                    // Codificar para URL
                     const encodedMessage = encodeURIComponent(m);
 
                     // Limpiar datos y cerrar modal
@@ -250,7 +251,6 @@
                     setReceiptFile(null);
                     setIsCartOpen(false);
                     
-                    // Abrir WhatsApp con el formato codificado
                     window.open(`https://wa.me/50587091008?text=${encodedMessage}`, '_blank');
                     
                 } catch (error) {
@@ -329,13 +329,13 @@
                             </div>
                         ) : (
                             
-                            // PRODUCTO
+                            // VISTA DE PRODUCTO
                             <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
                                 <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
                                     <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 mb-20">
+                                <div className="flex flex-col md:flex-row gap-6 md:gap-12 lg:gap-20 mb-10">
                                     <div className="w-full md:w-[55%] flex flex-col-reverse md:flex-row gap-4">
                                         {selectedProduct.images?.length > 1 && (
                                             <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
@@ -387,6 +387,65 @@
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* ========================================== */}
+                                {/* NUEVO MÓDULO DE RECOMENDACIONES Y ENGAGEMENT */}
+                                {/* ========================================== */}
+                                <div className="border-t border-zinc-900 pt-16 mt-16">
+                                    
+                                    {/* 1. SIMILARES (Misma Categoría) */}
+                                    {products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).length > 0 && (
+                                        <div className="mb-16">
+                                            <h3 className="font-bebas text-3xl md:text-4xl mb-6 flex items-center gap-4">
+                                                <span className="w-8 h-[2px] bg-kuraRed"></span> PRODUCTOS SIMILARES
+                                            </h3>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {products
+                                                    .filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id)
+                                                    .slice(0, 4)
+                                                    .map(item => (
+                                                        <div key={item.id} className="brutalist-card cursor-pointer group flex flex-col" onClick={() => openProduct(item)}>
+                                                            <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
+                                                                <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                            </div>
+                                                            <div className="p-3 flex flex-col flex-1">
+                                                                <p className="font-bebas text-lg truncate leading-none mb-1">{item.title}</p>
+                                                                <p className="text-kuraRed text-xs font-bold font-mono mt-auto">NIO {item.price}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 2. COMPLETAR EL OUTFIT (Engagement de otras categorías) */}
+                                    {products.filter(p => p.category !== selectedProduct.category).length > 0 && (
+                                        <div className="mb-10">
+                                            <h3 className="font-bebas text-3xl md:text-4xl mb-6 flex items-center gap-4 text-zinc-500">
+                                                <span className="w-8 h-[2px] bg-zinc-500"></span> COMPLETA TU ARSENAL
+                                            </h3>
+                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {products
+                                                    .filter(p => p.category !== selectedProduct.category)
+                                                    .sort(() => 0.5 - Math.random()) // Mezcla para mostrar cosas distintas cada vez
+                                                    .slice(0, 4)
+                                                    .map(item => (
+                                                        <div key={item.id} className="brutalist-card cursor-pointer grayscale hover:grayscale-0 transition-all duration-300 flex flex-col" onClick={() => openProduct(item)}>
+                                                            <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
+                                                                <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                            </div>
+                                                            <div className="p-3 flex flex-col flex-1">
+                                                                <p className="font-bebas text-lg truncate text-zinc-300 leading-none mb-1">{item.title}</p>
+                                                                <p className="text-zinc-600 text-[10px] uppercase font-mono mt-auto">{item.category}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* FIN DEL MÓDULO */}
+
                             </div>
                         )}
                     </div>
@@ -407,7 +466,7 @@
                         </div>
                     )}
 
-                    {/* CARRITO Y CHECKOUT SLIDE-OVER - MEJORADO PARA MÓVIL */}
+                    {/* CARRITO Y CHECKOUT */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-[200] flex justify-end">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
@@ -419,7 +478,6 @@
                                 
                                 <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-5 space-y-4">
                                     {!pendingOrder ? (
-                                        // LISTA DE PRODUCTOS
                                         cart.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center h-full text-zinc-600 space-y-4">
                                                 <span className="text-4xl">🛒</span>
@@ -439,7 +497,6 @@
                                             ))
                                         )
                                     ) : (
-                                        // PASO DE PAGO
                                         <div className="flex flex-col gap-4 animate-slideUp">
                                             <div className="bg-zinc-950 border-2 border-kuraRed p-5 relative overflow-hidden">
                                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45"></div>
@@ -488,7 +545,7 @@
                                     )}
                                 </div>
 
-                                {/* FORMULARIO Y FOOTER */}
+                                {/* FORMULARIO DE ENVÍO */}
                                 {!pendingOrder && cart.length > 0 && (
                                     <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <div className="mb-6">
@@ -513,7 +570,7 @@
                                     </div>
                                 )}
 
-                                {/* BOTÓN FINAL DE COMPRA */}
+                                {/* BOTÓN FINAL */}
                                 {pendingOrder && (
                                     <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <button 
@@ -547,4 +604,3 @@
     </script>
 </body>
 </html>
- 
