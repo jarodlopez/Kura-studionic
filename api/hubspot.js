@@ -3,10 +3,13 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    const { name, phone, address, total, orderNumber } = req.body;
+    const { name, phone, address, total, orderNumber, orderDetails } = req.body;
     
-    // Vercel saca el token que guardaste en el Paso 1
     const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
+
+    if (!HUBSPOT_TOKEN) {
+        return res.status(500).json({ error: 'Falta el token de configuración en Vercel' });
+    }
 
     try {
         const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
@@ -19,19 +22,26 @@ export default async function handler(req, res) {
                 properties: {
                     firstname: name,
                     phone: phone,
-                    address: address,
-                    lifecyclestage: "customer"
+                    address: address, 
+                    lifecyclestage: "customer",
+                    numero_de_orden: orderNumber,
+                    detalles_del_pedido: orderDetails,
+                    total_gastado: total.toString()
                 }
             })
         });
 
+        const data = await response.json();
+        
         if (!response.ok) {
-            throw new Error('Error guardando en HubSpot');
+            console.error("Fallo enviando a HubSpot:", data);
+            throw new Error(data.message || 'Error guardando en HubSpot');
         }
 
-        return res.status(200).json({ success: true, message: 'Lead guardado!' });
+        return res.status(200).json({ success: true, message: 'Lead guardado con todos sus datos!' });
         
     } catch (error) {
-        return res.status(500).json({ error: 'Error interno' });
+        console.error("Error en API:", error);
+        return res.status(500).json({ error: 'Error interno del servidor' });
     }
 }
