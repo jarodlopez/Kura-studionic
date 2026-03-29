@@ -44,7 +44,6 @@
         .text-outline { -webkit-text-stroke: 1px #ff003c; color: transparent; }
         .marquee-container { width: 100%; overflow: hidden; white-space: nowrap; background-color: #ff003c; color: #000; padding: 4px 0; position: relative; }
         .marquee-content { display: inline-block; min-width: 100%; }
-        
         .img-fade { opacity: 0; transition: opacity 0.5s ease-in-out; }
         .img-loaded { opacity: 1; }
     </style>
@@ -64,7 +63,6 @@
         
         const { useState, useEffect } = React;
 
-        // Utilidad para subir a ImgBB
         const uploadToImgBB = async (file) => {
             const fd = new FormData();
             fd.append("image", file);
@@ -76,20 +74,13 @@
 
         const Toast = ({ message, isVisible }) => (
             <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-                <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3"><span className="text-2xl">✓</span> {message}</div>
+                <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3 shadow-[4px_4px_0_white]"><span className="text-2xl">✓</span> {message}</div>
             </div>
         );
 
-        const SmoothImage = ({ src, className }) => {
-            return (
-                <img 
-                    src={src} 
-                    className={`img-fade ${className}`} 
-                    onLoad={(e) => e.target.classList.add('img-loaded')} 
-                    alt="Kura Studio"
-                />
-            );
-        };
+        const SmoothImage = ({ src, className }) => (
+            <img src={src} className={`img-fade ${className}`} onLoad={(e) => e.target.classList.add('img-loaded')} alt="Kura Studio" />
+        );
 
         function KuraStudio() {
             const [products, setProducts] = useState([]);
@@ -108,23 +99,23 @@
             const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
             const [currentHeroSlide, setCurrentHeroSlide] = useState(0);
 
-            // ESTADOS DE ENVÍO Y PAGO
+            // Estados de envío y pago
             const [shippingZone, setShippingZone] = useState('managua'); 
             const [receiptFile, setReceiptFile] = useState(null);
             const [isUploading, setIsUploading] = useState(false);
 
-            // CACHÉ DEL CARRITO
+            // Caché del carrito
             const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
             useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-            // CACHÉ DE LA ORDEN PENDIENTE
+            // Caché de orden pendiente
             const [pendingOrder, setPendingOrder] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_pending_order')) || null; } catch (e) { return null; } });
             useEffect(() => { 
                 if(pendingOrder) localStorage.setItem('kura_pending_order', JSON.stringify(pendingOrder)); 
                 else localStorage.removeItem('kura_pending_order');
             }, [pendingOrder]);
 
-            // LÓGICA DE PRECIOS
+            // Cálculo de totales
             const shippingRates = { managua: 100, departamentos: 165 };
             const currentShippingCost = shippingRates[shippingZone] || 0;
             const cartSubtotal = cart.reduce((a, b) => a + b.price, 0);
@@ -179,7 +170,7 @@
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
-            // GENERAR ORDEN Y CACHÉ
+            // PASO 1: Generar orden
             const handleProceedToPayment = (e) => {
                 e.preventDefault();
                 if (cart.length === 0) return;
@@ -198,9 +189,11 @@
                 setPendingOrder(orderData);
             };
 
-            // LLAMADO A LA API DE VERCEL PARA HUBSPOT
+            // PASO 2: Sincronización API HubSpot
             const syncToHubSpot = async (orderData) => {
                 try {
+                    const detalles = orderData.items.map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
+                    
                     await fetch('/api/hubspot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -209,64 +202,64 @@
                             name: orderData.customer.name,
                             phone: orderData.customer.phone,
                             address: orderData.customer.address,
-                            total: orderData.total
+                            total: orderData.total,
+                            orderDetails: detalles
                         })
                     });
-                    console.log("Sincronizado con HubSpot vía Vercel");
-                } catch (error) {
-                    console.error("Error silencioso al sincronizar con HubSpot:", error);
-                }
+                    console.log("Sincronizado con HubSpot correctamente");
+                } catch (error) { console.error("Error conectando con HubSpot", error); }
             };
 
-            // SUBIR COMPROBANTE, GUARDAR EN DB Y MANDAR A WHATSAPP
+            // PASO 3: Finalizar compra y mandar a WhatsApp
             const handleFinalizeOrder = async () => {
                 if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
                 setIsUploading(true);
 
                 try {
-                    // 1. Subir a ImgBB
+                    // Subir recibo
                     const receiptUrl = await uploadToImgBB(receiptFile);
 
-                    // 2. Guardar en Firestore
+                    // Guardar en DB
                     await db.collection("orders").doc(pendingOrder.orderNumber).set({
                         ...pendingOrder,
                         receiptUrl,
                         status: 'paid_pending_verification'
                     });
 
-                    // 3. Sincronizar con HubSpot (Backend Vercel)
+                    // Sincronizar CRM
                     syncToHubSpot(pendingOrder);
 
-                    // 4. Construir el mensaje de WhatsApp
-                    let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸%0A%0A`;
-                    m += `*Cliente:* ${pendingOrder.customer.name}%0A`;
-                    m += `*Tel:* ${pendingOrder.customer.phone}%0A`;
-                    m += `*Dirección:* ${pendingOrder.customer.address} (${pendingOrder.shippingZone})%0A%0A`;
-                    m += `*ARSENAL:*%0A`;
-                    pendingOrder.items.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}%0A`; });
-                    m += `%0A*Subtotal:* NIO ${pendingOrder.subtotal}%0A`;
-                    m += `*Envío:* NIO ${pendingOrder.shippingCost}%0A`;
-                    m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}%0A%0A`;
+                    // Construir mensaje limpio con saltos de línea (\n)
+                    let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸\n\n`;
+                    m += `*Cliente:* ${pendingOrder.customer.name}\n`;
+                    m += `*Tel:* ${pendingOrder.customer.phone}\n`;
+                    m += `*Dirección:* ${pendingOrder.customer.address} (${pendingOrder.shippingZone})\n\n`;
+                    m += `*ARSENAL:*\n`;
+                    pendingOrder.items.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}\n`; });
+                    m += `\n*Subtotal:* NIO ${pendingOrder.subtotal}\n`;
+                    m += `*Envío:* NIO ${pendingOrder.shippingCost}\n`;
+                    m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
                     m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
-                    // Limpiar caché y estados
+                    // Codificar para URL
+                    const encodedMessage = encodeURIComponent(m);
+
+                    // Limpiar datos y cerrar modal
                     setCart([]);
                     setPendingOrder(null);
                     setReceiptFile(null);
                     setIsCartOpen(false);
                     
-                    // Abrir WhatsApp
-                    window.open(`https://wa.me/50587091008?text=${m}`, '_blank');
+                    // Abrir WhatsApp con el formato codificado
+                    window.open(`https://wa.me/50587091008?text=${encodedMessage}`, '_blank');
                     
                 } catch (error) {
-                    console.error("Error al finalizar:", error);
-                    alert("Ocurrió un error al cargar el pago. Verifica tu conexión e intenta de nuevo.");
+                    alert("Ocurrió un error al procesar el pago. Verifica tu conexión e intenta de nuevo.");
                 }
                 setIsUploading(false);
             };
 
             const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
-            const relatedProducts = selectedProduct ? products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 3) : [];
 
             return (
                 <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
@@ -280,7 +273,7 @@
                         <div className="cursor-pointer" onClick={closeProduct}>
                             <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                         </div>
-                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2 relative">
+                        <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2 relative text-xs md:text-sm">
                             {pendingOrder && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-kuraRed"></span></span>}
                             <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CARRITO [{cart.length}]
                         </button>
@@ -293,7 +286,7 @@
                             </div>
                         ) : !selectedProduct ? (
                             
-                            /* ================= CATÁLOGO ================= */
+                            // CATÁLOGO
                             <div className="animate-slideUp pb-20">
                                 {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
                                     <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
@@ -336,7 +329,7 @@
                             </div>
                         ) : (
                             
-                            /* ================= PRODUCTO ================= */
+                            // PRODUCTO
                             <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
                                 <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
                                     <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
@@ -398,7 +391,7 @@
                         )}
                     </div>
 
-                    {/* MODAL DE TALLAS DINÁMICO */}
+                    {/* MODAL DE TALLAS */}
                     {isSizeModalOpen && (
                         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsSizeModalOpen(false)}>
                             <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] no-scrollbar" onClick={e => e.stopPropagation()}>
@@ -414,34 +407,39 @@
                         </div>
                     )}
 
-                    {/* CARRITO Y CHECKOUT SLIDE-OVER */}
+                    {/* CARRITO Y CHECKOUT SLIDE-OVER - MEJORADO PARA MÓVIL */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-[200] flex justify-end">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
-                            <div className="h-full w-full md:w-[450px] bg-kuraDark border-l border-zinc-800 flex flex-col relative shadow-2xl">
-                                <div className="p-5 border-b border-zinc-800 flex justify-between bg-black">
+                            <div className="h-full w-full sm:w-[400px] md:w-[450px] bg-[#080808] border-l border-zinc-800 flex flex-col relative shadow-2xl overflow-hidden">
+                                <div className="p-4 md:p-5 border-b border-zinc-800 flex justify-between bg-black items-center">
                                     <h2 className="text-2xl font-bebas">{pendingOrder ? 'COMPLETAR PAGO' : 'CARRITO ACTUAL'}</h2>
-                                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white">✕ CERRAR</button>
+                                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-white font-bold p-2">✕ CERRAR</button>
                                 </div>
                                 
-                                <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-4">
+                                <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-5 space-y-4">
                                     {!pendingOrder ? (
+                                        // LISTA DE PRODUCTOS
                                         cart.length === 0 ? (
-                                            <p className="text-center text-zinc-600 font-bebas text-xl mt-10">VACÍO.</p>
+                                            <div className="flex flex-col items-center justify-center h-full text-zinc-600 space-y-4">
+                                                <span className="text-4xl">🛒</span>
+                                                <p className="font-bebas text-2xl tracking-widest">CARRITO VACÍO</p>
+                                            </div>
                                         ) : (
                                             cart.map(item => (
-                                                <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-2 bg-black relative">
-                                                    <img src={item.images?.[0]} className="w-16 h-20 object-cover border border-zinc-900" />
-                                                    <div className="flex-1">
-                                                        <p className="font-bebas text-lg pr-6 leading-tight">{item.title}</p>
-                                                        <p className="text-[10px] text-zinc-500 mt-1">TALLA: {item.selectedSize}</p>
-                                                        <p className="text-kuraRed text-xs mt-1 font-bold">NIO {item.price}</p>
+                                                <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm">
+                                                    <img src={item.images?.[0]} className="w-20 h-24 object-cover border border-zinc-900" />
+                                                    <div className="flex-1 pt-1">
+                                                        <p className="font-bebas text-xl pr-6 leading-tight text-zinc-100">{item.title}</p>
+                                                        <p className="text-xs text-zinc-500 mt-2 font-bold tracking-wider">TALLA: {item.selectedSize}</p>
+                                                        <p className="text-kuraRed text-sm mt-1 font-bold">NIO {item.price}</p>
                                                     </div>
-                                                    <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500">✕</button>
+                                                    <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-2">✕</button>
                                                 </div>
                                             ))
                                         )
                                     ) : (
+                                        // PASO DE PAGO
                                         <div className="flex flex-col gap-4 animate-slideUp">
                                             <div className="bg-zinc-950 border-2 border-kuraRed p-5 relative overflow-hidden">
                                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45"></div>
@@ -466,7 +464,7 @@
                                                     <p><span className="text-zinc-500">BENEFICIARIO:</span> KURA STUDIO</p>
                                                 </div>
 
-                                                <div className="border-2 border-dashed border-zinc-700 p-6 text-center hover:border-kuraRed transition-colors relative bg-black group">
+                                                <div className="border-2 border-dashed border-zinc-700 p-6 text-center hover:border-kuraRed transition-colors relative bg-black group cursor-pointer">
                                                     <input 
                                                         type="file" 
                                                         accept="image/*" 
@@ -481,7 +479,7 @@
                                                     ) : (
                                                         <div>
                                                             <div className="text-zinc-600 group-hover:text-kuraRed mb-2 text-2xl transition-colors">+</div>
-                                                            <p className="text-zinc-500 text-xs group-hover:text-white transition-colors">ADJUNTAR COMPROBANTE DE PAGO</p>
+                                                            <p className="text-zinc-500 text-xs group-hover:text-white transition-colors">TOCA PARA ADJUNTAR COMPROBANTE</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -490,13 +488,14 @@
                                     )}
                                 </div>
 
+                                {/* FORMULARIO Y FOOTER */}
                                 {!pendingOrder && cart.length > 0 && (
-                                    <div className="p-5 bg-black border-t border-zinc-800">
+                                    <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <div className="mb-6">
-                                            <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => setShippingZone('managua')} className={`flex-1 py-3 text-xs font-bold transition-all ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>MANAGUA<br/><span className="font-normal text-[10px]">C$100</span></button>
-                                                <button onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 text-xs font-bold transition-all ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>OTROS DEPTS<br/><span className="font-normal text-[10px]">C$165</span></button>
+                                            <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">SELECCIONA ZONA DE ENVÍO</p>
+                                            <div className="flex flex-row gap-2">
+                                                <button type="button" onClick={() => setShippingZone('managua')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>MANAGUA<br/><span className="font-normal text-[10px] md:text-xs">C$100</span></button>
+                                                <button type="button" onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800 hover:border-zinc-600'}`}>OTROS DEPTS<br/><span className="font-normal text-[10px] md:text-xs">C$165</span></button>
                                             </div>
                                         </div>
                                         
@@ -506,16 +505,17 @@
                                         </div>
                                         
                                         <form onSubmit={handleProceedToPayment} className="space-y-3">
-                                            <input required placeholder="NOMBRE / ALIAS" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, name: e.target.value})} />
-                                            <input required type="tel" placeholder="TELÉFONO" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, phone: e.target.value})} />
-                                            <textarea required placeholder="DIRECCIÓN EXACTA" className="w-full bg-zinc-950 border border-zinc-800 p-3 text-xs outline-none text-white focus:border-kuraRed h-16 resize-none transition-colors" onChange={e=>setFormData({...formData, address: e.target.value})} />
+                                            <input required placeholder="NOMBRE / ALIAS" className="w-full bg-zinc-950 border border-zinc-800 p-4 text-sm outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, name: e.target.value})} />
+                                            <input required type="tel" placeholder="TELÉFONO" className="w-full bg-zinc-950 border border-zinc-800 p-4 text-sm outline-none text-white focus:border-kuraRed transition-colors" onChange={e=>setFormData({...formData, phone: e.target.value})} />
+                                            <textarea required placeholder="DIRECCIÓN EXACTA" className="w-full bg-zinc-950 border border-zinc-800 p-4 text-sm outline-none text-white focus:border-kuraRed h-20 resize-none transition-colors" onChange={e=>setFormData({...formData, address: e.target.value})} />
                                             <button type="submit" className="brutalist-btn w-full py-4 text-xl mt-2">PROCEDER AL PAGO</button>
                                         </form>
                                     </div>
                                 )}
 
+                                {/* BOTÓN FINAL DE COMPRA */}
                                 {pendingOrder && (
-                                    <div className="p-5 bg-black border-t border-zinc-800">
+                                    <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <button 
                                             onClick={handleFinalizeOrder} 
                                             disabled={!receiptFile || isUploading}
@@ -530,9 +530,9 @@
                                         <button 
                                             onClick={() => {setPendingOrder(null); setReceiptFile(null);}} 
                                             disabled={isUploading}
-                                            className="w-full mt-4 text-xs text-zinc-600 hover:text-white transition-colors"
+                                            className="w-full mt-4 text-xs font-bold tracking-widest text-zinc-600 hover:text-white transition-colors py-2"
                                         >
-                                            ← CANCELAR ORDEN Y VOLVER AL CARRITO
+                                            ← VOLVER AL CARRITO
                                         </button>
                                     </div>
                                 )}
