@@ -170,6 +170,7 @@
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
+            // PASO 1: Generar orden
             const handleProceedToPayment = (e) => {
                 e.preventDefault();
                 if (cart.length === 0) return;
@@ -188,22 +189,11 @@
                 setPendingOrder(orderData);
             };
 
-            const syncToHubSpot = async (orderData, receiptUrl) => {
+            // PASO 2: Sincronización API HubSpot
+            const syncToHubSpot = async (orderData) => {
                 try {
                     const detalles = orderData.items.map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
                     
-                    // Mensaje para Telegram en formato HTML limpio
-                    let mTele = `🚨 <b>NUEVA ORDEN: #${orderData.orderNumber}</b> 🩸\n\n`;
-                    mTele += `<b>Cliente:</b> ${orderData.customer.name}\n`;
-                    mTele += `<b>Tel:</b> ${orderData.customer.phone}\n`;
-                    mTele += `<b>Dirección:</b> ${orderData.customer.address} (${orderData.shippingZone})\n\n`;
-                    mTele += `<b>ARSENAL:</b>\n`;
-                    orderData.items.forEach(i => { mTele += `▪️ ${i.title} (${i.selectedSize}) - NIO ${i.price}\n`; });
-                    mTele += `\n<b>Subtotal:</b> NIO ${orderData.subtotal}\n`;
-                    mTele += `<b>Envío:</b> NIO ${orderData.shippingCost}\n`;
-                    mTele += `<b>TOTAL PAGADO:</b> NIO ${orderData.total}\n\n`;
-                    mTele += `<b>Comprobante:</b> <a href="${receiptUrl}">🔗 Ver Comprobante</a>`;
-
                     await fetch('/api/hubspot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -213,30 +203,33 @@
                             phone: orderData.customer.phone,
                             address: orderData.customer.address,
                             total: orderData.total,
-                            orderDetails: detalles,
-                            telegramMsg: mTele
+                            orderDetails: detalles
                         })
                     });
+                    console.log("Sincronizado con HubSpot correctamente");
                 } catch (error) { console.error("Error conectando con HubSpot", error); }
             };
 
+            // PASO 3: Finalizar compra y mandar a WhatsApp
             const handleFinalizeOrder = async () => {
                 if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
                 setIsUploading(true);
 
                 try {
+                    // Subir recibo
                     const receiptUrl = await uploadToImgBB(receiptFile);
 
+                    // Guardar en DB
                     await db.collection("orders").doc(pendingOrder.orderNumber).set({
                         ...pendingOrder,
                         receiptUrl,
                         status: 'paid_pending_verification'
                     });
 
-                    // Enviamos a la API con el link del recibo para armar el mensaje de Telegram
-                    syncToHubSpot(pendingOrder, receiptUrl);
+                    // Sincronizar CRM
+                    syncToHubSpot(pendingOrder);
 
-                    // Mensaje para WhatsApp (formato con asteriscos para negritas)
+                    // Construir mensaje limpio con saltos de línea (\n)
                     let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸\n\n`;
                     m += `*Cliente:* ${pendingOrder.customer.name}\n`;
                     m += `*Tel:* ${pendingOrder.customer.phone}\n`;
@@ -248,13 +241,16 @@
                     m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
                     m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
+                    // Codificar para URL
                     const encodedMessage = encodeURIComponent(m);
 
+                    // Limpiar datos y cerrar modal
                     setCart([]);
                     setPendingOrder(null);
                     setReceiptFile(null);
                     setIsCartOpen(false);
                     
+                    // Abrir WhatsApp con el formato codificado
                     window.open(`https://wa.me/50587091008?text=${encodedMessage}`, '_blank');
                     
                 } catch (error) {
@@ -290,6 +286,7 @@
                             </div>
                         ) : !selectedProduct ? (
                             
+                            // CATÁLOGO
                             <div className="animate-slideUp pb-20">
                                 {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
                                     <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
@@ -332,6 +329,7 @@
                             </div>
                         ) : (
                             
+                            // PRODUCTO
                             <div className="animate-slideUp pb-32 md:pb-20 p-4 md:p-8">
                                 <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
                                     <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
@@ -393,6 +391,7 @@
                         )}
                     </div>
 
+                    {/* MODAL DE TALLAS */}
                     {isSizeModalOpen && (
                         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsSizeModalOpen(false)}>
                             <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] no-scrollbar" onClick={e => e.stopPropagation()}>
@@ -408,6 +407,7 @@
                         </div>
                     )}
 
+                    {/* CARRITO Y CHECKOUT SLIDE-OVER - MEJORADO PARA MÓVIL */}
                     {isCartOpen && (
                         <div className="fixed inset-0 z-[200] flex justify-end">
                             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
@@ -419,6 +419,7 @@
                                 
                                 <div className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-5 space-y-4">
                                     {!pendingOrder ? (
+                                        // LISTA DE PRODUCTOS
                                         cart.length === 0 ? (
                                             <div className="flex flex-col items-center justify-center h-full text-zinc-600 space-y-4">
                                                 <span className="text-4xl">🛒</span>
@@ -438,6 +439,7 @@
                                             ))
                                         )
                                     ) : (
+                                        // PASO DE PAGO
                                         <div className="flex flex-col gap-4 animate-slideUp">
                                             <div className="bg-zinc-950 border-2 border-kuraRed p-5 relative overflow-hidden">
                                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45"></div>
@@ -486,6 +488,7 @@
                                     )}
                                 </div>
 
+                                {/* FORMULARIO Y FOOTER */}
                                 {!pendingOrder && cart.length > 0 && (
                                     <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <div className="mb-6">
@@ -510,6 +513,7 @@
                                     </div>
                                 )}
 
+                                {/* BOTÓN FINAL DE COMPRA */}
                                 {pendingOrder && (
                                     <div className="p-4 md:p-5 bg-black border-t border-zinc-800">
                                         <button 
