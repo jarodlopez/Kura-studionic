@@ -38,7 +38,10 @@
         .brutalist-btn { background: #ff003c; color: black; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; }
         .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
         .brutalist-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #333; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: bold; }
+        .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+        .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
@@ -65,25 +68,25 @@
             const [loginError, setLoginError] = useState('');
 
             // Vistas
-            const [view, setView] = useState('INVENTORY'); // INVENTORY, DESIGN, ORDERS
+            const [view, setView] = useState('INVENTORY');
             
             // Estados Inventario
             const [products, setProducts] = useState([]);
-            // Añadido: sku y discountPrice
+            const [inventoryFilter, setInventoryFilter] = useState('TODAS'); // Filtro de inventario
             const [formData, setFormData] = useState({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
             const [editingId, setEditingId] = useState(null);
             
             // Estados Diseño
             const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: '' });
-            const [slideForm, setSlideForm] = useState({ subtitle: '', title: '', cta: '' });
+            const [slideForm, setSlideForm] = useState({ subtitle: '', title: '', cta: '', categoryTarget: '' });
             
             // Estados Órdenes
             const [orders, setOrders] = useState([]);
             const [selectedOrder, setSelectedOrder] = useState(null);
+            const [orderSearchQuery, setOrderSearchQuery] = useState(''); // Buscador de órdenes
 
             const [isSaving, setIsSaving] = useState(false);
 
-            // Observador de estado de sesión
             useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged((currentUser) => {
                     setUser(currentUser);
@@ -126,12 +129,10 @@
             const fetchOrders = async () => {
                 const snapshot = await db.collection("orders").get();
                 const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Ordenar por fecha descendente (más recientes primero)
                 fetchedOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
                 setOrders(fetchedOrders);
             };
 
-            // Utilidad para subir a ImgBB
             const uploadToImgBB = async (file) => {
                 const fd = new FormData();
                 fd.append("image", file);
@@ -141,10 +142,19 @@
                 throw new Error("Error subiendo imagen");
             };
 
+            /* === LISTADO DINÁMICO DE CATEGORÍAS === */
+            // Extrae categorías únicas de los productos, e incluye la que esté en formData si es nueva
+            const uniqueCategories = Array.from(new Set([...products.map(p => p.category), formData.category].filter(Boolean)));
+
             /* === LÓGICA DE INVENTARIO === */
             const handleProductSubmit = async (e) => {
                 e.preventDefault(); setIsSaving(true);
                 
+                if(!formData.category) {
+                    alert("Por favor selecciona o añade una categoría.");
+                    setIsSaving(false); return;
+                }
+
                 const data = { 
                     ...formData, 
                     price: Number(formData.price), 
@@ -169,6 +179,10 @@
                 setIsSaving(false);
             };
 
+            const filteredInventory = inventoryFilter === 'TODAS' 
+                ? products 
+                : products.filter(p => p.category === inventoryFilter);
+
             /* === LÓGICA DE DISEÑO === */
             const saveStoreConfig = async (newConfig) => {
                 await db.collection("settings").doc("store").set(newConfig, { merge: true });
@@ -187,9 +201,16 @@
                 if(!e.target.files[0]) return;
                 setIsSaving(true);
                 const url = await uploadToImgBB(e.target.files[0]);
-                const newSlide = { id: Date.now(), image: url, subtitle: slideForm.subtitle.toUpperCase(), title: slideForm.title.toUpperCase(), cta: slideForm.cta.toUpperCase() || 'VER MÁS' };
+                const newSlide = { 
+                    id: Date.now(), 
+                    image: url, 
+                    subtitle: slideForm.subtitle.toUpperCase(), 
+                    title: slideForm.title.toUpperCase(), 
+                    cta: slideForm.cta.toUpperCase() || 'VER COLECCIÓN',
+                    categoryTarget: slideForm.categoryTarget // Se asocia la categoría
+                };
                 await saveStoreConfig({ ...storeConfig, heroSlides: [...(storeConfig.heroSlides || []), newSlide] });
-                setSlideForm({ subtitle: '', title: '', cta: '' });
+                setSlideForm({ subtitle: '', title: '', cta: '', categoryTarget: '' });
                 setIsSaving(false);
             };
 
@@ -198,7 +219,7 @@
                 await saveStoreConfig({ ...storeConfig, heroSlides: newSlides });
             };
 
-            // Helpers de Órdenes
+            /* === LÓGICA DE ÓRDENES === */
             const getPrice = (product) => {
                 return product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
             };
@@ -209,10 +230,16 @@
                 return date.toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' });
             };
 
+            // Filtrado del buscador de órdenes
+            const filteredOrders = orders.filter(o => {
+                const q = orderSearchQuery.toLowerCase();
+                return o.orderNumber?.toLowerCase().includes(q) || 
+                       o.customer?.name?.toLowerCase().includes(q) || 
+                       o.customer?.phone?.toLowerCase().includes(q);
+            });
+
             // === PANTALLA DE CARGA Y LOGIN ===
-            if (authLoading) {
-                return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-kuraRed animate-pulse">VERIFICANDO SISTEMA...</div>;
-            }
+            if (authLoading) return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-kuraRed animate-pulse">VERIFICANDO SISTEMA...</div>;
 
             if (!user) {
                 return (
@@ -344,7 +371,25 @@
                                     
                                     <div className="flex gap-2">
                                         <input placeholder="SKU (Opcional)" className="brutalist-input" value={formData.sku} onChange={e=>setFormData({...formData, sku: e.target.value.toUpperCase()})} />
-                                        <input required placeholder="CATEGORÍA (Ej: T-SHIRT)" className="brutalist-input" value={formData.category} onChange={e=>setFormData({...formData, category: e.target.value.toUpperCase()})} />
+                                        
+                                        {/* SELECTOR DE CATEGORÍA MEJORADO */}
+                                        <select 
+                                            required 
+                                            className="brutalist-input text-xs" 
+                                            value={formData.category} 
+                                            onChange={e => {
+                                                if (e.target.value === 'NEW_CAT') {
+                                                    const newCat = window.prompt("ESCRIBE EL NOMBRE DE LA NUEVA CATEGORÍA:");
+                                                    if (newCat) setFormData({...formData, category: newCat.toUpperCase()});
+                                                } else {
+                                                    setFormData({...formData, category: e.target.value});
+                                                }
+                                            }}
+                                        >
+                                            <option value="" disabled>SELECCIONAR CATEGORÍA...</option>
+                                            {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                            <option value="NEW_CAT" className="text-kuraRed font-bold">+ AÑADIR NUEVA CATEGORÍA</option>
+                                        </select>
                                     </div>
 
                                     <div className="flex gap-2 bg-black p-2 border border-zinc-800">
@@ -382,49 +427,65 @@
                                     <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4">{editingId ? 'ACTUALIZAR PRENDA' : 'AÑADIR AL CATÁLOGO'}</button>
                                 </form>
 
-                                {/* LISTA INVENTARIO */}
-                                <div className="w-full lg:w-2/3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 h-max">
-                                    {products.map(p => (
-                                        <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
-                                            <div className="relative aspect-[4/5] bg-black border-b border-zinc-800 overflow-hidden">
-                                                <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                                {p.discountPrice && p.discountPrice > 0 && (
-                                                    <span className="absolute top-2 left-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
-                                                )}
-                                            </div>
-                                            <div className="p-3 flex-1 flex flex-col">
-                                                <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
-                                                {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
-                                                <div className="mt-auto">
-                                                    {p.discountPrice && p.discountPrice > 0 ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
-                                                            <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                                {/* LISTA INVENTARIO Y FILTROS */}
+                                <div className="w-full lg:w-2/3 flex flex-col h-max">
+                                    
+                                    {/* FILTRO DE CATEGORÍAS */}
+                                    <div className="bg-black border border-zinc-800 p-4 mb-4 flex flex-wrap gap-2 items-center">
+                                        <span className="text-xs text-zinc-500 font-bold mr-2">FILTRAR POR:</span>
+                                        <button onClick={() => setInventoryFilter('TODAS')} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === 'TODAS' ? 'active' : ''}`}>TODAS</button>
+                                        {uniqueCategories.map(cat => (
+                                            <button key={cat} onClick={() => setInventoryFilter(cat)} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === cat ? 'active' : ''}`}>{cat}</button>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredInventory.map(p => (
+                                            <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
+                                                <div className="relative aspect-[4/5] bg-black border-b border-zinc-800 overflow-hidden">
+                                                    <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                    {p.discountPrice && p.discountPrice > 0 && (
+                                                        <span className="absolute top-2 right-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
                                                     )}
+                                                    <span className="absolute top-2 left-2 bg-white text-black text-[10px] font-bold px-2 py-1">{p.category}</span>
+                                                </div>
+                                                <div className="p-3 flex-1 flex flex-col">
+                                                    <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
+                                                    {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
+                                                    <div className="mt-auto">
+                                                        {p.discountPrice && p.discountPrice > 0 ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
+                                                                <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex border-t border-zinc-800">
+                                                    <button onClick={() => {
+                                                        setEditingId(p.id);
+                                                        setFormData({
+                                                            title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '',
+                                                            category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'),
+                                                            sizes: p.sizes || [], stock: p.stock || '', images: p.images || []
+                                                        });
+                                                        window.scrollTo({top: 0, behavior: 'smooth'});
+                                                    }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
+                                                    
+                                                    <button onClick={async () => { 
+                                                        if(window.confirm('¿Seguro que quieres borrar esta prenda?')) {
+                                                            await db.collection('products').doc(p.id).delete(); fetchProducts(); 
+                                                        }
+                                                    }} className="flex-1 text-xs text-red-500 font-bold py-2 hover:bg-red-900 transition-colors">ELIMINAR</button>
                                                 </div>
                                             </div>
-                                            <div className="flex border-t border-zinc-800">
-                                                <button onClick={() => {
-                                                    setEditingId(p.id);
-                                                    setFormData({
-                                                        title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '',
-                                                        category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'),
-                                                        sizes: p.sizes || [], stock: p.stock || '', images: p.images || []
-                                                    });
-                                                    window.scrollTo({top: 0, behavior: 'smooth'});
-                                                }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
-                                                
-                                                <button onClick={async () => { 
-                                                    if(window.confirm('¿Seguro que quieres borrar esta prenda?')) {
-                                                        await db.collection('products').doc(p.id).delete(); fetchProducts(); 
-                                                    }
-                                                }} className="flex-1 text-xs text-red-500 font-bold py-2 hover:bg-red-900 transition-colors">ELIMINAR</button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                    {filteredInventory.length === 0 && (
+                                        <p className="text-center text-zinc-600 py-10 font-bebas text-2xl tracking-widest">NO HAY PRENDAS EN ESTA CATEGORÍA</p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -438,7 +499,17 @@
                                     <div className="space-y-4 mb-8">
                                         <input placeholder="SUBTÍTULO (Ej: NUEVA COLECCIÓN)" className="brutalist-input" value={slideForm.subtitle} onChange={e=>setSlideForm({...slideForm, subtitle: e.target.value})} />
                                         <input placeholder="TÍTULO PRINCIPAL" className="brutalist-input" value={slideForm.title} onChange={e=>setSlideForm({...slideForm, title: e.target.value})} />
-                                        <input placeholder="TEXTO DEL BOTÓN (Ej: VER T-SHIRTS)" className="brutalist-input" value={slideForm.cta} onChange={e=>setSlideForm({...slideForm, cta: e.target.value})} />
+                                        
+                                        <div className="flex gap-2">
+                                            <input placeholder="TEXTO DEL BOTÓN (Ej: VER T-SHIRTS)" className="brutalist-input w-1/2" value={slideForm.cta} onChange={e=>setSlideForm({...slideForm, cta: e.target.value})} />
+                                            
+                                            {/* SELECTOR DE ENLACE A CATEGORÍA */}
+                                            <select className="brutalist-input w-1/2 text-xs" value={slideForm.categoryTarget} onChange={e=>setSlideForm({...slideForm, categoryTarget: e.target.value})}>
+                                                <option value="">ENLAZAR A CATEGORÍA (Opcional)</option>
+                                                {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+
                                         <div className="border border-zinc-800 p-4 bg-black">
                                             <p className="text-xs text-zinc-500 mb-2 font-bold">SELECCIONA LA IMAGEN DE PORTADA</p>
                                             <input type="file" accept="image/*" onChange={handleSlideAdd} className="text-xs w-full text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700" />
@@ -453,6 +524,7 @@
                                                 <div className="flex-1 overflow-hidden">
                                                     <p className="font-bebas text-xl leading-none truncate">{slide.title}</p>
                                                     <p className="text-[10px] text-zinc-500 mt-1">{slide.subtitle} | Botón: {slide.cta}</p>
+                                                    {slide.categoryTarget && <p className="text-[10px] text-kuraRed mt-1">⮑ Enlaza a: {slide.categoryTarget}</p>}
                                                 </div>
                                                 <button onClick={() => removeSlide(slide.id)} className="text-red-500 font-bold px-4 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors">✕</button>
                                             </div>
@@ -488,16 +560,29 @@
                         {/* VISTA: ORDENES */}
                         {view === 'ORDERS' && (
                             <div className="bg-zinc-950 border border-zinc-800 p-6 min-h-[50vh]">
-                                <div className="flex justify-between items-end mb-6 border-b border-zinc-800 pb-4">
-                                    <h2 className="font-bebas text-3xl text-kuraRed">HISTORIAL DE ÓRDENES</h2>
-                                    <button onClick={fetchOrders} className="text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-2">
-                                        <span className="text-lg">↻</span> REFRESCAR
-                                    </button>
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 border-b border-zinc-800 pb-4 gap-4">
+                                    <div>
+                                        <h2 className="font-bebas text-3xl text-kuraRed">HISTORIAL DE ÓRDENES</h2>
+                                        <p className="text-zinc-500 text-xs mt-1">Gestión y control de ventas.</p>
+                                    </div>
+                                    
+                                    <div className="flex gap-4 w-full md:w-auto">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Buscar orden, cliente o teléfono..." 
+                                            value={orderSearchQuery}
+                                            onChange={(e) => setOrderSearchQuery(e.target.value)}
+                                            className="brutalist-input mt-0 text-xs py-2 w-full md:w-64"
+                                        />
+                                        <button onClick={fetchOrders} className="text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-2 whitespace-nowrap px-2">
+                                            <span className="text-lg">↻</span> REFRESCAR
+                                        </button>
+                                    </div>
                                 </div>
 
-                                {orders.length === 0 ? (
+                                {filteredOrders.length === 0 ? (
                                     <div className="text-center py-20 text-zinc-600 font-bebas text-2xl tracking-widest">
-                                        AÚN NO HAY ÓRDENES REGISTRADAS
+                                        {orderSearchQuery ? 'NO HAY RESULTADOS DE BÚSQUEDA' : 'AÚN NO HAY ÓRDENES REGISTRADAS'}
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
@@ -513,7 +598,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-800">
-                                                {orders.map((order) => (
+                                                {filteredOrders.map((order) => (
                                                     <tr key={order.id} className="hover:bg-zinc-900 transition-colors">
                                                         <td className="px-4 py-4 font-bold text-white">{order.orderNumber}</td>
                                                         <td className="px-4 py-4 text-zinc-400 text-xs">{formatDate(order.date)}</td>
