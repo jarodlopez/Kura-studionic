@@ -90,6 +90,7 @@
             
             const [selectedProduct, setSelectedProduct] = useState(null);
             const [activeCategory, setActiveCategory] = useState('ALL');
+            const [searchQuery, setSearchQuery] = useState(''); // Estado del buscador
             const [selectedSize, setSelectedSize] = useState('');
             const [mainImageIndex, setMainImageIndex] = useState(0);
             
@@ -145,17 +146,34 @@
                 fetchData();
             }, []);
 
+            // Rotación Automática del Hero Slider
             useEffect(() => {
                 if (selectedProduct || !storeConfig.heroSlides || storeConfig.heroSlides.length <= 1) return;
                 const timer = setInterval(() => setCurrentHeroSlide((prev) => (prev + 1) % storeConfig.heroSlides.length), 5000);
                 return () => clearInterval(timer);
             }, [selectedProduct, storeConfig.heroSlides]);
 
+            // Filtrado por Categoría y Búsqueda
             useEffect(() => {
                 let result = [...products];
-                if (activeCategory !== 'ALL') result = result.filter(p => p.category === activeCategory);
+                
+                // Filtro Categoría
+                if (activeCategory !== 'ALL') {
+                    result = result.filter(p => p.category === activeCategory);
+                }
+
+                // Filtro Buscador
+                if (searchQuery.trim() !== '') {
+                    const query = searchQuery.toUpperCase();
+                    result = result.filter(p => 
+                        p.title.toUpperCase().includes(query) || 
+                        (p.sku && p.sku.toUpperCase().includes(query)) ||
+                        (p.category && p.category.toUpperCase().includes(query))
+                    );
+                }
+
                 setFilteredProducts(result);
-            }, [activeCategory, products]);
+            }, [activeCategory, searchQuery, products]);
 
             const checkDynamicLink = (items) => {
                 const id = new URLSearchParams(window.location.search).get('product');
@@ -176,7 +194,6 @@
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
             };
 
-            // PASO 1: Generar orden
             const handleProceedToPayment = (e) => {
                 e.preventDefault();
                 if (cart.length === 0) return;
@@ -195,7 +212,6 @@
                 setPendingOrder(orderData);
             };
 
-            // PASO 2: Sincronización API (HubSpot + Telegram)
             const syncToHubSpot = async (orderData) => {
                 try {
                     const detalles = orderData.items.map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
@@ -212,17 +228,14 @@
                             orderDetails: detalles
                         })
                     });
-                    console.log("Sincronizado con APIs correctamente");
                 } catch (error) { console.error("Error conectando con API", error); }
             };
 
-            // PASO 3: Finalizar compra
             const handleFinalizeOrder = async () => {
                 if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
                 setIsUploading(true);
 
                 try {
-                    // Subir recibo
                     const receiptUrl = await uploadToImgBB(receiptFile);
 
                     const finalOrder = {
@@ -231,13 +244,9 @@
                         status: 'paid_pending_verification'
                     };
 
-                    // Guardar en DB
                     await db.collection("orders").doc(pendingOrder.orderNumber).set(finalOrder);
-
-                    // Sincronizar CRM y disparar Telegram
                     syncToHubSpot(finalOrder);
 
-                    // Construir mensaje limpio con saltos de línea (\n)
                     let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸\n\n`;
                     m += `*Cliente:* ${pendingOrder.customer.name}\n`;
                     m += `*Tel:* ${pendingOrder.customer.phone}\n`;
@@ -254,7 +263,6 @@
 
                     const encodedMessage = encodeURIComponent(m);
 
-                    // Limpiar datos y cerrar modal
                     setCart([]);
                     setPendingOrder(null);
                     setReceiptFile(null);
@@ -322,40 +330,63 @@
                                     </div>
                                 )}
 
+                                {/* BARRA DE CATEGORÍAS Y BÚSQUEDA */}
                                 {products.length > 0 && (
-                                    <div className="px-4 md:px-8 py-6 flex overflow-x-auto no-scrollbar gap-2 border-b border-zinc-900 sticky top-[72px] bg-black/95 z-30">
-                                        {categories.map(cat => (
-                                            <button key={cat} onClick={() => setActiveCategory(cat)} className={`brutalist-btn-outline px-4 py-1 text-xs whitespace-nowrap ${activeCategory === cat ? 'active' : ''}`}>{cat}</button>
-                                        ))}
+                                    <div className="px-4 md:px-8 py-4 border-b border-zinc-900 sticky top-[72px] bg-black/95 z-30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                                        <div className="flex overflow-x-auto no-scrollbar gap-2 items-center w-full md:w-auto">
+                                            <span className="text-zinc-500 font-bold text-xs tracking-widest mr-2 whitespace-nowrap">CATEGORÍAS:</span>
+                                            {categories.map(cat => (
+                                                <button key={cat} onClick={() => setActiveCategory(cat)} className={`brutalist-btn-outline px-4 py-1 text-xs whitespace-nowrap ${activeCategory === cat ? 'active' : ''}`}>{cat}</button>
+                                            ))}
+                                        </div>
+                                        <div className="w-full md:w-auto">
+                                            <div className="relative w-full md:w-64">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="BUSCAR PRENDA..." 
+                                                    value={searchQuery}
+                                                    onChange={e => setSearchQuery(e.target.value)}
+                                                    className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2 text-xs outline-none focus:border-kuraRed transition-colors pr-8"
+                                                />
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">⌕</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
                                 <main className="p-4 md:p-8 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                                    {filteredProducts.map(product => (
-                                        <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
-                                            <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                                <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
-                                                <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
-                                                {product.discountPrice && product.discountPrice > 0 && (
-                                                    <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
-                                                )}
-                                            </div>
-                                            <div className="p-4 flex flex-col flex-1">
-                                                <h2 className="text-xl md:text-2xl font-bebas tracking-wide leading-tight mb-1">{product.title}</h2>
-                                                
-                                                {/* Mostrar Precios con Descuento en el Catálogo */}
-                                                {product.discountPrice && product.discountPrice > 0 ? (
-                                                    <div className="flex flex-col mt-auto pt-2">
-                                                        <p className="text-zinc-500 line-through text-xs font-mono">NIO {product.price}</p>
-                                                        <p className="text-kuraRed font-bold font-mono text-sm">NIO {product.discountPrice}</p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">NIO {product.price}</p>
-                                                )}
-                                                
-                                            </div>
+                                    {filteredProducts.length === 0 ? (
+                                        <div className="col-span-full py-20 text-center flex flex-col items-center">
+                                            <span className="text-4xl mb-4">🛸</span>
+                                            <h3 className="font-bebas text-3xl text-zinc-600">NO SE ENCONTRÓ NADA</h3>
+                                            <p className="text-zinc-500 text-xs mt-2">Intenta buscar con otra palabra clave.</p>
                                         </div>
-                                    ))}
+                                    ) : (
+                                        filteredProducts.map(product => (
+                                            <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
+                                                <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
+                                                    <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                    <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
+                                                    {product.discountPrice && product.discountPrice > 0 && (
+                                                        <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
+                                                    )}
+                                                </div>
+                                                <div className="p-4 flex flex-col flex-1">
+                                                    <h2 className="text-xl md:text-2xl font-bebas tracking-wide leading-tight mb-1">{product.title}</h2>
+                                                    
+                                                    {product.discountPrice && product.discountPrice > 0 ? (
+                                                        <div className="flex flex-col mt-auto pt-2">
+                                                            <p className="text-zinc-500 line-through text-xs font-mono">NIO {product.price}</p>
+                                                            <p className="text-kuraRed font-bold font-mono text-sm">NIO {product.discountPrice}</p>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">NIO {product.price}</p>
+                                                    )}
+                                                    
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                 </main>
                             </div>
                         ) : (
@@ -386,14 +417,12 @@
                                         <p className="text-kuraRed font-mono text-sm tracking-widest mb-2 font-bold uppercase">{selectedProduct.category} FIT</p>
                                         <h2 className="text-5xl md:text-7xl font-bebas mb-2 leading-none tracking-wide">{selectedProduct.title}</h2>
                                         
-                                        {/* Visualización del SKU */}
                                         {selectedProduct.sku && (
                                             <p className="text-zinc-500 font-mono text-xs tracking-widest uppercase mb-4 border-b border-zinc-800 pb-4">
                                                 SKU: <span className="text-white">{selectedProduct.sku}</span>
                                             </p>
                                         )}
 
-                                        {/* Visualización del Precio con Descuento */}
                                         <div className="flex items-end gap-4 mb-8">
                                             {selectedProduct.discountPrice && selectedProduct.discountPrice > 0 ? (
                                                 <>
@@ -540,7 +569,6 @@
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-8 pb-4">
-                                                {/* LISTA DE ITEMS */}
                                                 <div className="space-y-4">
                                                     {cart.map(item => (
                                                         <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm">
@@ -549,7 +577,6 @@
                                                                 <p className="font-bebas text-lg pr-6 leading-none text-zinc-100 line-clamp-2">{item.title}</p>
                                                                 <p className="text-xs text-zinc-500 mt-2 font-bold tracking-wider">TALLA: {item.selectedSize}</p>
                                                                 
-                                                                {/* Precio de Carrito */}
                                                                 {item.discountPrice && item.discountPrice > 0 ? (
                                                                     <div className="mt-1 flex items-center gap-2">
                                                                         <span className="text-kuraRed text-sm font-bold">NIO {item.discountPrice}</span>
@@ -565,13 +592,11 @@
                                                     ))}
                                                 </div>
 
-                                                {/* SECCIÓN DE COBRO (FORM + TOTALES) */}
                                                 <div className="border-t border-zinc-800 pt-8">
                                                     <h3 className="font-bebas text-2xl mb-4 text-white flex items-center gap-2">
                                                         <span className="w-2 h-2 bg-kuraRed inline-block"></span> RESUMEN Y ENVÍO
                                                     </h3>
                                                     
-                                                    {/* CONSOLIDADO DE PRECIOS */}
                                                     <div className="bg-zinc-950 border border-zinc-800 p-4 font-mono text-sm mb-6">
                                                         <div className="flex justify-between mb-2 text-zinc-400"><span>SUBTOTAL</span> <span>NIO {cartSubtotal}</span></div>
                                                         <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO</span> <span>NIO {currentShippingCost}</span></div>
@@ -581,7 +606,6 @@
                                                         </div>
                                                     </div>
 
-                                                    {/* SELECTOR DE ZONA */}
                                                     <div className="mb-6">
                                                         <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">SELECCIONA ZONA DE ENVÍO</p>
                                                         <div className="flex flex-row gap-2">
@@ -602,10 +626,8 @@
                                             </div>
                                         )
                                     ) : (
-                                        // PASO 2: INSTRUCCIONES DE PAGO Y SUBIDA DE VOUCHER REPARADO
                                         <div className="flex flex-col pb-10 animate-slideUp">
                                             
-                                            {/* AVISO DE ENTREGA RECUPERADO */}
                                             <div className="bg-[#111] border border-kuraRed p-4 mb-6">
                                                 <h4 className="text-kuraRed font-bebas text-xl mb-1 flex items-center gap-2">
                                                     <span className="text-lg">⚠️</span> AVISO DE ENTREGA
@@ -615,7 +637,6 @@
                                                 </p>
                                             </div>
 
-                                            {/* CONTENEDOR DE RESUMEN - SIN BLOQUEO DE OVERFLOW */}
                                             <div className="bg-zinc-950 border border-zinc-800 p-6 mb-6 relative shadow-lg">
                                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45 pointer-events-none"></div>
                                                 <p className="text-zinc-500 text-[10px] uppercase mb-1">ORDEN RESERVADA</p>
@@ -646,7 +667,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* ZONA DE SUBIDA DE COMPROBANTE */}
                                             <div className="mb-6">
                                                 <p className="text-xs text-white mb-3 font-bold border-l-2 border-kuraRed pl-2">ADJUNTA TU COMPROBANTE:</p>
                                                 <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-700 border-dashed hover:border-kuraRed hover:bg-zinc-900 transition-colors cursor-pointer relative">
@@ -666,10 +686,9 @@
                                                 </label>
                                             </div>
 
-                                            {/* BOTONES FINALES Y TÉRMINOS */}
                                             <label className="flex items-start gap-3 cursor-pointer text-xs text-zinc-400 mb-8 p-3 border border-zinc-800 bg-black">
                                                 <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-0.5 accent-kuraRed w-4 h-4 shrink-0" />
-                                                <span className="leading-tight">Acepto la <a href="#" className="text-white underline">política de cambios y devoluciones</a> de Kura Studio.</span>
+                                                <span className="leading-tight">Acepto la <a href="#" className="text-white underline">política de envios</a> de Kura Studio.</span>
                                             </label>
 
                                             <button 
@@ -710,4 +729,3 @@
     </script>
 </body>
 </html>
- 
