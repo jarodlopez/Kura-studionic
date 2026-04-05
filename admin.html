@@ -4,22 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>KURA STUDIO | Backoffice</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { kuraRed: '#ff003c', kuraDark: '#050505' }, fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] } } } }
+        tailwind.config = { 
+            theme: { 
+                extend: { 
+                    colors: { kuraRed: '#ff003c', kuraDark: '#050505' }, 
+                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] },
+                    animation: { 'slideUp': 'slideUp 0.3s ease-out' }, 
+                    keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } } }
+                } 
+            } 
+        }
     </script>
+    
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    
     <style>
         body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; }
-        .brutalist-input { width: 100%; background: #050505; border: 1px solid #333; color: white; padding: 0.75rem; font-size: 0.875rem; margin-top: 0.25rem; outline: none; }
+        .brutalist-input { width: 100%; background: #050505; border: 1px solid #333; color: white; padding: 0.75rem; font-size: 0.875rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; }
         .brutalist-input:focus { border-color: #ff003c; }
-        .brutalist-btn { background: #ff003c; color: black; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; text-transform: uppercase; border: none; }
-        .brutalist-btn:hover { background: white; }
+        .brutalist-btn { background: #ff003c; color: black; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; }
+        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
+        .brutalist-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
     </style>
 </head>
 <body>
@@ -35,27 +54,64 @@
 
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
-        const { useState, useEffect, useRef } = React;
+        const auth = firebase.auth();
+        const { useState, useEffect } = React;
 
         function AdminPanel() {
-            const [view, setView] = useState('INVENTORY'); // INVENTORY o DESIGN
+            // Autenticación
+            const [user, setUser] = useState(null);
+            const [authLoading, setAuthLoading] = useState(true);
+            const [loginData, setLoginData] = useState({ email: '', password: '' });
+            const [loginError, setLoginError] = useState('');
+
+            // Vistas
+            const [view, setView] = useState('INVENTORY'); // INVENTORY, DESIGN, ORDERS
             
             // Estados Inventario
             const [products, setProducts] = useState([]);
-            const [formData, setFormData] = useState({ title: '', price: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+            // Añadido: sku y discountPrice
+            const [formData, setFormData] = useState({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
             const [editingId, setEditingId] = useState(null);
             
             // Estados Diseño
             const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: '' });
             const [slideForm, setSlideForm] = useState({ subtitle: '', title: '', cta: '' });
             
+            // Estados Órdenes
+            const [orders, setOrders] = useState([]);
+            const [selectedOrder, setSelectedOrder] = useState(null);
+
             const [isSaving, setIsSaving] = useState(false);
 
-            // Cargar Datos Iniciales
+            // Observador de estado de sesión
             useEffect(() => {
-                fetchProducts();
-                fetchStoreConfig();
+                const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+                    setUser(currentUser);
+                    setAuthLoading(false);
+                    if (currentUser) {
+                        fetchProducts();
+                        fetchStoreConfig();
+                        fetchOrders();
+                    }
+                });
+                return () => unsubscribe();
             }, []);
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoginError('');
+                setIsSaving(true);
+                try {
+                    await auth.signInWithEmailAndPassword(loginData.email, loginData.password);
+                } catch (error) {
+                    setLoginError('Credenciales incorrectas o error de conexión.');
+                }
+                setIsSaving(false);
+            };
+
+            const handleLogout = async () => {
+                await auth.signOut();
+            };
 
             const fetchProducts = async () => {
                 const snapshot = await db.collection("products").get();
@@ -65,6 +121,14 @@
             const fetchStoreConfig = async () => {
                 const doc = await db.collection("settings").doc("store").get();
                 if (doc.exists) setStoreConfig(doc.data());
+            };
+
+            const fetchOrders = async () => {
+                const snapshot = await db.collection("orders").get();
+                const fetchedOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Ordenar por fecha descendente (más recientes primero)
+                fetchedOrders.sort((a, b) => new Date(b.date) - new Date(a.date));
+                setOrders(fetchedOrders);
             };
 
             // Utilidad para subir a ImgBB
@@ -80,10 +144,19 @@
             /* === LÓGICA DE INVENTARIO === */
             const handleProductSubmit = async (e) => {
                 e.preventDefault(); setIsSaving(true);
-                const data = { ...formData, price: Number(formData.price), stock: Number(formData.stock), details: formData.details.split('\n').filter(d=>d) };
+                
+                const data = { 
+                    ...formData, 
+                    price: Number(formData.price), 
+                    discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null,
+                    stock: Number(formData.stock), 
+                    details: formData.details.split('\n').filter(d=>d) 
+                };
+
                 if (editingId) await db.collection("products").doc(editingId).update(data);
                 else await db.collection("products").add(data);
-                setFormData({ title: '', price: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+                
+                setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
                 setEditingId(null); fetchProducts(); setIsSaving(false);
             };
 
@@ -96,7 +169,7 @@
                 setIsSaving(false);
             };
 
-            /* === LÓGICA DE DISEÑO (PORTADAS Y GUÍA) === */
+            /* === LÓGICA DE DISEÑO === */
             const saveStoreConfig = async (newConfig) => {
                 await db.collection("settings").doc("store").set(newConfig, { merge: true });
                 setStoreConfig(newConfig);
@@ -125,110 +198,344 @@
                 await saveStoreConfig({ ...storeConfig, heroSlides: newSlides });
             };
 
+            // Helpers de Órdenes
+            const getPrice = (product) => {
+                return product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
+            };
+
+            const formatDate = (isoString) => {
+                if (!isoString) return 'Fecha desconocida';
+                const date = new Date(isoString);
+                return date.toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' });
+            };
+
+            // === PANTALLA DE CARGA Y LOGIN ===
+            if (authLoading) {
+                return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-kuraRed animate-pulse">VERIFICANDO SISTEMA...</div>;
+            }
+
+            if (!user) {
+                return (
+                    <div className="min-h-screen bg-black flex justify-center items-center px-4" style={{ backgroundImage: 'linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+                        <div className="border-2 border-zinc-800 bg-zinc-950 p-8 w-full max-w-md shadow-2xl">
+                            <h1 className="font-bebas text-5xl text-kuraRed mb-2 text-center">KURA STUDIO</h1>
+                            <p className="text-zinc-500 font-mono text-xs text-center mb-8 uppercase tracking-widest border-b border-zinc-800 pb-4">Terminal de Acceso</p>
+                            
+                            {loginError && <div className="bg-red-900/50 border border-red-500 text-red-200 text-xs p-3 mb-4 font-mono">{loginError}</div>}
+                            
+                            <form onSubmit={handleLogin} className="space-y-4">
+                                <div>
+                                    <label className="text-xs text-zinc-400 font-bold">CORREO ADMINISTRADOR</label>
+                                    <input type="email" required className="brutalist-input" value={loginData.email} onChange={e => setLoginData({...loginData, email: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-zinc-400 font-bold">CONTRASEÑA</label>
+                                    <input type="password" required className="brutalist-input" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} />
+                                </div>
+                                <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-6">
+                                    {isSaving ? 'CONECTANDO...' : 'ENTRAR AL SISTEMA'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            }
+
             return (
                 <div className="min-h-screen flex flex-col">
-                    {/* TABS NAVEGACIÓN */}
-                    <header className="bg-kuraDark border-b border-zinc-800 p-4 flex gap-4">
-                        <button onClick={() => setView('INVENTORY')} className={`font-bebas text-2xl ${view === 'INVENTORY' ? 'text-kuraRed' : 'text-zinc-500'}`}>INVENTARIO DE PRENDAS</button>
-                        <button onClick={() => setView('DESIGN')} className={`font-bebas text-2xl ${view === 'DESIGN' ? 'text-kuraRed' : 'text-zinc-500'}`}>PORTADAS Y GUÍA DE TALLAS</button>
+                    {/* MODAL DETALLES DE ORDEN */}
+                    {selectedOrder && (
+                        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
+                            <div className="bg-zinc-950 border border-zinc-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-slideUp flex flex-col md:flex-row shadow-2xl" onClick={e => e.stopPropagation()}>
+                                
+                                <div className="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-zinc-800">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div>
+                                            <h2 className="font-bebas text-4xl text-kuraRed leading-none">ORDEN {selectedOrder.orderNumber}</h2>
+                                            <p className="text-zinc-500 text-xs mt-1">{formatDate(selectedOrder.date)}</p>
+                                        </div>
+                                        <button onClick={() => setSelectedOrder(null)} className="text-zinc-500 hover:text-white font-bold text-xl">✕</button>
+                                    </div>
+
+                                    <div className="mb-6 bg-black p-4 border border-zinc-800">
+                                        <p className="font-bold text-white mb-2 text-sm border-b border-zinc-800 pb-2">DATOS DEL CLIENTE</p>
+                                        <p className="text-sm"><span className="text-zinc-500">Nombre:</span> {selectedOrder.customer?.name}</p>
+                                        <p className="text-sm"><span className="text-zinc-500">Teléfono:</span> {selectedOrder.customer?.phone}</p>
+                                        <p className="text-sm"><span className="text-zinc-500">Dirección:</span> {selectedOrder.customer?.address}</p>
+                                        <p className="text-sm"><span className="text-zinc-500">Zona:</span> <span className="text-kuraRed font-bold">{selectedOrder.shippingZone}</span></p>
+                                    </div>
+
+                                    <div>
+                                        <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">PRODUCTOS COMPRADOS</p>
+                                        <div className="space-y-3">
+                                            {selectedOrder.items?.map((item, idx) => (
+                                                <div key={idx} className="flex gap-3 bg-black p-2 border border-zinc-900">
+                                                    <img src={item.images?.[0]} className="w-12 h-16 object-cover border border-zinc-800" />
+                                                    <div className="flex-1">
+                                                        <p className="font-bebas text-lg leading-none truncate max-w-[200px]">{item.title}</p>
+                                                        <p className="text-[10px] text-zinc-400 font-bold mt-1">TALLA: {item.selectedSize} {item.sku && `| SKU: ${item.sku}`}</p>
+                                                        <p className="text-kuraRed font-bold text-xs mt-1">NIO {getPrice(item)}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mt-6 pt-4 border-t border-zinc-800 space-y-1 text-sm">
+                                        <div className="flex justify-between text-zinc-400"><span>Subtotal:</span><span>NIO {selectedOrder.subtotal}</span></div>
+                                        <div className="flex justify-between text-zinc-400"><span>Costo de Envío:</span><span>NIO {selectedOrder.shippingCost}</span></div>
+                                        <div className="flex justify-between text-white font-bold text-lg pt-2 mt-2 border-t border-zinc-800">
+                                            <span>TOTAL PAGADO:</span><span className="text-kuraRed">NIO {selectedOrder.total}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="w-full md:w-1/2 p-6 flex flex-col bg-zinc-900">
+                                    <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">COMPROBANTE DE PAGO</p>
+                                    {selectedOrder.receiptUrl ? (
+                                        <div className="flex-1 border border-zinc-700 bg-black flex flex-col">
+                                            <a href={selectedOrder.receiptUrl} target="_blank" className="flex-1 flex items-center justify-center p-2 hover:opacity-80 transition-opacity">
+                                                <img src={selectedOrder.receiptUrl} className="max-h-[50vh] object-contain" />
+                                            </a>
+                                            <a href={selectedOrder.receiptUrl} target="_blank" className="bg-zinc-800 text-center py-2 text-xs font-bold hover:bg-kuraRed hover:text-black transition-colors block border-t border-zinc-700">
+                                                ABRIR IMAGEN COMPLETA ↗
+                                            </a>
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center border border-dashed border-zinc-700 text-zinc-500 text-sm">
+                                            Sin comprobante adjunto
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CABECERA Y NAVEGACIÓN */}
+                    <header className="bg-black border-b border-zinc-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-40">
+                        <div className="flex items-center gap-6 overflow-x-auto w-full md:w-auto no-scrollbar">
+                            <h1 className="font-bebas text-3xl text-white mr-4">KURA<span className="text-kuraRed">STUDIO</span></h1>
+                            <button onClick={() => setView('INVENTORY')} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'INVENTORY' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>INVENTARIO</button>
+                            <button onClick={() => setView('DESIGN')} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'DESIGN' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>DISEÑO WEB</button>
+                            <button onClick={() => {setView('ORDERS'); fetchOrders();}} className={`font-bebas text-2xl whitespace-nowrap transition-colors flex items-center gap-2 ${view === 'ORDERS' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>
+                                ÓRDENES <span className="bg-zinc-800 text-white text-xs px-2 py-1 rounded-full">{orders.length}</span>
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                            <span className="text-xs text-zinc-500 font-mono hidden md:inline">{user.email}</span>
+                            <button onClick={handleLogout} className="text-xs border border-zinc-700 px-3 py-1 hover:bg-red-900 hover:border-red-500 transition-colors">SALIR</button>
+                        </div>
                     </header>
 
-                    <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
-                        {isSaving && <div className="fixed top-4 right-4 bg-kuraRed text-black font-bebas px-4 py-2 z-50 animate-pulse">GUARDANDO EN SERVIDOR...</div>}
+                    <div className="flex-1 p-4 md:p-6 max-w-[1400px] mx-auto w-full">
+                        {isSaving && <div className="fixed top-20 right-4 bg-kuraRed text-black font-bebas px-4 py-2 z-50 animate-pulse border-2 border-black shadow-[4px_4px_0_white]">GUARDANDO EN SERVIDOR...</div>}
 
-                        {view === 'INVENTORY' ? (
-                            <div className="flex flex-col md:flex-row gap-8">
+                        {/* VISTA: INVENTARIO */}
+                        {view === 'INVENTORY' && (
+                            <div className="flex flex-col lg:flex-row gap-8">
                                 {/* FORMULARIO INVENTARIO */}
-                                <form onSubmit={handleProductSubmit} className="w-full md:w-1/3 space-y-4 bg-zinc-950 p-6 border border-zinc-800">
-                                    <h2 className="font-bebas text-2xl text-kuraRed">NUEVA PRENDA</h2>
-                                    <input required placeholder="TÍTULO" className="brutalist-input" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value.toUpperCase()})} />
+                                <form onSubmit={handleProductSubmit} className="w-full lg:w-1/3 space-y-4 bg-zinc-950 p-6 border border-zinc-800 h-max sticky top-24">
+                                    <div className="flex justify-between items-end border-b border-zinc-800 pb-4">
+                                        <h2 className="font-bebas text-3xl text-kuraRed">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h2>
+                                        {editingId && <button type="button" onClick={() => {setEditingId(null); setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });}} className="text-xs text-zinc-500 underline">Cancelar Edición</button>}
+                                    </div>
+                                    
+                                    <input required placeholder="TÍTULO (Ej: OVERSIZED TEE BLACK)" className="brutalist-input" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value.toUpperCase()})} />
+                                    
                                     <div className="flex gap-2">
-                                        <input required type="number" placeholder="PRECIO (NIO)" className="brutalist-input" value={formData.price} onChange={e=>setFormData({...formData, price: e.target.value})} />
+                                        <input placeholder="SKU (Opcional)" className="brutalist-input" value={formData.sku} onChange={e=>setFormData({...formData, sku: e.target.value.toUpperCase()})} />
                                         <input required placeholder="CATEGORÍA (Ej: T-SHIRT)" className="brutalist-input" value={formData.category} onChange={e=>setFormData({...formData, category: e.target.value.toUpperCase()})} />
                                     </div>
-                                    <textarea required placeholder="DESCRIPCIÓN" className="brutalist-input h-16" value={formData.description} onChange={e=>setFormData({...formData, description: e.target.value})} />
-                                    <textarea placeholder="DETALLES (UNO POR LÍNEA)" className="brutalist-input h-16" value={formData.details} onChange={e=>setFormData({...formData, details: e.target.value})} />
+
+                                    <div className="flex gap-2 bg-black p-2 border border-zinc-800">
+                                        <div className="w-1/2">
+                                            <label className="text-[10px] text-zinc-500 font-bold block mb-1">PRECIO BASE (NIO)</label>
+                                            <input required type="number" className="brutalist-input mt-0" value={formData.price} onChange={e=>setFormData({...formData, price: e.target.value})} />
+                                        </div>
+                                        <div className="w-1/2 relative">
+                                            <label className="text-[10px] text-kuraRed font-bold block mb-1">PRECIO DESCUENTO (Opcional)</label>
+                                            <input type="number" placeholder="Ej: 500" className="brutalist-input mt-0 border-zinc-800 focus:border-kuraRed" value={formData.discountPrice} onChange={e=>setFormData({...formData, discountPrice: e.target.value})} />
+                                        </div>
+                                    </div>
+
+                                    <textarea required placeholder="DESCRIPCIÓN DEL PRODUCTO" className="brutalist-input h-20 resize-none" value={formData.description} onChange={e=>setFormData({...formData, description: e.target.value})} />
+                                    <textarea placeholder="DETALLES TÉCNICOS (UNO POR LÍNEA)" className="brutalist-input h-20 resize-none" value={formData.details} onChange={e=>setFormData({...formData, details: e.target.value})} />
                                     
-                                    <div>
-                                        <p className="text-xs text-zinc-500 mb-2">TALLAS</p>
+                                    <div className="border-t border-zinc-800 pt-4">
+                                        <p className="text-xs text-zinc-500 mb-2 font-bold tracking-widest">TALLAS DISPONIBLES</p>
                                         <div className="flex flex-wrap gap-2">
-                                            {['S','M','L','XL','XXL'].map(s => (
+                                            {['S','M','L','XL','XXL', 'ÚNICA'].map(s => (
                                                 <button key={s} type="button" onClick={() => setFormData(p => ({...p, sizes: p.sizes.includes(s) ? p.sizes.filter(x=>x!==s) : [...p.sizes, s]}))}
-                                                    className={`px-3 py-1 font-bebas border ${formData.sizes.includes(s) ? 'bg-kuraRed text-black' : 'border-zinc-700'}`}>{s}</button>
+                                                    className={`px-4 py-2 font-bebas text-lg transition-colors border ${formData.sizes.includes(s) ? 'bg-kuraRed border-kuraRed text-black' : 'border-zinc-700 text-zinc-400 hover:text-white'}`}>{s}</button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="border border-zinc-700 p-2">
-                                        <p className="text-xs text-zinc-500 mb-2">FOTOS (Sube varias)</p>
-                                        <input type="file" multiple onChange={handleProductImage} className="text-xs w-full mb-2" />
-                                        <div className="flex gap-2">
-                                            {formData.images.map((img, i) => <img key={i} src={img} className="w-10 h-10 object-cover border border-zinc-600" />)}
-                                            {formData.images.length > 0 && <button type="button" onClick={()=>setFormData({...formData, images:[]})} className="text-red-500 text-xs">Limpiar fotos</button>}
+                                    <div className="border border-zinc-700 bg-black p-4">
+                                        <p className="text-xs text-zinc-500 mb-2 font-bold">FOTOGRAFÍAS</p>
+                                        <input type="file" multiple accept="image/*" onChange={handleProductImage} className="text-xs w-full mb-3 text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700" />
+                                        <div className="flex flex-wrap gap-2">
+                                            {formData.images.map((img, i) => <img key={i} src={img} className="w-16 h-20 object-cover border border-zinc-600" />)}
+                                            {formData.images.length > 0 && <button type="button" onClick={()=>setFormData({...formData, images:[]})} className="text-kuraRed font-bold text-xs underline mt-2 w-full text-left">Eliminar fotos y subir otras</button>}
                                         </div>
                                     </div>
-                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full">GUARDAR PRENDA</button>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4">{editingId ? 'ACTUALIZAR PRENDA' : 'AÑADIR AL CATÁLOGO'}</button>
                                 </form>
 
                                 {/* LISTA INVENTARIO */}
-                                <div className="w-full md:w-2/3 grid grid-cols-2 md:grid-cols-3 gap-4 h-max">
+                                <div className="w-full lg:w-2/3 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 h-max">
                                     {products.map(p => (
-                                        <div key={p.id} className="border border-zinc-800 p-2 flex flex-col bg-zinc-950">
-                                            <img src={p.images?.[0]} className="w-full h-40 object-cover mb-2" />
-                                            <p className="font-bebas text-xl truncate">{p.title}</p>
-                                            <p className="text-kuraRed font-mono text-xs mb-2">NIO {p.price}</p>
-                                            <button onClick={async () => { await db.collection('products').doc(p.id).delete(); fetchProducts(); }} className="text-xs border border-red-900 text-red-500 py-1 hover:bg-red-900">ELIMINAR</button>
+                                        <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
+                                            <div className="relative aspect-[4/5] bg-black border-b border-zinc-800 overflow-hidden">
+                                                <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                                {p.discountPrice && p.discountPrice > 0 && (
+                                                    <span className="absolute top-2 left-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
+                                                )}
+                                            </div>
+                                            <div className="p-3 flex-1 flex flex-col">
+                                                <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
+                                                {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
+                                                <div className="mt-auto">
+                                                    {p.discountPrice && p.discountPrice > 0 ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
+                                                            <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex border-t border-zinc-800">
+                                                <button onClick={() => {
+                                                    setEditingId(p.id);
+                                                    setFormData({
+                                                        title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '',
+                                                        category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'),
+                                                        sizes: p.sizes || [], stock: p.stock || '', images: p.images || []
+                                                    });
+                                                    window.scrollTo({top: 0, behavior: 'smooth'});
+                                                }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
+                                                
+                                                <button onClick={async () => { 
+                                                    if(window.confirm('¿Seguro que quieres borrar esta prenda?')) {
+                                                        await db.collection('products').doc(p.id).delete(); fetchProducts(); 
+                                                    }
+                                                }} className="flex-1 text-xs text-red-500 font-bold py-2 hover:bg-red-900 transition-colors">ELIMINAR</button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="flex flex-col md:flex-row gap-8">
-                                {/* GESTOR DE PORTADAS (HERO SLIDES) */}
-                                <div className="w-full md:w-1/2 border border-zinc-800 p-6 bg-zinc-950">
+                        )}
+
+                        {/* VISTA: DISEÑO */}
+                        {view === 'DESIGN' && (
+                            <div className="flex flex-col lg:flex-row gap-8">
+                                {/* GESTOR DE PORTADAS */}
+                                <div className="w-full lg:w-1/2 border border-zinc-800 p-6 bg-zinc-950">
                                     <h2 className="font-bebas text-3xl text-kuraRed mb-4">AÑADIR PORTADA (HERO SLIDER)</h2>
-                                    <div className="space-y-2 mb-4">
+                                    <div className="space-y-4 mb-8">
                                         <input placeholder="SUBTÍTULO (Ej: NUEVA COLECCIÓN)" className="brutalist-input" value={slideForm.subtitle} onChange={e=>setSlideForm({...slideForm, subtitle: e.target.value})} />
                                         <input placeholder="TÍTULO PRINCIPAL" className="brutalist-input" value={slideForm.title} onChange={e=>setSlideForm({...slideForm, title: e.target.value})} />
                                         <input placeholder="TEXTO DEL BOTÓN (Ej: VER T-SHIRTS)" className="brutalist-input" value={slideForm.cta} onChange={e=>setSlideForm({...slideForm, cta: e.target.value})} />
-                                        <div className="pt-2">
-                                            <p className="text-xs text-zinc-500 mb-1">SELECCIONA LA IMAGEN DE PORTADA</p>
-                                            <input type="file" onChange={handleSlideAdd} className="text-xs border border-zinc-700 p-2 w-full bg-black" />
+                                        <div className="border border-zinc-800 p-4 bg-black">
+                                            <p className="text-xs text-zinc-500 mb-2 font-bold">SELECCIONA LA IMAGEN DE PORTADA</p>
+                                            <input type="file" accept="image/*" onChange={handleSlideAdd} className="text-xs w-full text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700" />
                                         </div>
                                     </div>
                                     
-                                    <h3 className="font-bebas text-xl mt-8 mb-2 border-t border-zinc-800 pt-4">PORTADAS ACTIVAS</h3>
-                                    <div className="space-y-2">
+                                    <h3 className="font-bebas text-2xl mb-4 border-t border-zinc-800 pt-6">PORTADAS ACTIVAS</h3>
+                                    <div className="space-y-3">
                                         {storeConfig.heroSlides?.map(slide => (
-                                            <div key={slide.id} className="flex gap-4 border border-zinc-800 p-2 items-center bg-black">
-                                                <img src={slide.image} className="w-20 h-10 object-cover" />
-                                                <div className="flex-1">
-                                                    <p className="font-bebas leading-none">{slide.title}</p>
-                                                    <p className="text-[10px] text-zinc-500">{slide.subtitle}</p>
+                                            <div key={slide.id} className="flex gap-4 border border-zinc-800 p-3 items-center bg-black">
+                                                <img src={slide.image} className="w-24 h-16 object-cover border border-zinc-700" />
+                                                <div className="flex-1 overflow-hidden">
+                                                    <p className="font-bebas text-xl leading-none truncate">{slide.title}</p>
+                                                    <p className="text-[10px] text-zinc-500 mt-1">{slide.subtitle} | Botón: {slide.cta}</p>
                                                 </div>
-                                                <button onClick={() => removeSlide(slide.id)} className="text-red-500 font-bold px-2">X</button>
+                                                <button onClick={() => removeSlide(slide.id)} className="text-red-500 font-bold px-4 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors">✕</button>
                                             </div>
                                         ))}
+                                        {(!storeConfig.heroSlides || storeConfig.heroSlides.length === 0) && (
+                                            <p className="text-zinc-600 text-sm font-mono italic">No hay portadas configuradas. Agrega una arriba.</p>
+                                        )}
                                     </div>
                                 </div>
 
                                 {/* GESTOR DE GUÍA DE TALLAS */}
-                                <div className="w-full md:w-1/2 border border-zinc-800 p-6 bg-zinc-950 h-max">
+                                <div className="w-full lg:w-1/2 border border-zinc-800 p-6 bg-zinc-950 h-max">
                                     <h2 className="font-bebas text-3xl text-kuraRed mb-4">GUÍA DE TALLAS GLOBAL</h2>
-                                    <p className="text-xs text-zinc-400 mb-4">Sube una imagen con la tabla de medidas. Aparecerá cuando el cliente toque "Guía de Medidas" al comprar.</p>
-                                    <input type="file" onChange={handleSizeGuideUpload} className="text-xs border border-zinc-700 p-2 w-full bg-black mb-4" />
+                                    <p className="text-xs text-zinc-400 mb-6 leading-relaxed">Sube una imagen con la tabla de medidas. Aparecerá cuando el cliente toque "Guía de Medidas" al ver una prenda.</p>
+                                    
+                                    <div className="border border-zinc-800 p-4 bg-black mb-6">
+                                        <p className="text-xs text-zinc-500 mb-2 font-bold">SUBIR O REEMPLAZAR IMAGEN</p>
+                                        <input type="file" accept="image/*" onChange={handleSizeGuideUpload} className="text-xs w-full text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700" />
+                                    </div>
                                     
                                     {storeConfig.sizeGuide ? (
-                                        <div className="border border-zinc-800 p-2">
-                                            <p className="text-xs text-zinc-500 mb-2">GUÍA ACTUAL:</p>
-                                            <img src={storeConfig.sizeGuide} className="w-full h-auto" />
+                                        <div className="border border-zinc-800 p-4 bg-black">
+                                            <p className="text-xs text-kuraRed mb-3 font-bold border-b border-zinc-800 pb-2">GUÍA ACTUAL:</p>
+                                            <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-900" />
                                         </div>
                                     ) : (
-                                        <p className="text-red-500 text-xs">NO HAY GUÍA DE TALLAS CONFIGURADA.</p>
+                                        <p className="text-red-500 text-xs bg-red-950/30 p-3 border border-red-900">NO HAY GUÍA DE TALLAS CONFIGURADA.</p>
                                     )}
                                 </div>
                             </div>
                         )}
+
+                        {/* VISTA: ORDENES */}
+                        {view === 'ORDERS' && (
+                            <div className="bg-zinc-950 border border-zinc-800 p-6 min-h-[50vh]">
+                                <div className="flex justify-between items-end mb-6 border-b border-zinc-800 pb-4">
+                                    <h2 className="font-bebas text-3xl text-kuraRed">HISTORIAL DE ÓRDENES</h2>
+                                    <button onClick={fetchOrders} className="text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-2">
+                                        <span className="text-lg">↻</span> REFRESCAR
+                                    </button>
+                                </div>
+
+                                {orders.length === 0 ? (
+                                    <div className="text-center py-20 text-zinc-600 font-bebas text-2xl tracking-widest">
+                                        AÚN NO HAY ÓRDENES REGISTRADAS
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm font-mono whitespace-nowrap">
+                                            <thead className="text-xs text-zinc-500 uppercase bg-black border-y border-zinc-800">
+                                                <tr>
+                                                    <th className="px-4 py-3">No. Orden</th>
+                                                    <th className="px-4 py-3">Fecha</th>
+                                                    <th className="px-4 py-3">Cliente</th>
+                                                    <th className="px-4 py-3">Zona</th>
+                                                    <th className="px-4 py-3">Total (NIO)</th>
+                                                    <th className="px-4 py-3 text-center">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-800">
+                                                {orders.map((order) => (
+                                                    <tr key={order.id} className="hover:bg-zinc-900 transition-colors">
+                                                        <td className="px-4 py-4 font-bold text-white">{order.orderNumber}</td>
+                                                        <td className="px-4 py-4 text-zinc-400 text-xs">{formatDate(order.date)}</td>
+                                                        <td className="px-4 py-4">{order.customer?.name}</td>
+                                                        <td className="px-4 py-4">
+                                                            <span className="bg-zinc-800 px-2 py-1 text-[10px] rounded-sm">{order.shippingZone}</span>
+                                                        </td>
+                                                        <td className="px-4 py-4 text-kuraRed font-bold">{order.total}</td>
+                                                        <td className="px-4 py-4 text-center">
+                                                            <button onClick={() => setSelectedOrder(order)} className="bg-zinc-800 hover:bg-kuraRed hover:text-black text-white px-4 py-2 text-xs transition-colors font-bold border border-zinc-700 hover:border-kuraRed">
+                                                                VER DETALLES
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                     </div>
                 </div>
             );
