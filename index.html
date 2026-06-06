@@ -91,6 +91,7 @@
         .marquee-content { display: inline-block; min-width: 100%; }
         .img-fade { opacity: 0; transition: opacity 0.5s ease-in-out; }
         .img-loaded { opacity: 1; }
+        img { -webkit-user-drag: none; -webkit-touch-callout: none; pointer-events: none; }
     </style>
 </head>
 <body class="font-mono">
@@ -134,7 +135,7 @@
         );
 
         const SmoothImage = ({ src, className, alt, eager }) => (
-            <img src={src} className={`img-fade ${className}`} onLoad={(e) => e.target.classList.add('img-loaded')} alt={alt || "KURA STUDIO"} loading={eager ? "eager" : "lazy"} />
+            <img src={src} className={`img-fade ${className}`} onLoad={(e) => e.target.classList.add('img-loaded')} alt={alt || "KURA STUDIO"} loading={eager ? "eager" : "lazy"} draggable={false} />
         );
 
         function KuraStudio() {
@@ -393,7 +394,7 @@
                         <div className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setIsPopupVisible(false)}>
                             <div className="relative max-w-md w-full border-2 border-kuraRed bg-black animate-slideUp shadow-[8px_8px_0px_0px_#ff003c]" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setIsPopupVisible(false)} className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-kuraRed text-white font-bold text-xl transition-colors leading-none border border-zinc-700">✕</button>
-                                <img src={popupBanners[0].image} className="w-full object-cover max-h-[55vh]" alt={popupBanners[0].title || 'KURA STUDIO'} />
+                                <img src={popupBanners[0].image} className="w-full object-cover max-h-[55vh]" alt={popupBanners[0].title || 'KURA STUDIO'} draggable={false} />
                                 {(popupBanners[0].title || popupBanners[0].subtitle || popupBanners[0].ctaText) && (
                                     <div className="p-6 text-center">
                                         {popupBanners[0].title && <h2 className="font-bebas text-4xl text-white leading-none mb-2">{popupBanners[0].title}</h2>}
@@ -614,7 +615,7 @@
                                                 .map(item => (
                                                     <div key={item.id} className="brutalist-card cursor-pointer group flex flex-col" onClick={() => openProduct(item)}>
                                                         <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
-                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" />
+                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" draggable={false} />
                                                             {item.discountPrice && item.discountPrice > 0 && (
                                                                 <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
                                                             )}
@@ -642,7 +643,7 @@
                                                 .map(item => (
                                                     <div key={item.id} className="brutalist-card cursor-pointer grayscale hover:grayscale-0 transition-all duration-300 flex flex-col" onClick={() => openProduct(item)}>
                                                         <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" />
+                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" draggable={false} />
                                                         </div>
                                                         <div className="p-3 flex flex-col flex-1">
                                                             <p className="font-bebas text-lg truncate text-zinc-300 leading-none mb-1">{item.title}</p>
@@ -664,7 +665,7 @@
                                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white font-bebas text-2xl">✕</button>
                                 <h3 className="font-bebas text-3xl text-kuraRed mb-6">GUÍA DE MEDIDAS</h3>
                                 {storeConfig.sizeGuide ? (
-                                    <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-800" />
+                                    <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-800" draggable={false} alt="Guía de tallas KURA STUDIO" />
                                 ) : (
                                     <p className="text-zinc-500">Guía no disponible temporalmente.</p>
                                 )}
@@ -696,7 +697,7 @@
                                                 <div className="space-y-4">
                                                     {cart.map(item => (
                                                         <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm">
-                                                            <img src={item.images?.[0]} className="w-20 h-24 object-cover border border-zinc-900 shrink-0" />
+                                                            <img src={item.images?.[0]} className="w-20 h-24 object-cover border border-zinc-900 shrink-0" draggable={false} alt={item.title} />
                                                             <div className="flex-1 pt-1 overflow-hidden">
                                                                 <p className="font-bebas text-lg pr-6 leading-none text-zinc-100 line-clamp-2">{item.title}</p>
                                                                 <p className="text-xs text-zinc-500 mt-2 font-bold tracking-wider">TALLA: {item.selectedSize}</p>
