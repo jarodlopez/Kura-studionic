@@ -38,7 +38,7 @@ window.CartModal = ({
                                 <div className="space-y-4">
                                     {cart.map(item => (
                                         <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm">
-                                            <img src={item.images?.[0]} className="w-20 h-24 object-cover border border-zinc-900 shrink-0" draggable={false} alt={item.title} />
+                                            <img src={optimizeImg(item.images?.[0], 160)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="w-20 h-24 object-cover border border-zinc-900 shrink-0" decoding="async" draggable={false} alt={item.title} />
                                             <div className="flex-1 pt-1 overflow-hidden">
                                                 <p className="font-bebas text-lg pr-6 leading-none text-zinc-100 line-clamp-2">{item.title}</p>
                                                 <p className="text-xs text-zinc-500 mt-2 font-bold tracking-wider">TALLA: {item.selectedSize}</p>

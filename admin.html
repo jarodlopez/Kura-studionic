@@ -168,9 +168,49 @@
                 setAnalyticsLoading(false);
             };
 
+            // Comprime y redimensiona la imagen (WebP, ~1400px máx) antes de subir.
+            // Una foto de varios MB suele bajar a ~150-250 KB. Si falla, sube el original.
+            const compressImage = async (file, { maxDim = 1400, quality = 0.82 } = {}) => {
+                try {
+                    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+                    if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    const img = await new Promise((resolve, reject) => {
+                        const i = new Image();
+                        i.onload = () => resolve(i);
+                        i.onerror = reject;
+                        i.src = dataUrl;
+                    });
+
+                    let { width, height } = img;
+                    if (!width || !height) return file;
+                    if (width > maxDim || height > maxDim) {
+                        const scale = Math.min(maxDim / width, maxDim / height);
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', quality));
+                    if (!blob || blob.size >= file.size) return file;
+                    const baseName = (file.name || 'imagen').replace(/\.[^.]+$/, '');
+                    return new File([blob], `${baseName}.webp`, { type: 'image/webp' });
+                } catch (e) {
+                    return file;
+                }
+            };
+
             const uploadToImgBB = async (file) => {
+                const optimized = await compressImage(file);
                 const fd = new FormData();
-                fd.append("image", file);
+                fd.append("image", optimized);
                 const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
                 const data = await res.json();
                 if (data.success) return data.data.url;

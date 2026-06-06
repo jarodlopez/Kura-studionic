@@ -6,7 +6,7 @@ window.SizeModal = ({ isSizeModalOpen, setIsSizeModalOpen, storeConfig }) => {
                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white font-bebas text-2xl">✕</button>
                 <h3 className="font-bebas text-3xl text-kuraRed mb-6">GUÍA DE MEDIDAS</h3>
                 {storeConfig.sizeGuide ? (
-                    <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-800" draggable={false} alt="Guía de tallas KURA STUDIO" />
+                    <img src={optimizeImg(storeConfig.sizeGuide, 1400)} onError={(e) => { if (storeConfig.sizeGuide && e.target.src !== storeConfig.sizeGuide) e.target.src = storeConfig.sizeGuide; }} className="w-full h-auto border border-zinc-800" decoding="async" draggable={false} alt="Guía de tallas KURA STUDIO" />
                 ) : (
                     <p className="text-zinc-500">Guía no disponible temporalmente.</p>
                 )}
@@ -30,13 +30,13 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
                         {selectedProduct.images.map((img, idx) => (
                             <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
-                                <SmoothImage src={img} className="w-full h-full object-cover" alt={`${selectedProduct.title} – imagen ${idx + 1}`} />
+                                <SmoothImage src={img} width={200} className="w-full h-full object-cover" alt={`${selectedProduct.title} – imagen ${idx + 1}`} />
                             </button>
                         ))}
                     </div>
                 )}
                 <div className="w-full border border-zinc-800 bg-zinc-950 relative">
-                    <SmoothImage src={selectedProduct.images?.[mainImageIndex]} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – KURA STUDIO`} eager />
+                    <SmoothImage src={selectedProduct.images?.[mainImageIndex]} width={900} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – KURA STUDIO`} eager />
                 </div>
             </div>
 
@@ -111,7 +111,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     {products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 4).map(item => (
                         <div key={item.id} className="brutalist-card cursor-pointer group flex flex-col" onClick={() => openProduct(item)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
-                                <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" draggable={false} />
+                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" decoding="async" draggable={false} />
                                 {item.discountPrice && item.discountPrice > 0 && (
                                     <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
                                 )}
@@ -136,7 +136,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     {products.filter(p => p.category !== selectedProduct.category).sort(() => 0.5 - Math.random()).slice(0, 4).map(item => (
                         <div key={item.id} className="brutalist-card cursor-pointer grayscale hover:grayscale-0 transition-all duration-300 flex flex-col" onClick={() => openProduct(item)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" draggable={false} />
+                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" decoding="async" draggable={false} />
                             </div>
                             <div className="p-3 flex flex-col flex-1">
                                 <p className="font-bebas text-lg truncate text-zinc-300 leading-none mb-1">{item.title}</p>

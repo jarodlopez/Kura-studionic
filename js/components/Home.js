@@ -17,7 +17,7 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
                     {storeConfig.heroSlides.map((slide, index) => (
                         <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
-                            <SmoothImage src={slide.image} className="w-full h-full object-cover scale-105" alt={slide.title ? `KURA STUDIO – ${slide.title}` : "KURA STUDIO colección"} eager={index === 0} />
+                            <SmoothImage src={slide.image} width={1600} className="w-full h-full object-cover scale-105" alt={slide.title ? `KURA STUDIO – ${slide.title}` : "KURA STUDIO colección"} eager={index === 0} />
                             <div className="absolute bottom-10 left-4 md:left-12 z-20">
                                 <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
                                 <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>
@@ -72,7 +72,7 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
                     filteredProducts.map(product => (
                         <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – KURA STUDIO`} />
+                                <SmoothImage src={product.images?.[0]} width={600} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – KURA STUDIO`} />
                                 <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
                                 {product.discountPrice && product.discountPrice > 0 && (
                                     <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>

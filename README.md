@@ -41,3 +41,16 @@ api/hubspot.js             → función serverless de Vercel
 
 - `npm run build:css` → solo el CSS
 - `npm run build:js`  → solo el JS
+
+## Imágenes (optimización automática)
+
+No requiere acción manual:
+
+- **Al subir** (desde la web o el admin): la imagen se comprime y redimensiona
+  en el navegador a WebP (~1400px, calidad 82%) antes de mandarla a ImgBB.
+  Una foto de varios MB suele quedar en ~150-250 KB. Ver `compressImage`.
+- **Al mostrar**: las imágenes de ImgBB se sirven vía `wsrv.nl` (sobre
+  Cloudflare), que las convierte a WebP y las redimensiona al ancho que pide
+  cada lugar de la web. Esto también optimiza las imágenes ya subidas, sin
+  re-subir nada. Si el proxy fallara, cada imagen cae automáticamente a su URL
+  original de ImgBB (`onError`). Ver `optimizeImg` en `js/utils.js`.
