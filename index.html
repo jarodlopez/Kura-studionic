@@ -2,9 +2,46 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KURA STUDIO</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KURA STUDIO | Ropa Streetwear Nicaragua</title>
+    <meta name="description" content="KURA STUDIO – Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua. Descubre nuestra colección de camisetas, hoodies y más.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#ff003c">
+    <link rel="canonical" href="https://kurastudio.vercel.app/">
+
+    <!-- Open Graph / Redes Sociales -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kurastudio.vercel.app/">
+    <meta property="og:title" content="KURA STUDIO | Ropa Streetwear Nicaragua">
+    <meta property="og:description" content="Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.">
+    <meta property="og:site_name" content="KURA STUDIO">
+    <meta property="og:locale" content="es_NI">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KURA STUDIO | Ropa Streetwear Nicaragua">
+    <meta name="twitter:description" content="Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.">
+
+    <!-- Datos estructurados (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ClothingStore",
+      "name": "KURA STUDIO",
+      "description": "Ropa streetwear auténtica para los fans reales. Entregas en Nicaragua en 24 a 72 horas.",
+      "url": "https://kurastudio.vercel.app/",
+      "areaServed": {
+        "@type": "Country",
+        "name": "Nicaragua"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Colección KURA STUDIO"
+      },
+      "sameAs": []
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -78,8 +115,8 @@
             </div>
         );
 
-        const SmoothImage = ({ src, className }) => (
-            <img src={src} className={`img-fade ${className}`} onLoad={(e) => e.target.classList.add('img-loaded')} alt="Kura Studio" />
+        const SmoothImage = ({ src, className, alt, eager }) => (
+            <img src={src} className={`img-fade ${className}`} onLoad={(e) => e.target.classList.add('img-loaded')} alt={alt || "KURA STUDIO"} loading={eager ? "eager" : "lazy"} />
         );
 
         function KuraStudio() {
@@ -300,7 +337,7 @@
                     <div className="flex-1 w-full max-w-[1440px] mx-auto">
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center h-[70vh] bg-black">
-                                <h1 className="text-4xl md:text-6xl font-bebas text-zinc-800 animate-pulse">CARGANDO SISTEMA...</h1>
+                                <p className="text-4xl md:text-6xl font-bebas text-zinc-800 animate-pulse">CARGANDO SISTEMA...</p>
                             </div>
                         ) : !selectedProduct ? (
                             
@@ -311,7 +348,7 @@
                                         {storeConfig.heroSlides.map((slide, index) => (
                                             <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
-                                                <SmoothImage src={slide.image} className="w-full h-full object-cover scale-105" />
+                                                <SmoothImage src={slide.image} className="w-full h-full object-cover scale-105" alt={slide.title ? `KURA STUDIO – ${slide.title}` : "KURA STUDIO colección"} eager={index === 0} />
                                                 <div className="absolute bottom-10 left-4 md:left-12 z-20">
                                                     <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
                                                     <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>
@@ -365,7 +402,7 @@
                                         filteredProducts.map(product => (
                                             <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
                                                 <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                                    <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                    <SmoothImage src={product.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – KURA STUDIO`} />
                                                     <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
                                                     {product.discountPrice && product.discountPrice > 0 && (
                                                         <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
@@ -403,13 +440,13 @@
                                             <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
                                                 {selectedProduct.images.map((img, idx) => (
                                                     <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
-                                                        <SmoothImage src={img} className="w-full h-full object-cover" />
+                                                        <SmoothImage src={img} className="w-full h-full object-cover" alt={`${selectedProduct.title} – imagen ${idx + 1}`} />
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
                                         <div className="w-full border border-zinc-800 bg-zinc-950 relative">
-                                            <SmoothImage src={selectedProduct.images?.[mainImageIndex]} className="w-full h-auto aspect-[4/5] object-cover" />
+                                            <SmoothImage src={selectedProduct.images?.[mainImageIndex]} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – KURA STUDIO`} eager />
                                         </div>
                                     </div>
 
@@ -490,7 +527,7 @@
                                                 .map(item => (
                                                     <div key={item.id} className="brutalist-card cursor-pointer group flex flex-col" onClick={() => openProduct(item)}>
                                                         <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
-                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" />
                                                             {item.discountPrice && item.discountPrice > 0 && (
                                                                 <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
                                                             )}
@@ -518,7 +555,7 @@
                                                 .map(item => (
                                                     <div key={item.id} className="brutalist-card cursor-pointer grayscale hover:grayscale-0 transition-all duration-300 flex flex-col" onClick={() => openProduct(item)}>
                                                         <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" />
+                                                            <img src={item.images?.[0]} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" />
                                                         </div>
                                                         <div className="p-3 flex flex-col flex-1">
                                                             <p className="font-bebas text-lg truncate text-zinc-300 leading-none mb-1">{item.title}</p>
