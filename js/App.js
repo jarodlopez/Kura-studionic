@@ -30,6 +30,8 @@ function KuraStudio() {
     const [popupBanners, setPopupBanners] = useState([]);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
 
+    const [confirmedOrder, setConfirmedOrder] = useState(null);
+
     const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
     useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
@@ -191,12 +193,13 @@ function KuraStudio() {
             m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
             m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
+            const whatsappUrl = `https://wa.me/50587091008?text=${encodeURIComponent(m)}`;
             setCart([]);
-            setPendingOrder(null);
             setReceiptFile(null);
             setAcceptTerms(false);
             setIsCartOpen(false);
-            window.open(`https://wa.me/50587091008?text=${encodeURIComponent(m)}`, '_blank');
+            setConfirmedOrder({ orderNumber: pendingOrder.orderNumber, customer: pendingOrder.customer, shippingZone: pendingOrder.shippingZone, total: pendingOrder.total, whatsappUrl });
+            setPendingOrder(null);
         } catch (error) {
             alert("Ocurrió un error al procesar el pago. Verifica tu conexión e intenta de nuevo.");
         }
@@ -290,6 +293,8 @@ function KuraStudio() {
                 setAcceptTerms={setAcceptTerms}
                 handleFinalizeOrder={handleFinalizeOrder}
             />
+
+            <OrderConfirmModal order={confirmedOrder} onClose={() => setConfirmedOrder(null)} />
         </div>
     );
 }
