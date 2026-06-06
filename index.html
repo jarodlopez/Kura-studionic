@@ -105,8 +105,18 @@
 
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
-        
+
         const { useState, useEffect } = React;
+
+        const trackEvent = async (type, data = {}) => {
+            try {
+                await db.collection("analytics").add({
+                    type, ...data,
+                    timestamp: new Date().toISOString(),
+                    date: new Date().toISOString().split('T')[0]
+                });
+            } catch (e) { /* never break UX by a tracking error */ }
+        };
 
         const uploadToImgBB = async (file) => {
             const fd = new FormData();
@@ -203,6 +213,10 @@
             useEffect(() => {
                 const fetchData = async () => {
                     setIsLoading(true);
+                    if (!sessionStorage.getItem('kura_session')) {
+                        sessionStorage.setItem('kura_session', '1');
+                        trackEvent('page_view');
+                    }
                     try {
                         const prodSnap = await db.collection("products").get();
                         const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -265,6 +279,7 @@
             const openProduct = (product) => {
                 setSelectedProduct(product); setSelectedSize(''); setMainImageIndex(0);
                 window.history.pushState(null, '', `?product=${product.id}`); window.scrollTo({ top: 0, behavior: 'smooth' });
+                trackEvent('product_view', { productId: product.id, productTitle: product.title, category: product.category || '' });
             };
 
             const closeProduct = () => { setSelectedProduct(null); window.history.pushState(null, '', window.location.pathname); };
@@ -274,11 +289,13 @@
                 const sizeToSave = selectedSize || 'ÚNICA';
                 setCart([...cart, { ...product, selectedSize: sizeToSave, cartId: Date.now() }]);
                 setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
+                trackEvent('add_to_cart', { productId: product.id, productTitle: product.title, price: getPrice(product) });
             };
 
             const handleProceedToPayment = (e) => {
                 e.preventDefault();
                 if (cart.length === 0) return;
+                trackEvent('checkout_started', { itemCount: cart.length, subtotal: cartSubtotal });
                 
                 const orderNum = `KURA-${Math.floor(100000 + Math.random() * 900000)}`;
                 const orderData = {
