@@ -14,7 +14,7 @@
     <meta property="og:url" content="https://kurastudio.vercel.app/">
     <meta property="og:title" content="KURA STUDIO | Ropa Streetwear Nicaragua">
     <meta property="og:description" content="Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.">
-    <meta property="og:image" content="REEMPLAZAR_CON_URL_DE_IMAGEN_OG">
+    <meta property="og:image" content="https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="KURA STUDIO – Ropa Streetwear Nicaragua">
@@ -25,7 +25,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="KURA STUDIO | Ropa Streetwear Nicaragua">
     <meta name="twitter:description" content="Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.">
-    <meta name="twitter:image" content="REEMPLAZAR_CON_URL_DE_IMAGEN_OG">
+    <meta name="twitter:image" content="https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png">
     <meta name="twitter:image:alt" content="KURA STUDIO – Ropa Streetwear Nicaragua">
 
     <!-- Datos estructurados (JSON-LD) -->
@@ -151,6 +151,16 @@
             const [isUploading, setIsUploading] = useState(false);
             const [acceptTerms, setAcceptTerms] = useState(false);
 
+            // Descuentos
+            const [discountCodes, setDiscountCodes] = useState([]);
+            const [discountInput, setDiscountInput] = useState('');
+            const [appliedDiscount, setAppliedDiscount] = useState(null);
+            const [discountError, setDiscountError] = useState('');
+
+            // Banners pop-up
+            const [popupBanners, setPopupBanners] = useState([]);
+            const [isPopupVisible, setIsPopupVisible] = useState(false);
+
             // Caché del carrito
             const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
             useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
@@ -171,7 +181,24 @@
             const shippingRates = { managua: 100, departamentos: 165 };
             const currentShippingCost = shippingRates[shippingZone] || 0;
             const cartSubtotal = cart.reduce((a, b) => a + getPrice(b), 0);
-            const cartTotal = cartSubtotal + (cart.length > 0 ? currentShippingCost : 0);
+            const discountAmount = appliedDiscount
+                ? (appliedDiscount.type === 'percent'
+                    ? Math.round(cartSubtotal * appliedDiscount.value / 100)
+                    : Math.min(appliedDiscount.value, cartSubtotal))
+                : 0;
+            const cartTotal = cartSubtotal - discountAmount + (cart.length > 0 ? currentShippingCost : 0);
+
+            const applyDiscount = () => {
+                setDiscountError('');
+                const code = discountInput.toUpperCase().trim();
+                const found = discountCodes.find(c => c.code === code && c.active);
+                if (!found) { setDiscountError('CÓDIGO INVÁLIDO O INACTIVO'); return; }
+                if (found.expiryDate && new Date(found.expiryDate) < new Date()) { setDiscountError('CÓDIGO EXPIRADO'); return; }
+                if (found.usageLimit > 0 && found.usageCount >= found.usageLimit) { setDiscountError('CÓDIGO SIN USOS DISPONIBLES'); return; }
+                setAppliedDiscount(found);
+            };
+
+            const removeDiscount = () => { setAppliedDiscount(null); setDiscountInput(''); setDiscountError(''); };
 
             useEffect(() => {
                 const fetchData = async () => {
@@ -183,6 +210,16 @@
                         
                         const confSnap = await db.collection("settings").doc("store").get();
                         if(confSnap.exists) setStoreConfig(confSnap.data());
+
+                        const codesSnap = await db.collection("discountCodes").get();
+                        setDiscountCodes(codesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+                        const bannersSnap = await db.collection("popupBanners").get();
+                        const activeBanners = bannersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(b => b.active);
+                        if (activeBanners.length > 0) {
+                            setPopupBanners(activeBanners);
+                            setTimeout(() => setIsPopupVisible(true), 2000);
+                        }
 
                         checkDynamicLink(items);
                     } catch (error) { console.error("Error conectando al sistema", error); }
@@ -249,11 +286,16 @@
                     customer: formData,
                     items: cart,
                     subtotal: cartSubtotal,
+                    discountCode: appliedDiscount ? appliedDiscount.code : null,
+                    discountAmount: discountAmount,
                     shippingZone: shippingZone === 'managua' ? 'Managua' : 'Departamentos',
                     shippingCost: currentShippingCost,
                     total: cartTotal,
                     date: new Date().toISOString()
                 };
+                if (appliedDiscount) {
+                    db.collection("discountCodes").doc(appliedDiscount.id).update({ usageCount: (appliedDiscount.usageCount || 0) + 1 });
+                }
                 setPendingOrder(orderData);
             };
 
@@ -302,6 +344,7 @@
                         m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${itemPrice}\n`; 
                     });
                     m += `\n*Subtotal:* NIO ${pendingOrder.subtotal}\n`;
+                    if (pendingOrder.discountAmount > 0) m += `*Descuento (${pendingOrder.discountCode}):* - NIO ${pendingOrder.discountAmount}\n`;
                     m += `*Envío:* NIO ${pendingOrder.shippingCost}\n`;
                     m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
                     m += `*Comprobante Adjunto:* ${receiptUrl}`;
@@ -327,6 +370,25 @@
             return (
                 <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
                     <Toast message={toastMsg} isVisible={!!toastMsg} />
+
+                    {/* BANNER POP-UP */}
+                    {isPopupVisible && popupBanners.length > 0 && (
+                        <div className="fixed inset-0 z-[200] bg-black/85 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setIsPopupVisible(false)}>
+                            <div className="relative max-w-md w-full border-2 border-kuraRed bg-black animate-slideUp shadow-[8px_8px_0px_0px_#ff003c]" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setIsPopupVisible(false)} className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-black/60 hover:bg-kuraRed text-white font-bold text-xl transition-colors leading-none border border-zinc-700">✕</button>
+                                <img src={popupBanners[0].image} className="w-full object-cover max-h-[55vh]" alt={popupBanners[0].title || 'KURA STUDIO'} />
+                                {(popupBanners[0].title || popupBanners[0].subtitle || popupBanners[0].ctaText) && (
+                                    <div className="p-6 text-center">
+                                        {popupBanners[0].title && <h2 className="font-bebas text-4xl text-white leading-none mb-2">{popupBanners[0].title}</h2>}
+                                        {popupBanners[0].subtitle && <p className="text-zinc-400 text-sm mb-4">{popupBanners[0].subtitle}</p>}
+                                        {popupBanners[0].ctaText && (
+                                            <button onClick={() => setIsPopupVisible(false)} className="brutalist-btn px-8 py-3 text-lg">{popupBanners[0].ctaText}</button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
                         <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS //</div>
@@ -644,11 +706,45 @@
                                                     
                                                     <div className="bg-zinc-950 border border-zinc-800 p-4 font-mono text-sm mb-6">
                                                         <div className="flex justify-between mb-2 text-zinc-400"><span>SUBTOTAL</span> <span>NIO {cartSubtotal}</span></div>
+                                                        {discountAmount > 0 && (
+                                                            <div className="flex justify-between mb-2 text-green-400 font-bold">
+                                                                <span>DESCUENTO ({appliedDiscount.code})</span>
+                                                                <span>- NIO {discountAmount}</span>
+                                                            </div>
+                                                        )}
                                                         <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO</span> <span>NIO {currentShippingCost}</span></div>
                                                         <div className="flex justify-between pt-3 border-t border-zinc-800 font-bebas text-2xl text-white mt-3 items-end">
                                                             <span className="text-lg">TOTAL ESTIMADO</span>
                                                             <span className="text-kuraRed text-3xl leading-none">NIO {cartTotal}</span>
                                                         </div>
+                                                    </div>
+
+                                                    {/* CÓDIGO DE DESCUENTO */}
+                                                    <div className="border border-zinc-800 p-4 bg-zinc-950 mb-6">
+                                                        <p className="text-[10px] text-zinc-500 mb-3 font-bold uppercase tracking-widest">CÓDIGO DE DESCUENTO</p>
+                                                        {appliedDiscount ? (
+                                                            <div className="flex items-center justify-between bg-kuraRed/10 border border-kuraRed p-3">
+                                                                <div>
+                                                                    <span className="text-kuraRed font-bebas text-xl">{appliedDiscount.code}</span>
+                                                                    <span className="text-green-400 text-xs font-mono ml-3">
+                                                                        {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% OFF` : `NIO ${appliedDiscount.value} OFF`}
+                                                                    </span>
+                                                                </div>
+                                                                <button type="button" onClick={removeDiscount} className="text-zinc-500 hover:text-white text-xs font-bold">✕ QUITAR</button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="INGRESA TU CÓDIGO"
+                                                                    value={discountInput}
+                                                                    onChange={e => { setDiscountInput(e.target.value.toUpperCase()); setDiscountError(''); }}
+                                                                    className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-kuraRed transition-colors font-mono tracking-widest"
+                                                                />
+                                                                <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-kuraRed hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap">APLICAR</button>
+                                                            </div>
+                                                        )}
+                                                        {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
                                                     </div>
 
                                                     <div className="mb-6">
@@ -689,6 +785,9 @@
                                                 
                                                 <div className="space-y-2 text-xs font-mono mb-6 pb-4 border-b border-zinc-800 text-zinc-400">
                                                     <div className="flex justify-between"><span>SUBTOTAL:</span><span>NIO {pendingOrder.subtotal}</span></div>
+                                                    {pendingOrder.discountAmount > 0 && (
+                                                        <div className="flex justify-between text-green-400 font-bold"><span>DESCUENTO ({pendingOrder.discountCode}):</span><span>- NIO {pendingOrder.discountAmount}</span></div>
+                                                    )}
                                                     <div className="flex justify-between"><span>ENVÍO ({pendingOrder.shippingZone}):</span><span>NIO {pendingOrder.shippingCost}</span></div>
                                                     <div className="flex justify-between text-kuraRed font-bold text-lg mt-2 pt-2 border-t border-zinc-800/50">
                                                         <span>TOTAL A PAGAR:</span><span>NIO {pendingOrder.total}</span>
