@@ -63,6 +63,17 @@
         .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: bold; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+        /* Responsive sidebar / bottom nav */
+        .admin-sidebar { display: none; flex-direction: column; width: 13rem; background: #000; border-right: 1px solid #18181b; flex-shrink: 0; }
+        .admin-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 400; background: #000; border-top: 1px solid #18181b; }
+        .admin-main-padding { padding-bottom: 5rem; }
+        .admin-saving-offset { bottom: 5.5rem; }
+        @media (min-width: 768px) {
+            .admin-sidebar { display: flex; }
+            .admin-bottom-nav { display: none; }
+            .admin-main-padding { padding-bottom: 1.5rem; }
+            .admin-saving-offset { bottom: 1.5rem; }
+        }
     </style>
 </head>
 <body>
@@ -444,8 +455,8 @@
                         ))}
                     </div>
 
-                    {/* SIDEBAR — desktop only */}
-                    <aside className="hidden md:flex w-52 bg-black border-r border-zinc-900 flex-col shrink-0">
+                    {/* SIDEBAR — desktop only (hidden on mobile via CSS) */}
+                    <aside className="admin-sidebar">
                         <div className="px-5 py-5 border-b border-zinc-900">
                             <p className="font-bebas text-xl text-white leading-none">KURA <span className="text-kuraRed">STUDIO</span></p>
                             <p className="text-[10px] text-zinc-600 font-mono tracking-[0.2em] mt-1">ADMINISTRACIÓN</p>
@@ -473,19 +484,18 @@
 
                     {/* MAIN */}
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        <header className="bg-black border-b border-zinc-900 px-4 md:px-6 h-12 md:h-14 flex items-center justify-between shrink-0">
-                            <h2 className="font-bebas text-xl md:text-2xl text-white tracking-wide">{viewTitles[view]}</h2>
+                        <header className="bg-black border-b border-zinc-900 px-4 h-12 flex items-center justify-between shrink-0">
+                            <h2 className="font-bebas text-xl text-white tracking-wide">{viewTitles[view]}</h2>
                             <div className="flex items-center gap-2">
                                 {(view === 'ORDERS' || view === 'ANALYTICS') && (
-                                    <button onClick={() => { fetchOrders(); if (view === 'ANALYTICS') fetchAnalytics(); }} className="text-[11px] font-bold text-zinc-500 hover:text-white flex items-center gap-1.5 border border-zinc-800 px-3 py-1.5 hover:border-zinc-600 transition-colors">↻</button>
+                                    <button onClick={() => { fetchOrders(); if (view === 'ANALYTICS') fetchAnalytics(); }} className="text-[11px] font-bold text-zinc-500 hover:text-white flex items-center gap-1.5 border border-zinc-800 px-3 py-1.5 hover:border-zinc-600 transition-colors">↻ ACTUALIZAR</button>
                                 )}
-                                <button onClick={handleLogout} className="md:hidden text-[10px] text-zinc-600 hover:text-red-400 transition-colors font-bold">SALIR</button>
                             </div>
                         </header>
 
-                        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+                        <main className="flex-1 overflow-y-auto p-4 admin-main-padding">
                             {isSaving && (
-                                <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl">
+                                <div className="admin-saving-offset fixed left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl">
                                     <span className="w-3 h-3 border-2 border-kuraRed border-t-transparent rounded-full animate-spin shrink-0"></span>
                                     Guardando...
                                 </div>
@@ -542,8 +552,8 @@
                         </main>
                     </div>
 
-                    {/* BOTTOM NAV — mobile only */}
-                    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[400] bg-black border-t border-zinc-800 flex">
+                    {/* BOTTOM NAV — mobile only (hidden on desktop via CSS) */}
+                    <nav className="admin-bottom-nav">
                         {navItems.map(({ id, label, icon, badge }) => (
                             <button
                                 key={id}
