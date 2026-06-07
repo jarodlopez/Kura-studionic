@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KURA STUDIO | Admin</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/admin/manifest.json">
+    <meta name="theme-color" content="#ff003c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KURA Admin">
+    <link rel="apple-touch-icon" href="/admin/icons/icon.svg">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { kuraRed: '#ff003c', kuraDark: '#050505' },
+                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] },
+                    animation: { 'slideUp': 'slideUp 0.3s ease-out' },
+                    keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } } }
+                }
+            }
+        }
+    </script>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+
+    <!-- Firebase init (plain JS — must run before Babel scripts) -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
+            authDomain: "kuranic-b1034.firebaseapp.com",
+            projectId: "kuranic-b1034",
+            storageBucket: "kuranic-b1034.firebasestorage.app"
+        };
+        const IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        var db = firebase.firestore();
+        var auth = firebase.auth();
+    </script>
+
+    <style>
+        body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; }
+        .brutalist-input { width: 100%; background: #080808; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.75rem; font-size: 0.8rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; font-family: 'Space Mono', monospace; }
+        .brutalist-input:focus { border-color: #ff003c; background: #0d0d0d; }
+        .brutalist-btn { background: #ff003c; color: black; padding: 0.65rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; letter-spacing: 0.05em; }
+        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 3px 3px 0px 0px #ff003c; }
+        .brutalist-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: bold; }
+        .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
+        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Views (loaded first so globals are defined before AdminPanel uses them) -->
+    <script type="text/babel" src="views/InventoryView.js"></script>
+    <script type="text/babel" src="views/OrdersView.js"></script>
+    <script type="text/babel" src="views/DesignView.js"></script>
+    <script type="text/babel" src="views/DiscountsView.js"></script>
+    <script type="text/babel" src="views/BannersView.js"></script>
+    <script type="text/babel" src="views/AnalyticsView.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function AdminPanel() {
+            const [user, setUser] = useState(null);
+            const [authLoading, setAuthLoading] = useState(true);
+            const [loginData, setLoginData] = useState({ email: '', password: '' });
+            const [loginError, setLoginError] = useState('');
+
+            const [view, setView] = useState(() => {
+                const p = new URLSearchParams(window.location.search).get('view');
+                return p || 'INVENTORY';
+            });
+
+            const [products, setProducts] = useState([]);
+            const [inventoryFilter, setInventoryFilter] = useState('TODAS');
+            const [formData, setFormData] = useState({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+            const [editingId, setEditingId] = useState(null);
+
+            const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: '' });
+            const [slideForm, setSlideForm] = useState({ subtitle: '', title: '', cta: '', categoryTarget: '' });
+
+            const [orders, setOrders] = useState([]);
+            const [selectedOrder, setSelectedOrder] = useState(null);
+            const [orderSearchQuery, setOrderSearchQuery] = useState('');
+
+            const [discountCodes, setDiscountCodes] = useState([]);
+            const [codeForm, setCodeForm] = useState({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
+            const [editingCodeId, setEditingCodeId] = useState(null);
+
+            const [popupBanners, setPopupBanners] = useState([]);
+            const [bannerForm, setBannerForm] = useState({ title: '', subtitle: '', ctaText: '', active: true, image: '' });
+            const [editingBannerId, setEditingBannerId] = useState(null);
+
+            const [analyticsEvents, setAnalyticsEvents] = useState([]);
+            const [analyticsRange, setAnalyticsRange] = useState('7');
+            const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+            const [isSaving, setIsSaving] = useState(false);
+            const [toasts, setToasts] = useState([]);
+
+            const showToast = (msg, type = 'success') => {
+                const id = Date.now();
+                setToasts(p => [...p, { id, msg, type }]);
+                setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+            };
+
+            // Real-time order listener for new order notifications
+            const unsubOrdersRef = useRef(null);
+
+            const startOrderListener = (currentUser) => {
+                if (unsubOrdersRef.current) return;
+                let firstSnap = true;
+                unsubOrdersRef.current = db.collection("orders")
+                    .orderBy("date", "desc")
+                    .onSnapshot(snap => {
+                        if (firstSnap) { firstSnap = false; return; }
+                        snap.docChanges().forEach(change => {
+                            if (change.type === 'added') {
+                                const order = { id: change.doc.id, ...change.doc.data() };
+                                showToast(`Nueva orden: #${order.orderNumber} — ${order.customer?.name}`);
+                                if (Notification.permission === 'granted') {
+                                    new Notification('KURA STUDIO — Nueva Orden', {
+                                        body: `#${order.orderNumber} · ${order.customer?.name} · NIO ${order.total}`,
+                                        icon: '/admin/icons/icon.svg',
+                                        tag: order.orderNumber,
+                                    });
+                                }
+                            }
+                        });
+                    });
+            };
+
+            useEffect(() => {
+                const unsubAuth = auth.onAuthStateChanged((currentUser) => {
+                    setUser(currentUser);
+                    setAuthLoading(false);
+                    if (currentUser) {
+                        fetchProducts();
+                        fetchStoreConfig();
+                        fetchOrders();
+                        fetchDiscountCodes();
+                        fetchPopupBanners();
+                        fetchAnalytics();
+                        Notification.requestPermission();
+                        startOrderListener(currentUser);
+                    } else {
+                        if (unsubOrdersRef.current) { unsubOrdersRef.current(); unsubOrdersRef.current = null; }
+                    }
+                });
+                return () => { unsubAuth(); if (unsubOrdersRef.current) unsubOrdersRef.current(); };
+            }, []);
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoginError('');
+                setIsSaving(true);
+                try {
+                    await auth.signInWithEmailAndPassword(loginData.email, loginData.password);
+                } catch (error) {
+                    setLoginError('Credenciales incorrectas o error de conexión.');
+                }
+                setIsSaving(false);
+            };
+
+            const handleLogout = async () => { await auth.signOut(); };
+
+            const fetchProducts = async () => {
+                const snap = await db.collection("products").get();
+                setProducts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            };
+
+            const fetchStoreConfig = async () => {
+                const doc = await db.collection("settings").doc("store").get();
+                if (doc.exists) setStoreConfig(doc.data());
+            };
+
+            const fetchOrders = async () => {
+                const snap = await db.collection("orders").get();
+                const fetched = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                fetched.sort((a, b) => new Date(b.date) - new Date(a.date));
+                setOrders(fetched);
+            };
+
+            const fetchDiscountCodes = async () => {
+                try {
+                    const snap = await db.collection("discountCodes").get();
+                    setDiscountCodes(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (e) { console.error(e); }
+            };
+
+            const fetchPopupBanners = async () => {
+                try {
+                    const snap = await db.collection("popupBanners").get();
+                    setPopupBanners(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (e) { console.error(e); }
+            };
+
+            const fetchAnalytics = async () => {
+                setAnalyticsLoading(true);
+                try {
+                    const snap = await db.collection("analytics").get();
+                    setAnalyticsEvents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (e) { console.error(e); setAnalyticsEvents([]); }
+                finally { setAnalyticsLoading(false); }
+            };
+
+            const compressImage = async (file, { maxDim = 1400, quality = 0.82 } = {}) => {
+                try {
+                    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+                    if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+                    const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+                    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = dataUrl; });
+                    let { width, height } = img;
+                    if (!width || !height) return file;
+                    if (width > maxDim || height > maxDim) { const s = Math.min(maxDim / width, maxDim / height); width = Math.round(width * s); height = Math.round(height * s); }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width; canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    const blob = await new Promise(res => canvas.toBlob(res, 'image/webp', quality));
+                    if (!blob || blob.size >= file.size) return file;
+                    return new File([blob], (file.name || 'img').replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
+                } catch (e) { return file; }
+            };
+
+            const uploadToImgBB = async (file) => {
+                const opt = await compressImage(file);
+                const fd = new FormData();
+                fd.append("image", opt);
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: fd });
+                const data = await res.json();
+                if (data.success) return data.data.url;
+                throw new Error("Error subiendo imagen");
+            };
+
+            const uniqueCategories = Array.from(new Set([...products.map(p => p.category), formData.category].filter(Boolean)));
+            const filteredInventory = inventoryFilter === 'TODAS' ? products : products.filter(p => p.category === inventoryFilter);
+            const filteredOrders = orders.filter(o => {
+                const q = orderSearchQuery.toLowerCase();
+                return o.orderNumber?.toLowerCase().includes(q) || o.customer?.name?.toLowerCase().includes(q) || o.customer?.phone?.toLowerCase().includes(q);
+            });
+
+            const handleProductSubmit = async (e) => {
+                e.preventDefault(); setIsSaving(true);
+                if (!formData.category) { showToast('Selecciona una categoría.', 'error'); setIsSaving(false); return; }
+                try {
+                    const data = { ...formData, price: Number(formData.price), discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null, stock: Number(formData.stock), details: formData.details.split('\n').filter(d => d) };
+                    if (editingId) await db.collection("products").doc(editingId).update(data);
+                    else await db.collection("products").add(data);
+                    setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+                    setEditingId(null); fetchProducts();
+                    showToast(editingId ? 'Prenda actualizada.' : 'Prenda añadida al catálogo.');
+                } catch (error) { showToast("Error al guardar: " + error.message, 'error'); }
+                finally { setIsSaving(false); }
+            };
+
+            const handleProductImage = async (e) => {
+                setIsSaving(true);
+                for (const file of e.target.files) {
+                    const url = await uploadToImgBB(file);
+                    setFormData(p => ({ ...p, images: [...p.images, url] }));
+                }
+                setIsSaving(false);
+            };
+
+            const saveStoreConfig = async (newConfig) => {
+                await db.collection("settings").doc("store").set(newConfig, { merge: true });
+                setStoreConfig(newConfig);
+            };
+
+            const handleSizeGuideUpload = async (e) => {
+                if (!e.target.files[0]) return;
+                setIsSaving(true);
+                const url = await uploadToImgBB(e.target.files[0]);
+                await saveStoreConfig({ ...storeConfig, sizeGuide: url });
+                setIsSaving(false);
+            };
+
+            const handleSlideAdd = async (e) => {
+                if (!e.target.files[0]) return;
+                setIsSaving(true);
+                const url = await uploadToImgBB(e.target.files[0]);
+                const newSlide = { id: Date.now(), image: url, subtitle: slideForm.subtitle.toUpperCase(), title: slideForm.title.toUpperCase(), cta: slideForm.cta.toUpperCase() || 'VER COLECCIÓN', categoryTarget: slideForm.categoryTarget };
+                await saveStoreConfig({ ...storeConfig, heroSlides: [...(storeConfig.heroSlides || []), newSlide] });
+                setSlideForm({ subtitle: '', title: '', cta: '', categoryTarget: '' });
+                setIsSaving(false);
+            };
+
+            const removeSlide = async (id) => {
+                await saveStoreConfig({ ...storeConfig, heroSlides: storeConfig.heroSlides.filter(s => s.id !== id) });
+            };
+
+            const deleteOrder = async (id) => {
+                if (!window.confirm('¿Eliminar esta orden? Esta acción no se puede deshacer.')) return;
+                try {
+                    await db.collection("orders").doc(id).delete();
+                    setOrders(prev => prev.filter(o => o.id !== id));
+                    setSelectedOrder(null);
+                    showToast('Orden eliminada.');
+                } catch (error) { showToast("Error al eliminar: " + error.message, 'error'); }
+            };
+
+            const getPrice = (product) => product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
+            const formatDate = (iso) => { if (!iso) return 'Fecha desconocida'; return new Date(iso).toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' }); };
+
+            const handleCodeSubmit = async (e) => {
+                e.preventDefault(); setIsSaving(true);
+                try {
+                    const existing = editingCodeId ? discountCodes.find(c => c.id === editingCodeId) : null;
+                    const data = { code: codeForm.code.toUpperCase().trim(), type: codeForm.type, value: Number(codeForm.value), expiryDate: codeForm.expiryDate || '', usageLimit: codeForm.usageLimit ? Number(codeForm.usageLimit) : 0, usageCount: existing ? existing.usageCount : 0, active: true, createdAt: existing ? existing.createdAt : new Date().toISOString() };
+                    if (editingCodeId) await db.collection("discountCodes").doc(editingCodeId).update(data);
+                    else await db.collection("discountCodes").add(data);
+                    setCodeForm({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
+                    setEditingCodeId(null); fetchDiscountCodes();
+                    showToast(editingCodeId ? 'Código actualizado.' : 'Código creado.');
+                } catch (error) { showToast("Error: " + error.message, 'error'); }
+                finally { setIsSaving(false); }
+            };
+
+            const deleteCode = async (id) => {
+                if (!window.confirm('¿Eliminar este código?')) return;
+                await db.collection("discountCodes").doc(id).delete(); fetchDiscountCodes();
+            };
+
+            const toggleCodeActive = async (id, current) => {
+                await db.collection("discountCodes").doc(id).update({ active: !current }); fetchDiscountCodes();
+            };
+
+            const handleBannerImageUpload = async (e) => {
+                if (!e.target.files[0]) return;
+                setIsSaving(true);
+                const url = await uploadToImgBB(e.target.files[0]);
+                setBannerForm(p => ({ ...p, image: url }));
+                setIsSaving(false);
+            };
+
+            const handleBannerSubmit = async (e) => {
+                e.preventDefault();
+                if (!bannerForm.image) return showToast('Sube una imagen para el banner.', 'error');
+                setIsSaving(true);
+                try {
+                    const existing = editingBannerId ? popupBanners.find(b => b.id === editingBannerId) : null;
+                    const data = { title: bannerForm.title.toUpperCase(), subtitle: bannerForm.subtitle, ctaText: bannerForm.ctaText.toUpperCase(), active: bannerForm.active, image: bannerForm.image, createdAt: existing ? existing.createdAt : new Date().toISOString() };
+                    if (editingBannerId) await db.collection("popupBanners").doc(editingBannerId).update(data);
+                    else await db.collection("popupBanners").add(data);
+                    setBannerForm({ title: '', subtitle: '', ctaText: '', active: true, image: '' });
+                    setEditingBannerId(null); fetchPopupBanners();
+                    showToast(editingBannerId ? 'Banner actualizado.' : 'Banner guardado.');
+                } catch (error) { showToast("Error: " + error.message, 'error'); }
+                finally { setIsSaving(false); }
+            };
+
+            const deleteBanner = async (id) => {
+                if (!window.confirm('¿Eliminar este banner?')) return;
+                await db.collection("popupBanners").doc(id).delete(); fetchPopupBanners();
+            };
+
+            const toggleBannerActive = async (id, current) => {
+                await db.collection("popupBanners").doc(id).update({ active: !current }); fetchPopupBanners();
+            };
+
+            if (authLoading) return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-kuraRed animate-pulse">VERIFICANDO SISTEMA...</div>;
+
+            if (!user) {
+                return (
+                    <div className="min-h-screen bg-black flex justify-center items-center px-4" style={{ backgroundImage: 'linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+                        <div className="w-full max-w-sm">
+                            <div className="text-center mb-8">
+                                <h1 className="font-bebas text-6xl text-white leading-none">KURA<span className="text-kuraRed">STUDIO</span></h1>
+                                <p className="text-zinc-600 font-mono text-[11px] tracking-[0.3em] mt-2">PANEL DE ADMINISTRACIÓN</p>
+                            </div>
+                            <div className="bg-zinc-950 border border-zinc-800 p-8">
+                                {loginError && (
+                                    <div className="flex items-center gap-2 bg-red-950/50 border border-red-900 text-red-300 text-xs p-3 mb-5 font-mono">
+                                        <span className="text-red-500">✕</span> {loginError}
+                                    </div>
+                                )}
+                                <form onSubmit={handleLogin} className="space-y-5">
+                                    <div>
+                                        <label className="text-[10px] text-zinc-500 font-bold tracking-widest block mb-1.5">CORREO</label>
+                                        <input type="email" required className="brutalist-input" value={loginData.email} onChange={e => setLoginData({ ...loginData, email: e.target.value })} />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-zinc-500 font-bold tracking-widest block mb-1.5">CONTRASEÑA</label>
+                                        <input type="password" required className="brutalist-input" value={loginData.password} onChange={e => setLoginData({ ...loginData, password: e.target.value })} />
+                                    </div>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-2 flex items-center justify-center gap-2">
+                                        {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
+                                        {isSaving ? 'CONECTANDO...' : 'ENTRAR AL SISTEMA'}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const navItems = [
+                { id: 'INVENTORY', label: 'Inventario',  icon: '▣' },
+                { id: 'DESIGN',    label: 'Diseño Web',  icon: '◈' },
+                { id: 'ORDERS',    label: 'Órdenes',     icon: '≡', badge: orders.length },
+                { id: 'DISCOUNTS', label: 'Descuentos',  icon: '◇' },
+                { id: 'BANNERS',   label: 'Pop-ups',     icon: '▭' },
+                { id: 'ANALYTICS', label: 'Analytics',   icon: '▦' },
+            ];
+
+            const viewTitles = { INVENTORY: 'INVENTARIO', DESIGN: 'DISEÑO WEB', ORDERS: 'ÓRDENES', DISCOUNTS: 'DESCUENTOS', BANNERS: 'POP-UPS', ANALYTICS: 'ANALYTICS' };
+
+            return (
+                <div className="h-screen flex overflow-hidden bg-zinc-950">
+                    {/* TOASTS */}
+                    <div className="fixed top-4 right-4 z-[500] flex flex-col gap-2 w-72 pointer-events-none">
+                        {toasts.map(t => (
+                            <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-kuraRed text-white'}`}>
+                                <span className={`text-base shrink-0 ${t.type === 'error' ? 'text-red-500' : 'text-kuraRed'}`}>{t.type === 'error' ? '✕' : '✓'}</span>
+                                <span className="leading-tight">{t.msg}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* SIDEBAR */}
+                    <aside className="w-52 bg-black border-r border-zinc-900 flex flex-col shrink-0">
+                        <div className="px-5 py-5 border-b border-zinc-900">
+                            <p className="font-bebas text-xl text-white leading-none">KURA <span className="text-kuraRed">STUDIO</span></p>
+                            <p className="text-[10px] text-zinc-600 font-mono tracking-[0.2em] mt-1">ADMINISTRACIÓN</p>
+                        </div>
+                        <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+                            {navItems.map(({ id, label, icon, badge }) => (
+                                <button
+                                    key={id}
+                                    onClick={() => {
+                                        setView(id);
+                                        if (id === 'ORDERS') fetchOrders();
+                                        if (id === 'DISCOUNTS') fetchDiscountCodes();
+                                        if (id === 'BANNERS') fetchPopupBanners();
+                                        if (id === 'ANALYTICS') { fetchAnalytics(); fetchOrders(); }
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold rounded-sm transition-all text-left ${view === id ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/60'}`}
+                                >
+                                    <span className={`text-sm ${view === id ? 'text-kuraRed' : 'text-zinc-700'}`}>{icon}</span>
+                                    {label}
+                                    {badge !== undefined && (
+                                        <span className={`ml-auto text-[10px] px-1.5 py-0.5 font-mono ${view === id ? 'bg-kuraRed text-black' : 'bg-zinc-900 text-zinc-500'}`}>{badge}</span>
+                                    )}
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t border-zinc-900">
+                            <p className="text-[10px] text-zinc-600 font-mono truncate mb-2">{user.email}</p>
+                            <button onClick={handleLogout} className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors font-bold tracking-widest">CERRAR SESIÓN →</button>
+                        </div>
+                    </aside>
+
+                    {/* MAIN */}
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <header className="bg-black border-b border-zinc-900 px-6 h-14 flex items-center justify-between shrink-0">
+                            <h2 className="font-bebas text-2xl text-white tracking-wide">{viewTitles[view]}</h2>
+                            <div className="flex items-center gap-2">
+                                {(view === 'ORDERS' || view === 'ANALYTICS') && (
+                                    <button onClick={() => { fetchOrders(); if (view === 'ANALYTICS') fetchAnalytics(); }} className="text-[11px] font-bold text-zinc-500 hover:text-white flex items-center gap-1.5 border border-zinc-800 px-3 py-1.5 hover:border-zinc-600 transition-colors">↻ ACTUALIZAR</button>
+                                )}
+                            </div>
+                        </header>
+
+                        <main className="flex-1 overflow-y-auto p-6">
+                            {isSaving && (
+                                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl">
+                                    <span className="w-3 h-3 border-2 border-kuraRed border-t-transparent rounded-full animate-spin shrink-0"></span>
+                                    Guardando en servidor...
+                                </div>
+                            )}
+
+                            {view === 'INVENTORY' && (
+                                <window.InventoryView
+                                    products={products} formData={formData} setFormData={setFormData}
+                                    editingId={editingId} setEditingId={setEditingId}
+                                    handleProductSubmit={handleProductSubmit} handleProductImage={handleProductImage}
+                                    isSaving={isSaving} uniqueCategories={uniqueCategories}
+                                    filteredInventory={filteredInventory} inventoryFilter={inventoryFilter}
+                                    setInventoryFilter={setInventoryFilter} fetchProducts={fetchProducts} db={db}
+                                />
+                            )}
+                            {view === 'DESIGN' && (
+                                <window.DesignView
+                                    storeConfig={storeConfig} slideForm={slideForm} setSlideForm={setSlideForm}
+                                    uniqueCategories={uniqueCategories} handleSizeGuideUpload={handleSizeGuideUpload}
+                                    handleSlideAdd={handleSlideAdd} removeSlide={removeSlide} isSaving={isSaving}
+                                />
+                            )}
+                            {view === 'ORDERS' && (
+                                <window.OrdersView
+                                    orders={orders} filteredOrders={filteredOrders}
+                                    selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder}
+                                    orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery}
+                                    deleteOrder={deleteOrder} formatDate={formatDate} getPrice={getPrice}
+                                />
+                            )}
+                            {view === 'DISCOUNTS' && (
+                                <window.DiscountsView
+                                    discountCodes={discountCodes} codeForm={codeForm} setCodeForm={setCodeForm}
+                                    editingCodeId={editingCodeId} setEditingCodeId={setEditingCodeId}
+                                    handleCodeSubmit={handleCodeSubmit} deleteCode={deleteCode}
+                                    toggleCodeActive={toggleCodeActive} isSaving={isSaving}
+                                />
+                            )}
+                            {view === 'BANNERS' && (
+                                <window.BannersView
+                                    popupBanners={popupBanners} bannerForm={bannerForm} setBannerForm={setBannerForm}
+                                    editingBannerId={editingBannerId} setEditingBannerId={setEditingBannerId}
+                                    handleBannerSubmit={handleBannerSubmit} handleBannerImageUpload={handleBannerImageUpload}
+                                    deleteBanner={deleteBanner} toggleBannerActive={toggleBannerActive} isSaving={isSaving}
+                                />
+                            )}
+                            {view === 'ANALYTICS' && (
+                                <window.AnalyticsView
+                                    analyticsEvents={analyticsEvents} analyticsRange={analyticsRange}
+                                    setAnalyticsRange={setAnalyticsRange} analyticsLoading={analyticsLoading}
+                                    orders={orders} fetchAnalytics={fetchAnalytics} fetchOrders={fetchOrders}
+                                />
+                            )}
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AdminPanel />);
+    </script>
+
+    <!-- Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/admin/sw.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.error('SW error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
