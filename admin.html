@@ -297,6 +297,17 @@
             };
 
             /* === LÓGICA DE ÓRDENES === */
+            const deleteOrder = async (id) => {
+                if (!window.confirm('¿Eliminar esta orden? Esta acción no se puede deshacer.')) return;
+                try {
+                    await db.collection("orders").doc(id).delete();
+                    setOrders(prev => prev.filter(o => o.id !== id));
+                    setSelectedOrder(null);
+                } catch (error) {
+                    alert("Error al eliminar la orden: " + error.message);
+                }
+            };
+
             const getPrice = (product) => {
                 return product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
             };
@@ -451,7 +462,10 @@
                                             <h2 className="font-bebas text-4xl text-kuraRed leading-none">ORDEN {selectedOrder.orderNumber}</h2>
                                             <p className="text-zinc-500 text-xs mt-1">{formatDate(selectedOrder.date)}</p>
                                         </div>
-                                        <button onClick={() => setSelectedOrder(null)} className="text-zinc-500 hover:text-white font-bold text-xl">✕</button>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => deleteOrder(selectedOrder.id)} className="text-xs border border-red-900 text-red-500 px-3 py-1 hover:bg-red-900 hover:text-white transition-colors">ELIMINAR ORDEN</button>
+                                            <button onClick={() => setSelectedOrder(null)} className="text-zinc-500 hover:text-white font-bold text-xl">✕</button>
+                                        </div>
                                     </div>
 
                                     <div className="mb-6 bg-black p-4 border border-zinc-800">
@@ -767,7 +781,7 @@
                                                     <th className="px-4 py-3">Cliente</th>
                                                     <th className="px-4 py-3">Zona</th>
                                                     <th className="px-4 py-3">Total (NIO)</th>
-                                                    <th className="px-4 py-3 text-center">Acción</th>
+                                                    <th className="px-4 py-3 text-center">Acciones</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-800">
@@ -781,9 +795,14 @@
                                                         </td>
                                                         <td className="px-4 py-4 text-kuraRed font-bold">{order.total}</td>
                                                         <td className="px-4 py-4 text-center">
-                                                            <button onClick={() => setSelectedOrder(order)} className="bg-zinc-800 hover:bg-kuraRed hover:text-black text-white px-4 py-2 text-xs transition-colors font-bold border border-zinc-700 hover:border-kuraRed">
-                                                                VER DETALLES
-                                                            </button>
+                                                            <div className="flex gap-2 justify-center">
+                                                                <button onClick={() => setSelectedOrder(order)} className="bg-zinc-800 hover:bg-kuraRed hover:text-black text-white px-4 py-2 text-xs transition-colors font-bold border border-zinc-700 hover:border-kuraRed">
+                                                                    VER DETALLES
+                                                                </button>
+                                                                <button onClick={() => deleteOrder(order.id)} className="px-3 py-2 text-xs border border-zinc-800 text-zinc-500 hover:bg-red-900 hover:text-white hover:border-red-800 transition-colors" title="Eliminar orden">
+                                                                    ✕
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 ))}

@@ -148,9 +148,6 @@ function KuraStudio() {
             total: cartTotal,
             date: new Date().toISOString()
         };
-        if (appliedDiscount) {
-            db.collection("discountCodes").doc(appliedDiscount.id).update({ usageCount: (appliedDiscount.usageCount || 0) + 1 });
-        }
         setPendingOrder(orderData);
     };
 
@@ -194,9 +191,16 @@ function KuraStudio() {
             m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
             const whatsappUrl = `https://wa.me/50587091008?text=${encodeURIComponent(m)}`;
+            if (appliedDiscount) {
+                db.collection("discountCodes").doc(appliedDiscount.id).update({
+                    usageCount: firebase.firestore.FieldValue.increment(1)
+                });
+            }
             setCart([]);
             setReceiptFile(null);
             setAcceptTerms(false);
+            setAppliedDiscount(null);
+            setDiscountInput('');
             setIsCartOpen(false);
             setConfirmedOrder({ orderNumber: pendingOrder.orderNumber, customer: pendingOrder.customer, shippingZone: pendingOrder.shippingZone, total: pendingOrder.total, whatsappUrl });
             setPendingOrder(null);
