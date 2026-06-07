@@ -133,12 +133,13 @@
     <div id="root"></div>
 
     <!-- Views (loaded first so globals are defined before AdminPanel uses them) -->
-    <script type="text/babel" src="views/InventoryView.js"></script>
-    <script type="text/babel" src="views/OrdersView.js"></script>
-    <script type="text/babel" src="views/DesignView.js"></script>
-    <script type="text/babel" src="views/DiscountsView.js"></script>
-    <script type="text/babel" src="views/BannersView.js"></script>
-    <script type="text/babel" src="views/AnalyticsView.js"></script>
+    <!-- ?v= cache-busting: bump on every view change to defeat browser HTTP cache -->
+    <script type="text/babel" src="views/InventoryView.js?v=4"></script>
+    <script type="text/babel" src="views/OrdersView.js?v=4"></script>
+    <script type="text/babel" src="views/DesignView.js?v=4"></script>
+    <script type="text/babel" src="views/DiscountsView.js?v=4"></script>
+    <script type="text/babel" src="views/BannersView.js?v=4"></script>
+    <script type="text/babel" src="views/AnalyticsView.js?v=4"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;

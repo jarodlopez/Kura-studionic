@@ -1,14 +1,14 @@
-const CACHE = 'kura-admin-v3';
+const CACHE = 'kura-admin-v4';
 
 const PRECACHE = [
   '/admin/',
   '/admin/index.html',
-  '/admin/views/InventoryView.js',
-  '/admin/views/OrdersView.js',
-  '/admin/views/DesignView.js',
-  '/admin/views/DiscountsView.js',
-  '/admin/views/BannersView.js',
-  '/admin/views/AnalyticsView.js',
+  '/admin/views/InventoryView.js?v=4',
+  '/admin/views/OrdersView.js?v=4',
+  '/admin/views/DesignView.js?v=4',
+  '/admin/views/DiscountsView.js?v=4',
+  '/admin/views/BannersView.js?v=4',
+  '/admin/views/AnalyticsView.js?v=4',
   '/admin/icons/icon.svg',
 ];
 
@@ -27,11 +27,19 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Network-first: siempre datos frescos de Firebase
+// Network-first: siempre datos frescos. Para HTML/JS de la app forzamos
+// cache: 'reload' para saltarnos el cache HTTP del navegador (evita servir
+// vistas viejas tras un deploy).
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  const isAppAsset = url.origin === self.location.origin &&
+    (url.pathname.endsWith('.html') || url.pathname.endsWith('.js') || url.pathname.endsWith('/'));
+  const req = isAppAsset
+    ? new Request(e.request.url, { cache: 'reload', credentials: 'same-origin' })
+    : e.request;
   e.respondWith(
-    fetch(e.request)
+    fetch(req)
       .then(res => {
         const clone = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, clone));
