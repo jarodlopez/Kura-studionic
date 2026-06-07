@@ -152,20 +152,30 @@
             };
 
             const fetchDiscountCodes = async () => {
-                const snapshot = await db.collection("discountCodes").get();
-                setDiscountCodes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                try {
+                    const snapshot = await db.collection("discountCodes").get();
+                    setDiscountCodes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (error) { console.error("Error cargando códigos:", error); }
             };
 
             const fetchPopupBanners = async () => {
-                const snapshot = await db.collection("popupBanners").get();
-                setPopupBanners(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                try {
+                    const snapshot = await db.collection("popupBanners").get();
+                    setPopupBanners(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (error) { console.error("Error cargando banners:", error); }
             };
 
             const fetchAnalytics = async () => {
                 setAnalyticsLoading(true);
-                const snapshot = await db.collection("analytics").get();
-                setAnalyticsEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                setAnalyticsLoading(false);
+                try {
+                    const snapshot = await db.collection("analytics").get();
+                    setAnalyticsEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                } catch (error) {
+                    console.error("Error cargando analytics:", error);
+                    setAnalyticsEvents([]);
+                } finally {
+                    setAnalyticsLoading(false);
+                }
             };
 
             // Comprime y redimensiona la imagen (WebP, ~1400px máx) antes de subir.
@@ -224,25 +234,17 @@
             /* === LÓGICA DE INVENTARIO === */
             const handleProductSubmit = async (e) => {
                 e.preventDefault(); setIsSaving(true);
-                
-                if(!formData.category) {
-                    alert("Por favor selecciona o añade una categoría.");
-                    setIsSaving(false); return;
-                }
-
-                const data = { 
-                    ...formData, 
-                    price: Number(formData.price), 
-                    discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null,
-                    stock: Number(formData.stock), 
-                    details: formData.details.split('\n').filter(d=>d) 
-                };
-
-                if (editingId) await db.collection("products").doc(editingId).update(data);
-                else await db.collection("products").add(data);
-                
-                setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
-                setEditingId(null); fetchProducts(); setIsSaving(false);
+                if(!formData.category) { alert("Por favor selecciona o añade una categoría."); setIsSaving(false); return; }
+                try {
+                    const data = { ...formData, price: Number(formData.price), discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null, stock: Number(formData.stock), details: formData.details.split('\n').filter(d=>d) };
+                    if (editingId) await db.collection("products").doc(editingId).update(data);
+                    else await db.collection("products").add(data);
+                    setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+                    setEditingId(null); fetchProducts();
+                } catch (error) {
+                    console.error("Error guardando producto:", error);
+                    alert("Error al guardar: " + error.message);
+                } finally { setIsSaving(false); }
             };
 
             const handleProductImage = async (e) => {
@@ -317,26 +319,32 @@
             const handleCodeSubmit = async (e) => {
                 e.preventDefault();
                 setIsSaving(true);
-                const existing = editingCodeId ? discountCodes.find(c => c.id === editingCodeId) : null;
-                const data = {
-                    code: codeForm.code.toUpperCase().trim(),
-                    type: codeForm.type,
-                    value: Number(codeForm.value),
-                    expiryDate: codeForm.expiryDate || '',
-                    usageLimit: codeForm.usageLimit ? Number(codeForm.usageLimit) : 0,
-                    usageCount: existing ? existing.usageCount : 0,
-                    active: true,
-                    createdAt: existing ? existing.createdAt : new Date().toISOString()
-                };
-                if (editingCodeId) {
-                    await db.collection("discountCodes").doc(editingCodeId).update(data);
-                } else {
-                    await db.collection("discountCodes").add(data);
+                try {
+                    const existing = editingCodeId ? discountCodes.find(c => c.id === editingCodeId) : null;
+                    const data = {
+                        code: codeForm.code.toUpperCase().trim(),
+                        type: codeForm.type,
+                        value: Number(codeForm.value),
+                        expiryDate: codeForm.expiryDate || '',
+                        usageLimit: codeForm.usageLimit ? Number(codeForm.usageLimit) : 0,
+                        usageCount: existing ? existing.usageCount : 0,
+                        active: true,
+                        createdAt: existing ? existing.createdAt : new Date().toISOString()
+                    };
+                    if (editingCodeId) {
+                        await db.collection("discountCodes").doc(editingCodeId).update(data);
+                    } else {
+                        await db.collection("discountCodes").add(data);
+                    }
+                    setCodeForm({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
+                    setEditingCodeId(null);
+                    fetchDiscountCodes();
+                } catch (error) {
+                    console.error("Error guardando código:", error);
+                    alert("Error al guardar el código: " + error.message);
+                } finally {
+                    setIsSaving(false);
                 }
-                setCodeForm({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
-                setEditingCodeId(null);
-                fetchDiscountCodes();
-                setIsSaving(false);
             };
 
             const deleteCode = async (id) => {
@@ -363,24 +371,30 @@
                 e.preventDefault();
                 if (!bannerForm.image) return alert('Sube una imagen para el banner.');
                 setIsSaving(true);
-                const existing = editingBannerId ? popupBanners.find(b => b.id === editingBannerId) : null;
-                const data = {
-                    title: bannerForm.title.toUpperCase(),
-                    subtitle: bannerForm.subtitle,
-                    ctaText: bannerForm.ctaText.toUpperCase(),
-                    active: bannerForm.active,
-                    image: bannerForm.image,
-                    createdAt: existing ? existing.createdAt : new Date().toISOString()
-                };
-                if (editingBannerId) {
-                    await db.collection("popupBanners").doc(editingBannerId).update(data);
-                } else {
-                    await db.collection("popupBanners").add(data);
+                try {
+                    const existing = editingBannerId ? popupBanners.find(b => b.id === editingBannerId) : null;
+                    const data = {
+                        title: bannerForm.title.toUpperCase(),
+                        subtitle: bannerForm.subtitle,
+                        ctaText: bannerForm.ctaText.toUpperCase(),
+                        active: bannerForm.active,
+                        image: bannerForm.image,
+                        createdAt: existing ? existing.createdAt : new Date().toISOString()
+                    };
+                    if (editingBannerId) {
+                        await db.collection("popupBanners").doc(editingBannerId).update(data);
+                    } else {
+                        await db.collection("popupBanners").add(data);
+                    }
+                    setBannerForm({ title: '', subtitle: '', ctaText: '', active: true, image: '' });
+                    setEditingBannerId(null);
+                    fetchPopupBanners();
+                } catch (error) {
+                    console.error("Error guardando banner:", error);
+                    alert("Error al guardar el banner: " + error.message);
+                } finally {
+                    setIsSaving(false);
                 }
-                setBannerForm({ title: '', subtitle: '', ctaText: '', active: true, image: '' });
-                setEditingBannerId(null);
-                fetchPopupBanners();
-                setIsSaving(false);
             };
 
             const deleteBanner = async (id) => {
