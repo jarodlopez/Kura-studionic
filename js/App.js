@@ -148,9 +148,6 @@ function KuraStudio() {
             total: cartTotal,
             date: new Date().toISOString()
         };
-        if (appliedDiscount) {
-            db.collection("discountCodes").doc(appliedDiscount.id).update({ usageCount: (appliedDiscount.usageCount || 0) + 1 });
-        }
         setPendingOrder(orderData);
     };
 
@@ -194,9 +191,16 @@ function KuraStudio() {
             m += `*Comprobante Adjunto:* ${receiptUrl}`;
 
             const whatsappUrl = `https://wa.me/50587091008?text=${encodeURIComponent(m)}`;
+            if (appliedDiscount) {
+                db.collection("discountCodes").doc(appliedDiscount.id).update({
+                    usageCount: firebase.firestore.FieldValue.increment(1)
+                });
+            }
             setCart([]);
             setReceiptFile(null);
             setAcceptTerms(false);
+            setAppliedDiscount(null);
+            setDiscountInput('');
             setIsCartOpen(false);
             setConfirmedOrder({ orderNumber: pendingOrder.orderNumber, customer: pendingOrder.customer, shippingZone: pendingOrder.shippingZone, total: pendingOrder.total, whatsappUrl });
             setPendingOrder(null);
@@ -220,7 +224,7 @@ function KuraStudio() {
 
             <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
                 <div className="cursor-pointer" onClick={closeProduct}>
-                    <h1 className="text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
+                    <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                 </div>
                 <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2 relative text-xs md:text-sm">
                     {pendingOrder && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-kuraRed"></span></span>}
