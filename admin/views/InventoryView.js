@@ -2,12 +2,31 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
     handleProductSubmit, handleProductImage, isSaving, uniqueCategories,
     filteredInventory, inventoryFilter, setInventoryFilter, fetchProducts, db }) => {
 
-    return (
-        <div className="flex flex-col lg:flex-row gap-8">
-            <form onSubmit={handleProductSubmit} className="w-full lg:w-1/3 space-y-4 bg-zinc-950 p-6 border border-zinc-800 h-max sticky top-0">
-                <div className="flex justify-between items-end border-b border-zinc-800 pb-4">
+    const [formOpen, setFormOpen] = React.useState(false);
+    const closeForm = () => setFormOpen(false);
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+        closeForm();
+    };
+
+    const renderForm = () => (
+        <form onSubmit={(e) => { handleProductSubmit(e); closeForm(); }} className="space-y-4 bg-zinc-950 h-max">
+            {/* Mobile sheet header — sticky at top inside sheet */}
+            <div className="form-sheet-header flex items-center justify-between px-4 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
+                <h3 className="font-bebas text-2xl text-kuraRed">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h3>
+                <div className="flex items-center gap-3">
+                    {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
+                    <button type="button" onClick={closeForm} className="text-zinc-400 text-xl font-bold p-1 leading-none">✕</button>
+                </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+                {/* Desktop header (only visible in desk-form, not in sheet since sheet-header covers it) */}
+                <div className="hidden-in-sheet flex justify-between items-end border-b border-zinc-800 pb-4">
                     <h2 className="font-bebas text-3xl text-kuraRed">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h2>
-                    {editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] }); }} className="text-xs text-zinc-500 underline">Cancelar Edición</button>}
+                    {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar Edición</button>}
                 </div>
 
                 <input required placeholder="TÍTULO (Ej: OVERSIZED TEE BLACK)" className="brutalist-input" value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value.toUpperCase() })} />
@@ -22,9 +41,9 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                             setFormData({ ...formData, category: e.target.value });
                         }
                     }}>
-                        <option value="" disabled>SELECCIONAR CATEGORÍA...</option>
+                        <option value="" disabled>CATEGORÍA...</option>
                         {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="NEW_CAT" className="text-kuraRed font-bold">+ AÑADIR NUEVA CATEGORÍA</option>
+                        <option value="NEW_CAT" className="text-kuraRed font-bold">+ NUEVA CATEGORÍA</option>
                     </select>
                 </div>
 
@@ -34,8 +53,8 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                         <input required type="number" className="brutalist-input mt-0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
                     </div>
                     <div className="w-1/2">
-                        <label className="text-[10px] text-kuraRed font-bold block mb-1">PRECIO DESCUENTO (Opcional)</label>
-                        <input type="number" placeholder="Ej: 500" className="brutalist-input mt-0" value={formData.discountPrice} onChange={e => setFormData({ ...formData, discountPrice: e.target.value })} />
+                        <label className="text-[10px] text-kuraRed font-bold block mb-1">PRECIO DESCUENTO</label>
+                        <input type="number" placeholder="Opcional" className="brutalist-input mt-0" value={formData.discountPrice} onChange={e => setFormData({ ...formData, discountPrice: e.target.value })} />
                     </div>
                 </div>
 
@@ -61,64 +80,85 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                     </div>
                 </div>
 
-                <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4 flex items-center justify-center gap-2">
+                <button type="submit" disabled={isSaving} className="brutalist-btn w-full flex items-center justify-center gap-2">
                     {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
                     {editingId ? 'ACTUALIZAR PRENDA' : 'AÑADIR AL CATÁLOGO'}
                 </button>
-            </form>
+            </div>
+        </form>
+    );
 
-            <div className="w-full lg:w-2/3 flex flex-col h-max">
-                <div className="bg-black border border-zinc-800 p-4 mb-4 flex flex-wrap gap-2 items-center">
-                    <span className="text-xs text-zinc-500 font-bold mr-2">FILTRAR POR:</span>
-                    <button onClick={() => setInventoryFilter('TODAS')} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === 'TODAS' ? 'active' : ''}`}>TODAS</button>
-                    {uniqueCategories.map(cat => (
-                        <button key={cat} onClick={() => setInventoryFilter(cat)} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === cat ? 'active' : ''}`}>{cat}</button>
-                    ))}
+    return (
+        <div className="view-animate">
+            {/* Mobile form sheet */}
+            <div className={`form-sheet ${formOpen ? 'is-open' : ''}`}>
+                {renderForm()}
+            </div>
+
+            <div className="flex gap-6">
+                {/* Desktop sidebar form */}
+                <div className="desk-form border border-zinc-800 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 6rem)' }}>
+                    {renderForm()}
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filteredInventory.map(p => (
-                        <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
-                            <div className="relative aspect-[4/5] bg-black border-b border-zinc-800 overflow-hidden">
-                                <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                                {p.discountPrice && p.discountPrice > 0 && (
-                                    <span className="absolute top-2 right-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
-                                )}
-                                <span className="absolute top-2 left-2 bg-white text-black text-[10px] font-bold px-2 py-1">{p.category}</span>
-                            </div>
-                            <div className="p-3 flex-1 flex flex-col">
-                                <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
-                                {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
-                                <div className="mt-auto">
-                                    {p.discountPrice && p.discountPrice > 0 ? (
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
-                                            <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
-                                        </div>
-                                    ) : (
-                                        <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                {/* List */}
+                <div className="flex-1 min-w-0 flex flex-col">
+                    <div className="bg-black border border-zinc-800 p-4 mb-4 flex flex-wrap gap-2 items-center">
+                        <span className="text-xs text-zinc-500 font-bold mr-2">FILTRAR:</span>
+                        <button onClick={() => setInventoryFilter('TODAS')} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === 'TODAS' ? 'active' : ''}`}>TODAS</button>
+                        {uniqueCategories.map(cat => (
+                            <button key={cat} onClick={() => setInventoryFilter(cat)} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === cat ? 'active' : ''}`}>{cat}</button>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+                        {filteredInventory.map(p => (
+                            <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
+                                <div className="relative bg-black border-b border-zinc-800 overflow-hidden" style={{ aspectRatio: '4/5' }}>
+                                    <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                    {p.discountPrice && p.discountPrice > 0 && (
+                                        <span className="absolute top-2 right-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
                                     )}
+                                    <span className="absolute top-2 left-2 bg-white text-black text-[10px] font-bold px-2 py-1">{p.category}</span>
+                                </div>
+                                <div className="p-3 flex-1 flex flex-col">
+                                    <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
+                                    {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
+                                    <div className="mt-auto">
+                                        {p.discountPrice && p.discountPrice > 0 ? (
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
+                                                <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex border-t border-zinc-800">
+                                    <button onClick={() => {
+                                        setEditingId(p.id);
+                                        setFormData({ title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '', category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'), sizes: p.sizes || [], stock: p.stock || '', images: p.images || [] });
+                                        setFormOpen(true);
+                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
+                                    <button onClick={async () => {
+                                        if (window.confirm('¿Seguro que quieres borrar esta prenda?')) {
+                                            await db.collection('products').doc(p.id).delete(); fetchProducts();
+                                        }
+                                    }} className="flex-1 text-xs text-red-500 font-bold py-2 hover:bg-red-900 transition-colors">ELIMINAR</button>
                                 </div>
                             </div>
-                            <div className="flex border-t border-zinc-800">
-                                <button onClick={() => {
-                                    setEditingId(p.id);
-                                    setFormData({ title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '', category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'), sizes: p.sizes || [], stock: p.stock || '', images: p.images || [] });
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
-                                <button onClick={async () => {
-                                    if (window.confirm('¿Seguro que quieres borrar esta prenda?')) {
-                                        await db.collection('products').doc(p.id).delete(); fetchProducts();
-                                    }
-                                }} className="flex-1 text-xs text-red-500 font-bold py-2 hover:bg-red-900 transition-colors">ELIMINAR</button>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+                    {filteredInventory.length === 0 && (
+                        <p className="text-center text-zinc-600 py-10 font-bebas text-2xl tracking-widest">NO HAY PRENDAS EN ESTA CATEGORÍA</p>
+                    )}
                 </div>
-                {filteredInventory.length === 0 && (
-                    <p className="text-center text-zinc-600 py-10 font-bebas text-2xl tracking-widest">NO HAY PRENDAS EN ESTA CATEGORÍA</p>
-                )}
             </div>
+
+            {/* FAB — mobile only */}
+            <button className="fab" onClick={() => { setEditingId(null); setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] }); setFormOpen(true); }}>+</button>
         </div>
     );
 };

@@ -63,6 +63,7 @@
         .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: bold; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
+
         /* Responsive sidebar / bottom nav */
         .admin-sidebar { display: none; flex-direction: column; width: 13rem; background: #000; border-right: 1px solid #18181b; flex-shrink: 0; }
         .admin-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 400; background: #000; border-top: 1px solid #18181b; }
@@ -73,6 +74,58 @@
             .admin-bottom-nav { display: none; }
             .admin-main-padding { padding-bottom: 1.5rem; }
             .admin-saving-offset { bottom: 1.5rem; }
+        }
+
+        /* Safe area iPhone X+ */
+        .admin-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+        /* Form slide-up sheet (mobile) */
+        .form-sheet {
+            position: fixed; inset: 0; z-index: 300; background: #09090b;
+            overflow-y: auto; transform: translateY(100%);
+            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+        .form-sheet.is-open { transform: translateY(0); }
+
+        /* Desktop form sidebar (hidden on mobile) */
+        .desk-form { display: none; }
+
+        /* Floating action button (mobile only) */
+        .fab {
+            position: fixed; bottom: 5rem; right: 1rem; z-index: 250;
+            width: 56px; height: 56px; background: #ff003c; color: #000;
+            border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; font-weight: 900;
+            box-shadow: 0 4px 20px rgba(255,0,60,0.55);
+            transition: transform 0.15s; touch-action: manipulation;
+        }
+        .fab:active { transform: scale(0.9); }
+
+        /* Orders: cards on mobile, table on desktop */
+        .order-cards { display: flex; flex-direction: column; gap: 0.5rem; }
+        .order-table-wrap { display: none; }
+
+        /* View slide-in animation */
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+        .view-animate { animation: fadeSlideIn 0.22s ease-out; }
+
+        /* Analytics KPI grid: 4 cols on desktop */
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+        /* Hidden in sheet: desktop-only inner header (hidden on mobile, visible on desktop inside desk-form) */
+        .form-sheet .hidden-in-sheet { display: none; }
+        .desk-form .form-sheet-header { display: none; }
+
+        @media (min-width: 768px) {
+            .form-sheet { display: none !important; }
+            .desk-form { display: flex; flex-direction: column; width: 33.333%; min-width: 280px; max-width: 380px; flex-shrink: 0; }
+            .fab { display: none; }
+            .order-cards { display: none; }
+            .order-table-wrap { display: block; overflow-x: auto; }
+            .kpi-grid { grid-template-columns: repeat(4, 1fr) !important; }
+            .desk-form .hidden-in-sheet { display: block; }
         }
     </style>
 </head>
@@ -139,6 +192,26 @@
             useEffect(() => {
                 window.__pwaReadyCallback = () => setPwaReady(true);
                 return () => { window.__pwaReadyCallback = null; };
+            }, []);
+
+            // URL routing: sync URL when view changes
+            const handleNavClick = (id) => {
+                setView(id);
+                history.pushState({ view: id }, '', '/admin/?view=' + id);
+                if (id === 'ORDERS') fetchOrders();
+                if (id === 'DISCOUNTS') fetchDiscountCodes();
+                if (id === 'BANNERS') fetchPopupBanners();
+                if (id === 'ANALYTICS') { fetchAnalytics(); fetchOrders(); }
+            };
+
+            // Browser back/forward button support
+            useEffect(() => {
+                const onPopState = (e) => {
+                    const p = new URLSearchParams(window.location.search).get('view');
+                    if (p) setView(p);
+                };
+                window.addEventListener('popstate', onPopState);
+                return () => window.removeEventListener('popstate', onPopState);
             }, []);
 
             const handleInstall = async () => {
@@ -440,23 +513,15 @@
             }
 
             const navItems = [
-                { id: 'INVENTORY', label: 'Inventario',  icon: '▣' },
-                { id: 'DESIGN',    label: 'Diseño Web',  icon: '◈' },
-                { id: 'ORDERS',    label: 'Órdenes',     icon: '≡', badge: orders.length },
-                { id: 'DISCOUNTS', label: 'Descuentos',  icon: '◇' },
-                { id: 'BANNERS',   label: 'Pop-ups',     icon: '▭' },
-                { id: 'ANALYTICS', label: 'Analytics',   icon: '▦' },
+                { id: 'INVENTORY', label: 'Inventario', icon: '▣' },
+                { id: 'DESIGN',    label: 'Diseño',     icon: '◈' },
+                { id: 'ORDERS',    label: 'Órdenes',    icon: '≡', badge: orders.length },
+                { id: 'DISCOUNTS', label: 'Descuentos', icon: '◇' },
+                { id: 'BANNERS',   label: 'Pop-ups',    icon: '▭' },
+                { id: 'ANALYTICS', label: 'Analytics',  icon: '▦' },
             ];
 
             const viewTitles = { INVENTORY: 'INVENTARIO', DESIGN: 'DISEÑO WEB', ORDERS: 'ÓRDENES', DISCOUNTS: 'DESCUENTOS', BANNERS: 'POP-UPS', ANALYTICS: 'ANALYTICS' };
-
-            const handleNavClick = (id) => {
-                setView(id);
-                if (id === 'ORDERS') fetchOrders();
-                if (id === 'DISCOUNTS') fetchDiscountCodes();
-                if (id === 'BANNERS') fetchPopupBanners();
-                if (id === 'ANALYTICS') { fetchAnalytics(); fetchOrders(); }
-            };
 
             return (
                 <div className="h-screen flex overflow-hidden bg-zinc-950">
@@ -579,6 +644,7 @@
                                 key={id}
                                 onClick={() => handleNavClick(id)}
                                 className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}
+                                style={{ touchAction: 'manipulation' }}
                             >
                                 <span className="text-base leading-none relative">
                                     {icon}
@@ -586,7 +652,7 @@
                                         <span className="absolute -top-1 -right-2 bg-kuraRed text-black text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{badge > 9 ? '9+' : badge}</span>
                                     )}
                                 </span>
-                                <span className="text-[9px] font-bold tracking-wide leading-none">{label}</span>
+                                <span className={`text-[9px] font-bold tracking-wide leading-none ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}>{label}</span>
                             </button>
                         ))}
                     </nav>
