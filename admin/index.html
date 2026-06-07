@@ -127,11 +127,26 @@
 
             const [isSaving, setIsSaving] = useState(false);
             const [toasts, setToasts] = useState([]);
+            const [pwaReady, setPwaReady] = useState(!!window.__pwaInstallPrompt);
 
             const showToast = (msg, type = 'success') => {
                 const id = Date.now();
                 setToasts(p => [...p, { id, msg, type }]);
                 setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+            };
+
+            // Listen for install prompt if it fires after mount
+            useEffect(() => {
+                window.__pwaReadyCallback = () => setPwaReady(true);
+                return () => { window.__pwaReadyCallback = null; };
+            }, []);
+
+            const handleInstall = async () => {
+                const prompt = window.__pwaInstallPrompt;
+                if (!prompt) return;
+                prompt.prompt();
+                const { outcome } = await prompt.userChoice;
+                if (outcome === 'accepted') { window.__pwaInstallPrompt = null; setPwaReady(false); }
             };
 
             // Real-time order listener for new order notifications
@@ -477,6 +492,11 @@
                             ))}
                         </nav>
                         <div className="p-4 border-t border-zinc-900">
+                            {pwaReady && (
+                                <button onClick={handleInstall} className="w-full mb-3 flex items-center gap-2 px-3 py-2 bg-kuraRed text-black text-[11px] font-bold hover:opacity-90 transition-opacity">
+                                    <span>↓</span> INSTALAR APP
+                                </button>
+                            )}
                             <p className="text-[10px] text-zinc-600 font-mono truncate mb-2">{user.email}</p>
                             <button onClick={handleLogout} className="text-[10px] text-zinc-600 hover:text-red-400 transition-colors font-bold tracking-widest">CERRAR SESIÓN →</button>
                         </div>
@@ -578,13 +598,27 @@
         root.render(<AdminPanel />);
     </script>
 
-    <!-- Service Worker registration -->
+    <!-- Service Worker + PWA install -->
     <script>
+        window.__pwaInstallPrompt = null;
+
+        // Capture install prompt before Chrome dismisses it
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.__pwaInstallPrompt = e;
+            // Notify React if already mounted
+            if (window.__pwaReadyCallback) window.__pwaReadyCallback();
+        });
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/admin/sw.js')
-                    .then(reg => console.log('SW registered:', reg.scope))
-                    .catch(err => console.error('SW error:', err));
+                navigator.serviceWorker.register('/admin/sw.js').then(reg => {
+                    // When a new SW takes over reload to get fresh HTML
+                    let refreshing = false;
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        if (!refreshing) { refreshing = true; window.location.reload(); }
+                    });
+                }).catch(err => console.error('SW error:', err));
             });
         }
     </script>
