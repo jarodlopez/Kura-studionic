@@ -33,12 +33,12 @@
     
     <style>
         body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; }
-        .brutalist-input { width: 100%; background: #050505; border: 1px solid #333; color: white; padding: 0.75rem; font-size: 0.875rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; }
-        .brutalist-input:focus { border-color: #ff003c; }
-        .brutalist-btn { background: #ff003c; color: black; padding: 0.75rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; }
-        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 4px 4px 0px 0px #ff003c; }
-        .brutalist-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #333; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: bold; }
+        .brutalist-input { width: 100%; background: #080808; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.75rem; font-size: 0.8rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; font-family: 'Space Mono', monospace; }
+        .brutalist-input:focus { border-color: #ff003c; background: #0d0d0d; }
+        .brutalist-btn { background: #ff003c; color: black; padding: 0.65rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; letter-spacing: 0.05em; }
+        .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 3px 3px 0px 0px #ff003c; }
+        .brutalist-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: bold; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
         .no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -101,6 +101,12 @@
             const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
             const [isSaving, setIsSaving] = useState(false);
+            const [toasts, setToasts] = useState([]);
+            const showToast = (msg, type = 'success') => {
+                const id = Date.now();
+                setToasts(p => [...p, { id, msg, type }]);
+                setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4000);
+            };
 
             useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged((currentUser) => {
@@ -241,9 +247,10 @@
                     else await db.collection("products").add(data);
                     setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
                     setEditingId(null); fetchProducts();
+                    showToast(editingId ? 'Prenda actualizada.' : 'Prenda añadida al catálogo.');
                 } catch (error) {
                     console.error("Error guardando producto:", error);
-                    alert("Error al guardar: " + error.message);
+                    showToast("Error al guardar: " + error.message, 'error');
                 } finally { setIsSaving(false); }
             };
 
@@ -303,8 +310,9 @@
                     await db.collection("orders").doc(id).delete();
                     setOrders(prev => prev.filter(o => o.id !== id));
                     setSelectedOrder(null);
+                    showToast('Orden eliminada.');
                 } catch (error) {
-                    alert("Error al eliminar la orden: " + error.message);
+                    showToast("Error al eliminar: " + error.message, 'error');
                 }
             };
 
@@ -350,9 +358,10 @@
                     setCodeForm({ code: '', type: 'percent', value: '', expiryDate: '', usageLimit: '' });
                     setEditingCodeId(null);
                     fetchDiscountCodes();
+                    showToast(editingCodeId ? 'Código actualizado.' : 'Código de descuento creado.');
                 } catch (error) {
                     console.error("Error guardando código:", error);
-                    alert("Error al guardar el código: " + error.message);
+                    showToast("Error al guardar el código: " + error.message, 'error');
                 } finally {
                     setIsSaving(false);
                 }
@@ -380,7 +389,7 @@
 
             const handleBannerSubmit = async (e) => {
                 e.preventDefault();
-                if (!bannerForm.image) return alert('Sube una imagen para el banner.');
+                if (!bannerForm.image) return showToast('Sube una imagen para el banner.', 'error');
                 setIsSaving(true);
                 try {
                     const existing = editingBannerId ? popupBanners.find(b => b.id === editingBannerId) : null;
@@ -400,9 +409,10 @@
                     setBannerForm({ title: '', subtitle: '', ctaText: '', active: true, image: '' });
                     setEditingBannerId(null);
                     fetchPopupBanners();
+                    showToast(editingBannerId ? 'Banner actualizado.' : 'Banner guardado.');
                 } catch (error) {
                     console.error("Error guardando banner:", error);
-                    alert("Error al guardar el banner: " + error.message);
+                    showToast("Error al guardar el banner: " + error.message, 'error');
                 } finally {
                     setIsSaving(false);
                 }
@@ -425,25 +435,32 @@
             if (!user) {
                 return (
                     <div className="min-h-screen bg-black flex justify-center items-center px-4" style={{ backgroundImage: 'linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
-                        <div className="border-2 border-zinc-800 bg-zinc-950 p-8 w-full max-w-md shadow-2xl">
-                            <h1 className="font-bebas text-5xl text-kuraRed mb-2 text-center">KURA STUDIO</h1>
-                            <p className="text-zinc-500 font-mono text-xs text-center mb-8 uppercase tracking-widest border-b border-zinc-800 pb-4">Terminal de Acceso</p>
-                            
-                            {loginError && <div className="bg-red-900/50 border border-red-500 text-red-200 text-xs p-3 mb-4 font-mono">{loginError}</div>}
-                            
-                            <form onSubmit={handleLogin} className="space-y-4">
-                                <div>
-                                    <label className="text-xs text-zinc-400 font-bold">CORREO ADMINISTRADOR</label>
-                                    <input type="email" required className="brutalist-input" value={loginData.email} onChange={e => setLoginData({...loginData, email: e.target.value})} />
-                                </div>
-                                <div>
-                                    <label className="text-xs text-zinc-400 font-bold">CONTRASEÑA</label>
-                                    <input type="password" required className="brutalist-input" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} />
-                                </div>
-                                <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-6">
-                                    {isSaving ? 'CONECTANDO...' : 'ENTRAR AL SISTEMA'}
-                                </button>
-                            </form>
+                        <div className="w-full max-w-sm">
+                            <div className="text-center mb-8">
+                                <h1 className="font-bebas text-6xl text-white leading-none">KURA<span className="text-kuraRed">STUDIO</span></h1>
+                                <p className="text-zinc-600 font-mono text-[11px] tracking-[0.3em] mt-2">PANEL DE ADMINISTRACIÓN</p>
+                            </div>
+                            <div className="bg-zinc-950 border border-zinc-800 p-8">
+                                {loginError && (
+                                    <div className="flex items-center gap-2 bg-red-950/50 border border-red-900 text-red-300 text-xs p-3 mb-5 font-mono">
+                                        <span className="text-red-500">✕</span> {loginError}
+                                    </div>
+                                )}
+                                <form onSubmit={handleLogin} className="space-y-5">
+                                    <div>
+                                        <label className="text-[10px] text-zinc-500 font-bold tracking-widest block mb-1.5">CORREO</label>
+                                        <input type="email" required className="brutalist-input" value={loginData.email} onChange={e => setLoginData({...loginData, email: e.target.value})} />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] text-zinc-500 font-bold tracking-widest block mb-1.5">CONTRASEÑA</label>
+                                        <input type="password" required className="brutalist-input" value={loginData.password} onChange={e => setLoginData({...loginData, password: e.target.value})} />
+                                    </div>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-2 flex items-center justify-center gap-2">
+                                        {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
+                                        {isSaving ? 'CONECTANDO...' : 'ENTRAR AL SISTEMA'}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 );
@@ -451,6 +468,16 @@
 
             return (
                 <div className="min-h-screen flex flex-col">
+                    {/* TOASTS */}
+                    <div className="fixed top-4 right-4 z-[500] flex flex-col gap-2 w-72 pointer-events-none">
+                        {toasts.map(t => (
+                            <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-kuraRed text-white'}`}>
+                                <span className={`text-base shrink-0 ${t.type === 'error' ? 'text-red-500' : 'text-kuraRed'}`}>{t.type === 'error' ? '✕' : '✓'}</span>
+                                <span className="leading-tight">{t.msg}</span>
+                            </div>
+                        ))}
+                    </div>
+
                     {/* MODAL DETALLES DE ORDEN */}
                     {selectedOrder && (
                         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm" onClick={() => setSelectedOrder(null)}>
@@ -523,26 +550,50 @@
                     )}
 
                     {/* CABECERA Y NAVEGACIÓN */}
-                    <header className="bg-black border-b border-zinc-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-40">
-                        <div className="flex items-center gap-6 overflow-x-auto w-full md:w-auto no-scrollbar">
-                            <h1 className="font-bebas text-3xl text-white mr-4">KURA<span className="text-kuraRed">STUDIO</span></h1>
-                            <button onClick={() => setView('INVENTORY')} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'INVENTORY' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>INVENTARIO</button>
-                            <button onClick={() => setView('DESIGN')} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'DESIGN' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>DISEÑO WEB</button>
-                            <button onClick={() => {setView('ORDERS'); fetchOrders();}} className={`font-bebas text-2xl whitespace-nowrap transition-colors flex items-center gap-2 ${view === 'ORDERS' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>
-                                ÓRDENES <span className="bg-zinc-800 text-white text-xs px-2 py-1 rounded-full">{orders.length}</span>
-                            </button>
-                            <button onClick={() => {setView('DISCOUNTS'); fetchDiscountCodes();}} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'DISCOUNTS' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>DESCUENTOS</button>
-                            <button onClick={() => {setView('BANNERS'); fetchPopupBanners();}} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'BANNERS' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>POP-UPS</button>
-                            <button onClick={() => {setView('ANALYTICS'); fetchAnalytics(); fetchOrders();}} className={`font-bebas text-2xl whitespace-nowrap transition-colors ${view === 'ANALYTICS' ? 'text-kuraRed' : 'text-zinc-600 hover:text-white'}`}>ANALYTICS</button>
-                        </div>
-                        <div className="flex items-center gap-4 w-full md:w-auto justify-end">
-                            <span className="text-xs text-zinc-500 font-mono hidden md:inline">{user.email}</span>
-                            <button onClick={handleLogout} className="text-xs border border-zinc-700 px-3 py-1 hover:bg-red-900 hover:border-red-500 transition-colors">SALIR</button>
+                    <header className="bg-black/95 backdrop-blur-md border-b border-zinc-900 sticky top-0 z-40">
+                        <div className="px-4 md:px-6 flex items-center justify-between h-14">
+                            <div className="flex items-center gap-0 overflow-x-auto no-scrollbar">
+                                <span className="font-bebas text-xl text-white pr-6 border-r border-zinc-800 mr-2 shrink-0">KURA <span className="text-kuraRed">ADMIN</span></span>
+                                {[
+                                    { id: 'INVENTORY', label: 'INVENTARIO' },
+                                    { id: 'DESIGN',    label: 'DISEÑO WEB' },
+                                    { id: 'ORDERS',    label: 'ÓRDENES', badge: orders.length },
+                                    { id: 'DISCOUNTS', label: 'DESCUENTOS' },
+                                    { id: 'BANNERS',   label: 'POP-UPS' },
+                                    { id: 'ANALYTICS', label: 'ANALYTICS' },
+                                ].map(({ id, label, badge }) => (
+                                    <button
+                                        key={id}
+                                        onClick={() => {
+                                            setView(id);
+                                            if (id === 'ORDERS') fetchOrders();
+                                            if (id === 'DISCOUNTS') fetchDiscountCodes();
+                                            if (id === 'BANNERS') fetchPopupBanners();
+                                            if (id === 'ANALYTICS') { fetchAnalytics(); fetchOrders(); }
+                                        }}
+                                        className={`relative flex items-center gap-2 px-4 h-14 text-xs font-bold tracking-widest whitespace-nowrap transition-all ${view === id ? 'text-white after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-kuraRed' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                    >
+                                        {label}
+                                        {badge !== undefined && (
+                                            <span className={`text-[10px] px-1.5 py-0.5 font-mono ${view === id ? 'bg-kuraRed text-black' : 'bg-zinc-800 text-zinc-400'}`}>{badge}</span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0 pl-4">
+                                <span className="text-[11px] text-zinc-600 font-mono hidden lg:inline truncate max-w-[160px]">{user.email}</span>
+                                <button onClick={handleLogout} className="text-[11px] font-bold px-3 py-1.5 border border-zinc-800 text-zinc-500 hover:text-white hover:border-zinc-600 transition-colors">SALIR</button>
+                            </div>
                         </div>
                     </header>
 
                     <div className="flex-1 p-4 md:p-6 max-w-[1400px] mx-auto w-full">
-                        {isSaving && <div className="fixed top-20 right-4 bg-kuraRed text-black font-bebas px-4 py-2 z-50 animate-pulse border-2 border-black shadow-[4px_4px_0_white]">GUARDANDO EN SERVIDOR...</div>}
+                        {isSaving && (
+                            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl">
+                                <span className="w-3 h-3 border-2 border-kuraRed border-t-transparent rounded-full animate-spin shrink-0"></span>
+                                Guardando en servidor...
+                            </div>
+                        )}
 
                         {/* VISTA: INVENTARIO */}
                         {view === 'INVENTORY' && (
@@ -611,7 +662,10 @@
                                             {formData.images.length > 0 && <button type="button" onClick={()=>setFormData({...formData, images:[]})} className="text-kuraRed font-bold text-xs underline mt-2 w-full text-left">Eliminar fotos y subir otras</button>}
                                         </div>
                                     </div>
-                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4">{editingId ? 'ACTUALIZAR PRENDA' : 'AÑADIR AL CATÁLOGO'}</button>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full mt-4 flex items-center justify-center gap-2">
+                                        {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
+                                        {editingId ? 'ACTUALIZAR PRENDA' : 'AÑADIR AL CATÁLOGO'}
+                                    </button>
                                 </form>
 
                                 {/* LISTA INVENTARIO Y FILTROS */}
@@ -768,38 +822,38 @@
                                 </div>
 
                                 {filteredOrders.length === 0 ? (
-                                    <div className="text-center py-20 text-zinc-600 font-bebas text-2xl tracking-widest">
-                                        {orderSearchQuery ? 'NO HAY RESULTADOS DE BÚSQUEDA' : 'AÚN NO HAY ÓRDENES REGISTRADAS'}
+                                    <div className="text-center py-20 text-zinc-700 font-bebas text-2xl tracking-widest">
+                                        {orderSearchQuery ? '— SIN RESULTADOS —' : '— SIN ÓRDENES AÚN —'}
                                     </div>
                                 ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm font-mono whitespace-nowrap">
-                                            <thead className="text-xs text-zinc-500 uppercase bg-black border-y border-zinc-800">
+                                    <div className="overflow-x-auto rounded-sm">
+                                        <table className="w-full text-left text-xs font-mono whitespace-nowrap">
+                                            <thead className="text-[10px] text-zinc-500 uppercase tracking-widest bg-zinc-950 border-b border-zinc-800">
                                                 <tr>
-                                                    <th className="px-4 py-3">No. Orden</th>
-                                                    <th className="px-4 py-3">Fecha</th>
-                                                    <th className="px-4 py-3">Cliente</th>
-                                                    <th className="px-4 py-3">Zona</th>
-                                                    <th className="px-4 py-3">Total (NIO)</th>
-                                                    <th className="px-4 py-3 text-center">Acciones</th>
+                                                    <th className="px-4 py-3 font-bold">No. Orden</th>
+                                                    <th className="px-4 py-3 font-bold">Fecha</th>
+                                                    <th className="px-4 py-3 font-bold">Cliente</th>
+                                                    <th className="px-4 py-3 font-bold">Zona</th>
+                                                    <th className="px-4 py-3 font-bold">Total</th>
+                                                    <th className="px-4 py-3 font-bold text-center">Acciones</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-zinc-800">
-                                                {filteredOrders.map((order) => (
-                                                    <tr key={order.id} className="hover:bg-zinc-900 transition-colors">
-                                                        <td className="px-4 py-4 font-bold text-white">{order.orderNumber}</td>
-                                                        <td className="px-4 py-4 text-zinc-400 text-xs">{formatDate(order.date)}</td>
-                                                        <td className="px-4 py-4">{order.customer?.name}</td>
-                                                        <td className="px-4 py-4">
-                                                            <span className="bg-zinc-800 px-2 py-1 text-[10px] rounded-sm">{order.shippingZone}</span>
+                                            <tbody>
+                                                {filteredOrders.map((order, i) => (
+                                                    <tr key={order.id} className={`border-b border-zinc-900 hover:bg-zinc-900/60 transition-colors group ${i % 2 === 0 ? 'bg-black' : 'bg-zinc-950/40'}`}>
+                                                        <td className="px-4 py-3.5 font-bold text-white">{order.orderNumber}</td>
+                                                        <td className="px-4 py-3.5 text-zinc-500">{formatDate(order.date)}</td>
+                                                        <td className="px-4 py-3.5 text-zinc-300">{order.customer?.name}</td>
+                                                        <td className="px-4 py-3.5">
+                                                            <span className={`px-2 py-0.5 text-[10px] font-bold ${order.shippingZone === 'Managua' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-700 text-white'}`}>{order.shippingZone}</span>
                                                         </td>
-                                                        <td className="px-4 py-4 text-kuraRed font-bold">{order.total}</td>
-                                                        <td className="px-4 py-4 text-center">
-                                                            <div className="flex gap-2 justify-center">
-                                                                <button onClick={() => setSelectedOrder(order)} className="bg-zinc-800 hover:bg-kuraRed hover:text-black text-white px-4 py-2 text-xs transition-colors font-bold border border-zinc-700 hover:border-kuraRed">
-                                                                    VER DETALLES
+                                                        <td className="px-4 py-3.5 text-kuraRed font-bold">NIO {order.total}</td>
+                                                        <td className="px-4 py-3.5 text-center">
+                                                            <div className="flex gap-1.5 justify-center">
+                                                                <button onClick={() => setSelectedOrder(order)} className="px-3 py-1.5 text-[10px] font-bold bg-zinc-800 hover:bg-kuraRed hover:text-black text-zinc-300 transition-colors">
+                                                                    VER
                                                                 </button>
-                                                                <button onClick={() => deleteOrder(order.id)} className="px-3 py-2 text-xs border border-zinc-800 text-zinc-500 hover:bg-red-900 hover:text-white hover:border-red-800 transition-colors" title="Eliminar orden">
+                                                                <button onClick={() => deleteOrder(order.id)} className="px-2.5 py-1.5 text-[10px] border border-zinc-800 text-zinc-600 hover:bg-red-950 hover:text-red-400 hover:border-red-900 transition-colors" title="Eliminar">
                                                                     ✕
                                                                 </button>
                                                             </div>
@@ -851,7 +905,10 @@
                                         <input type="number" min="0" className="brutalist-input" placeholder="0" value={codeForm.usageLimit} onChange={e => setCodeForm({...codeForm, usageLimit: e.target.value})} />
                                     </div>
 
-                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full">{editingCodeId ? 'ACTUALIZAR CÓDIGO' : 'CREAR CÓDIGO'}</button>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full flex items-center justify-center gap-2">
+                                        {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
+                                        {editingCodeId ? 'ACTUALIZAR CÓDIGO' : 'CREAR CÓDIGO'}
+                                    </button>
                                 </form>
 
                                 {/* LISTADO */}
@@ -934,7 +991,10 @@
                                         </button>
                                     </div>
 
-                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full">{editingBannerId ? 'ACTUALIZAR BANNER' : 'GUARDAR BANNER'}</button>
+                                    <button type="submit" disabled={isSaving} className="brutalist-btn w-full flex items-center justify-center gap-2">
+                                        {isSaving && <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>}
+                                        {editingBannerId ? 'ACTUALIZAR BANNER' : 'GUARDAR BANNER'}
+                                    </button>
                                 </form>
 
                                 {/* LISTADO */}
