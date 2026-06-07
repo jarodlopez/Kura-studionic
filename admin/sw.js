@@ -1,4 +1,4 @@
-const CACHE = 'kura-admin-v4';
+const CACHE = 'kura-admin-v5';
 
 const PRECACHE = [
   '/admin/',

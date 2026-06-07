@@ -67,8 +67,8 @@
         /* Responsive sidebar / bottom nav */
         .admin-sidebar { display: none; flex-direction: column; width: 13rem; background: #000; border-right: 1px solid #18181b; flex-shrink: 0; }
         .admin-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 400; background: #000; border-top: 1px solid #18181b; }
-        .admin-main-padding { padding-bottom: 5rem; }
-        .admin-saving-offset { bottom: 5.5rem; }
+        .admin-main-padding { padding-bottom: 7rem; }
+        .admin-saving-offset { bottom: 7.5rem; }
         @media (min-width: 768px) {
             .admin-sidebar { display: flex; }
             .admin-bottom-nav { display: none; }
@@ -93,7 +93,7 @@
 
         /* Floating action button (mobile only) */
         .fab {
-            position: fixed; bottom: 5rem; right: 1rem; z-index: 250;
+            position: fixed; bottom: 6.5rem; right: 1rem; z-index: 250;
             width: 56px; height: 56px; background: #ff003c; color: #000;
             border-radius: 50%; border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
@@ -644,16 +644,16 @@
                             <button
                                 key={id}
                                 onClick={() => handleNavClick(id)}
-                                className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}
+                                className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}
                                 style={{ touchAction: 'manipulation' }}
                             >
-                                <span className="text-base leading-none relative">
+                                <span className="text-2xl leading-none relative">
                                     {icon}
                                     {badge !== undefined && badge > 0 && (
-                                        <span className="absolute -top-1 -right-2 bg-kuraRed text-black text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">{badge > 9 ? '9+' : badge}</span>
+                                        <span className="absolute -top-1 -right-2.5 bg-kuraRed text-black text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{badge > 9 ? '9+' : badge}</span>
                                     )}
                                 </span>
-                                <span className={`text-[9px] font-bold tracking-wide leading-none ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}>{label}</span>
+                                <span className={`text-[11px] font-bold tracking-wide leading-none ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}>{label}</span>
                             </button>
                         ))}
                     </nav>
