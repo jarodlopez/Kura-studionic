@@ -3,12 +3,17 @@
 @tailwind utilities;
 
 /* === Estilos personalizados KURA STUDIO === */
+html {
+  overflow-x: hidden;
+}
 body {
   background-color: #000;
   color: #fff;
   background-image: linear-gradient(rgba(255, 0, 60, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 0, 60, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   overscroll-behavior-y: none;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 .brutalist-card { border: 2px solid #222; background: #050505; transition: all 0.25s ease; }
 .brutalist-card:hover { border-color: #ff003c; transform: translate(-4px, -4px); box-shadow: 6px 6px 0px 0px #ff003c, 0 0 25px rgba(255, 0, 60, 0.35), 0 0 70px rgba(255, 0, 60, 0.12); }
