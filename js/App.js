@@ -63,6 +63,11 @@ function updateMetaTags(product, category, storeConfig, categoryFallbackImg) {
     }
 }
 
+// Permite que el admin limpie el caché del cliente añadiendo ?refresh=1 a la URL
+if (new URLSearchParams(window.location.search).get('refresh') === '1') {
+    try { localStorage.removeItem('kura_store_cache'); } catch {}
+}
+
 function KuraStudio() {
     const { useState, useEffect } = React;
 
@@ -119,6 +124,25 @@ function KuraStudio() {
     const removeDiscount = () => { setAppliedDiscount(null); setDiscountInput(''); setDiscountError(''); };
 
     useEffect(() => {
+        const CACHE_KEY = 'kura_store_cache';
+        const CACHE_TTL = 20 * 60 * 1000; // 20 minutos
+
+        const loadFromCache = () => {
+            try {
+                const raw = localStorage.getItem(CACHE_KEY);
+                if (!raw) return null;
+                const { ts, products, config, codes, banners } = JSON.parse(raw);
+                if (Date.now() - ts > CACHE_TTL) return null;
+                return { products, config, codes, banners };
+            } catch { return null; }
+        };
+
+        const saveToCache = (products, config, codes, banners) => {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), products, config, codes, banners }));
+            } catch { /* storage lleno, ignorar */ }
+        };
+
         const fetchData = async () => {
             setIsLoading(true);
             if (!sessionStorage.getItem('kura_session')) {
@@ -126,25 +150,39 @@ function KuraStudio() {
                 trackEvent('page_view');
             }
             try {
-                const prodSnap = await db.collection("products").get();
-                const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setProducts(items); setFilteredProducts(items);
+                const cached = loadFromCache();
+                if (cached) {
+                    setProducts(cached.products); setFilteredProducts(cached.products);
+                    setStoreConfig(cached.config);
+                    setDiscountCodes(cached.codes);
+                    if (cached.banners.length > 0) {
+                        setPopupBanners(cached.banners);
+                        setTimeout(() => setIsPopupVisible(true), 2000);
+                    }
+                    checkDynamicLink(cached.products, cached.config);
+                } else {
+                    const prodSnap = await db.collection("products").get();
+                    const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setProducts(items); setFilteredProducts(items);
 
-                const confSnap = await db.collection("settings").doc("store").get();
-                const confData = confSnap.exists ? confSnap.data() : {};
-                setStoreConfig(confData);
+                    const confSnap = await db.collection("settings").doc("store").get();
+                    const confData = confSnap.exists ? confSnap.data() : {};
+                    setStoreConfig(confData);
 
-                const codesSnap = await db.collection("discountCodes").get();
-                setDiscountCodes(codesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                    const codesSnap = await db.collection("discountCodes").get();
+                    const codes = codesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setDiscountCodes(codes);
 
-                const bannersSnap = await db.collection("popupBanners").get();
-                const activeBanners = bannersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(b => b.active);
-                if (activeBanners.length > 0) {
-                    setPopupBanners(activeBanners);
-                    setTimeout(() => setIsPopupVisible(true), 2000);
+                    const bannersSnap = await db.collection("popupBanners").get();
+                    const activeBanners = bannersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(b => b.active);
+                    if (activeBanners.length > 0) {
+                        setPopupBanners(activeBanners);
+                        setTimeout(() => setIsPopupVisible(true), 2000);
+                    }
+
+                    saveToCache(items, confData, codes, activeBanners);
+                    checkDynamicLink(items, confData);
                 }
-
-                checkDynamicLink(items, confData);
             } catch (error) { console.error("Error conectando al sistema", error); }
             setIsLoading(false);
         };
