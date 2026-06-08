@@ -24,7 +24,7 @@ const ProductCard = ({ product, openProduct }) => (
 );
 
 const SectionHeader = ({ title, onViewAll }) => (
-    <div className="flex items-center justify-between mb-5">
+    <div className="flex items-center justify-between mb-6 pt-2">
         <h3 className="font-bebas text-2xl md:text-3xl flex items-center gap-3">
             <span className="w-6 h-[2px] bg-kuraRed inline-block shrink-0"></span>
             {title}
@@ -178,11 +178,11 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
                             <h3 className="font-bebas text-3xl text-zinc-600">SIN PRODUCTOS AÚN</h3>
                         </div>
                     ) : (
-                        <div className="space-y-14">
+                        <div className="space-y-2">
 
                             {/* Últimas novedades */}
                             {latestProducts.length > 0 && (
-                                <section>
+                                <section className="pb-10">
                                     <SectionHeader title="ÚLTIMAS NOVEDADES" />
                                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                                         {latestProducts.map(product => (
@@ -197,7 +197,7 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
                                 const catProducts = allVisible.filter(p => p.category === cat).slice(0, 4);
                                 if (catProducts.length === 0) return null;
                                 return (
-                                    <section key={cat}>
+                                    <section key={cat} className="border-t border-zinc-900 pt-10 pb-10">
                                         <SectionHeader title={cat} onViewAll={() => setActiveCategory(cat)} />
                                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                                             {catProducts.map(product => (
