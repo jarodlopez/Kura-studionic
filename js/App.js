@@ -309,6 +309,12 @@ function KuraStudio() {
                 setShippingZone={setShippingZone}
             />
 
+            <footer className="py-4 text-center border-t border-zinc-900/50">
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 300, letterSpacing: '0.08em' }} className="text-[10px] text-zinc-700">
+                    powered by <span className="text-zinc-500">Kodialabs</span>
+                </p>
+            </footer>
+
             {/* Floating cart button */}
             <button
                 onClick={() => setIsCartOpen(true)}
