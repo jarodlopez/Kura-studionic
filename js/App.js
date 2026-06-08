@@ -226,9 +226,23 @@ function KuraStudio() {
                 <div className="cursor-pointer" onClick={closeProduct}>
                     <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                 </div>
-                <button onClick={() => setIsCartOpen(true)} className="brutalist-card px-4 py-2 font-bold flex items-center gap-2 relative text-xs md:text-sm">
-                    {pendingOrder && <span className="absolute -top-1 -right-1 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-kuraRed"></span></span>}
-                    <span className="w-2 h-2 bg-kuraRed rounded-full animate-pulse"></span> CARRITO [{cart.length}]
+                <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <path d="M16 10a4 4 0 01-8 0"/>
+                    </svg>
+                    {cart.length > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 bg-kuraRed text-black text-[9px] font-bold rounded-full min-w-[16px] h-4 flex items-center justify-center px-0.5 leading-none">
+                            {cart.length > 9 ? '9+' : cart.length}
+                        </span>
+                    )}
+                    {pendingOrder && (
+                        <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-kuraRed"></span>
+                        </span>
+                    )}
                 </button>
             </header>
 
@@ -299,6 +313,21 @@ function KuraStudio() {
             />
 
             <OrderConfirmModal order={confirmedOrder} onClose={() => setConfirmedOrder(null)} />
+
+            {/* Floating cart button — visible only when cart has items */}
+            <button
+                onClick={() => setIsCartOpen(true)}
+                aria-label="Ver carrito"
+                className={`fixed bottom-6 right-4 z-[100] flex items-center gap-2 bg-kuraRed text-black font-bebas text-lg rounded-full transition-all duration-300 ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+                style={{ padding: '0.7rem 1.4rem 0.7rem 1.1rem', boxShadow: '0 4px 28px rgba(255,0,60,0.55), 0 2px 8px rgba(0,0,0,0.5)' }}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 01-8 0"/>
+                </svg>
+                {cart.length} {cart.length === 1 ? 'ARTÍCULO' : 'ARTÍCULOS'}
+            </button>
         </div>
     );
 }
