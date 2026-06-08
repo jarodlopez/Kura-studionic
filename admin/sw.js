@@ -1,14 +1,14 @@
-const CACHE = 'kura-admin-v7';
+const CACHE = 'kura-admin-v8';
 
 const PRECACHE = [
   '/admin/',
   '/admin/index.html',
-  '/admin/views/InventoryView.js?v=6',
-  '/admin/views/OrdersView.js?v=6',
-  '/admin/views/DesignView.js?v=6',
-  '/admin/views/DiscountsView.js?v=6',
-  '/admin/views/BannersView.js?v=6',
-  '/admin/views/AnalyticsView.js?v=6',
+  '/admin/views/InventoryView.js?v=7',
+  '/admin/views/OrdersView.js?v=7',
+  '/admin/views/DesignView.js?v=7',
+  '/admin/views/DiscountsView.js?v=7',
+  '/admin/views/BannersView.js?v=7',
+  '/admin/views/AnalyticsView.js?v=7',
   '/admin/icons/icon.svg',
 ];
 

@@ -6,14 +6,26 @@ const DEFAULT_META = {
     url: SITE_URL + '/',
 };
 
-function updateMetaTags(product) {
-    const meta = product ? {
-        title: `${product.title} – KURA STUDIO`,
-        description: (product.description || '').slice(0, 155) ||
-            `${product.title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
-        image: product.images?.[0] || DEFAULT_META.image,
-        url: `${SITE_URL}/?product=${product.id}`,
-    } : DEFAULT_META;
+function updateMetaTags(product, category, storeConfig) {
+    let meta;
+    if (product) {
+        meta = {
+            title: `${product.title} – KURA STUDIO`,
+            description: (product.description || '').slice(0, 155) ||
+                `${product.title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+            image: product.images?.[0] || DEFAULT_META.image,
+            url: `${SITE_URL}/?product=${product.id}`,
+        };
+    } else if (category && category !== 'ALL') {
+        meta = {
+            title: `Colección ${category} – KURA STUDIO`,
+            description: `Descubrí la colección ${category} de KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+            image: storeConfig?.categoryCovers?.[category] || DEFAULT_META.image,
+            url: `${SITE_URL}/?category=${encodeURIComponent(category)}`,
+        };
+    } else {
+        meta = DEFAULT_META;
+    }
 
     document.title = meta.title;
     const setMeta = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
@@ -119,7 +131,8 @@ function KuraStudio() {
                 setProducts(items); setFilteredProducts(items);
 
                 const confSnap = await db.collection("settings").doc("store").get();
-                if (confSnap.exists) setStoreConfig(confSnap.data());
+                const confData = confSnap.exists ? confSnap.data() : {};
+                setStoreConfig(confData);
 
                 const codesSnap = await db.collection("discountCodes").get();
                 setDiscountCodes(codesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -131,7 +144,7 @@ function KuraStudio() {
                     setTimeout(() => setIsPopupVisible(true), 2000);
                 }
 
-                checkDynamicLink(items);
+                checkDynamicLink(items, confData);
             } catch (error) { console.error("Error conectando al sistema", error); }
             setIsLoading(false);
         };
@@ -152,9 +165,17 @@ function KuraStudio() {
         setFilteredProducts(result);
     }, [activeCategory, searchQuery, products]);
 
-    const checkDynamicLink = (items) => {
-        const id = new URLSearchParams(window.location.search).get('product');
-        if (id) { const found = items.find(p => p.id === id); if (found) { openProduct(found); updateMetaTags(found); } }
+    const checkDynamicLink = (items, conf = {}) => {
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get('product');
+        const categoryParam = params.get('category');
+        if (productId) {
+            const found = items.find(p => p.id === productId);
+            if (found) openProduct(found);
+        } else if (categoryParam) {
+            setActiveCategory(categoryParam);
+            updateMetaTags(null, categoryParam, conf);
+        }
     };
 
     const openProduct = (product) => {
@@ -169,6 +190,17 @@ function KuraStudio() {
         setSelectedProduct(null);
         window.history.pushState(null, '', window.location.pathname);
         updateMetaTags(null);
+    };
+
+    const openCategory = (cat) => {
+        setActiveCategory(cat);
+        if (cat === 'ALL') {
+            window.history.pushState(null, '', window.location.pathname);
+            updateMetaTags(null);
+        } else {
+            window.history.pushState(null, '', `?category=${encodeURIComponent(cat)}`);
+            updateMetaTags(null, cat, storeConfig);
+        }
     };
 
     const addToCart = (product) => {
@@ -226,7 +258,7 @@ function KuraStudio() {
                         filteredProducts={filteredProducts}
                         products={products}
                         activeCategory={activeCategory}
-                        setActiveCategory={setActiveCategory}
+                        setActiveCategory={openCategory}
                         categories={categories}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}

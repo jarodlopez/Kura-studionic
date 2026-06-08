@@ -1,5 +1,5 @@
 window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
-    handleSizeGuideUpload, handleSlideAdd, removeSlide, isSaving }) => {
+    handleSizeGuideUpload, handleCategoryCoversUpload, handleSlideAdd, removeSlide, isSaving }) => {
 
     const [formOpen, setFormOpen] = React.useState(false);
     const closeForm = () => setFormOpen(false);
@@ -95,6 +95,47 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                     )}
                 </div>
             </div>
+
+                {/* Category Covers section */}
+                <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
+                    <h2 className="font-bebas text-3xl text-kuraRed mb-1">PORTADAS DE COLECCIONES</h2>
+                    <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
+                        Imagen que aparece al compartir el link de una colección en WhatsApp, Instagram o Telegram.
+                    </p>
+                    {uniqueCategories.length === 0 ? (
+                        <p className="text-zinc-600 text-sm font-mono italic py-6 text-center">No hay colecciones creadas todavía.</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {uniqueCategories.map(cat => {
+                                const coverUrl = storeConfig.categoryCovers?.[cat];
+                                return (
+                                    <div key={cat} className="flex gap-4 border border-zinc-800 p-3 items-center bg-black">
+                                        {coverUrl ? (
+                                            <img src={coverUrl} className="w-20 h-14 object-cover border border-zinc-700 shrink-0" />
+                                        ) : (
+                                            <div className="w-20 h-14 bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center shrink-0">
+                                                <span className="text-zinc-600 text-[9px] font-mono text-center leading-tight">SIN<br/>PORTADA</span>
+                                            </div>
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bebas text-lg leading-none mb-2">{cat}</p>
+                                            <input
+                                                type="file" accept="image/*"
+                                                onChange={e => e.target.files[0] && handleCategoryCoversUpload(cat, e.target.files[0])}
+                                                className="text-xs w-full text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700"
+                                            />
+                                        </div>
+                                        {coverUrl && (
+                                            <button
+                                                onClick={() => handleCategoryCoversUpload(cat, null)}
+                                                className="text-red-500 font-bold px-3 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors shrink-0">✕</button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
 
             {/* FAB — mobile only — opens the slide form sheet */}
             <button className="fab" onClick={() => setFormOpen(true)}>+</button>
