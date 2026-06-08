@@ -213,7 +213,12 @@ function KuraStudio() {
         trackEvent('add_to_cart', { productId: product.id, productTitle: product.title, price: getPrice(product) });
     };
 
-    const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
+    const productCats = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+    const managedCats = storeConfig.categories || [];
+    const orderedCats = managedCats.length > 0
+        ? [...managedCats, ...productCats.filter(c => !managedCats.includes(c))]
+        : productCats;
+    const categories = ['ALL', ...orderedCats];
 
     return (
         <div className="min-h-screen relative flex flex-col text-sm bg-black">

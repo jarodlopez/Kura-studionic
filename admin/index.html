@@ -384,7 +384,10 @@
                 throw new Error("Error subiendo imagen");
             };
 
-            const uniqueCategories = Array.from(new Set([...products.map(p => p.category), formData.category].filter(Boolean)));
+            // Managed categories from storeConfig; orphan product categories appended for backward compatibility
+            const managedCats = storeConfig.categories || [];
+            const orphanCats = products.map(p => p.category).filter(c => c && !managedCats.includes(c));
+            const uniqueCategories = Array.from(new Set([...managedCats, ...orphanCats]));
             const filteredInventory = inventoryFilter === 'TODAS' ? products : products.filter(p => p.category === inventoryFilter);
             const filteredOrders = orders.filter(o => {
                 const q = orderSearchQuery.toLowerCase();
@@ -429,6 +432,35 @@
                 const url = await uploadToImgBB(e.target.files[0]);
                 await saveStoreConfig({ ...storeConfig, sizeGuide: url });
                 setIsSaving(false);
+            };
+
+            const handleAddCategory = async (name) => {
+                const trimmed = name.trim().toUpperCase();
+                if (!trimmed || uniqueCategories.includes(trimmed)) return;
+                const base = storeConfig.categories?.length > 0 ? storeConfig.categories : uniqueCategories;
+                await saveStoreConfig({ ...storeConfig, categories: [...base, trimmed] });
+            };
+
+            const handleRemoveCategory = async (name) => {
+                if (!window.confirm(`¿Eliminar la colección "${name}"? Los productos asignados no se eliminan.`)) return;
+                const cats = (storeConfig.categories || uniqueCategories).filter(c => c !== name);
+                const covers = { ...(storeConfig.categoryCovers || {}) };
+                delete covers[name];
+                await saveStoreConfig({ ...storeConfig, categories: cats, categoryCovers: covers });
+            };
+
+            const handleMoveCategoryUp = async (index) => {
+                const cats = [...(storeConfig.categories || uniqueCategories)];
+                if (index === 0) return;
+                [cats[index - 1], cats[index]] = [cats[index], cats[index - 1]];
+                await saveStoreConfig({ ...storeConfig, categories: cats });
+            };
+
+            const handleMoveCategoryDown = async (index) => {
+                const cats = [...(storeConfig.categories || uniqueCategories)];
+                if (index === cats.length - 1) return;
+                [cats[index], cats[index + 1]] = [cats[index + 1], cats[index]];
+                await saveStoreConfig({ ...storeConfig, categories: cats });
             };
 
             const handleCategoryCoversUpload = async (category, file) => {
@@ -679,6 +711,8 @@
                                     storeConfig={storeConfig} slideForm={slideForm} setSlideForm={setSlideForm}
                                     uniqueCategories={uniqueCategories} handleSizeGuideUpload={handleSizeGuideUpload}
                                     handleCategoryCoversUpload={handleCategoryCoversUpload}
+                                    handleAddCategory={handleAddCategory} handleRemoveCategory={handleRemoveCategory}
+                                    handleMoveCategoryUp={handleMoveCategoryUp} handleMoveCategoryDown={handleMoveCategoryDown}
                                     handleSlideAdd={handleSlideAdd} removeSlide={removeSlide} isSaving={isSaving}
                                 />
                             )}

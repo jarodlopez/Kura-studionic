@@ -33,17 +33,9 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
                 <div className="flex gap-2">
                     <input placeholder="SKU (Opcional)" className="brutalist-input" value={formData.sku} onChange={e => setFormData({ ...formData, sku: e.target.value.toUpperCase() })} />
-                    <select required className="brutalist-input text-xs" value={formData.category} onChange={e => {
-                        if (e.target.value === 'NEW_CAT') {
-                            const newCat = window.prompt("ESCRIBE EL NOMBRE DE LA NUEVA CATEGORÍA:");
-                            if (newCat) setFormData({ ...formData, category: newCat.toUpperCase() });
-                        } else {
-                            setFormData({ ...formData, category: e.target.value });
-                        }
-                    }}>
+                    <select required className="brutalist-input text-xs" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                         <option value="" disabled>CATEGORÍA...</option>
                         {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                        <option value="NEW_CAT" className="text-kuraRed font-bold">+ NUEVA CATEGORÍA</option>
                     </select>
                 </div>
 

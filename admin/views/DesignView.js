@@ -1,7 +1,10 @@
 window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
-    handleSizeGuideUpload, handleCategoryCoversUpload, handleSlideAdd, removeSlide, isSaving }) => {
+    handleSizeGuideUpload, handleCategoryCoversUpload,
+    handleAddCategory, handleRemoveCategory, handleMoveCategoryUp, handleMoveCategoryDown,
+    handleSlideAdd, removeSlide, isSaving }) => {
 
     const [formOpen, setFormOpen] = React.useState(false);
+    const [newCatInput, setNewCatInput] = React.useState('');
     const closeForm = () => setFormOpen(false);
 
     const renderSlideForm = () => (
@@ -96,40 +99,69 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                 </div>
             </div>
 
-                {/* Category Covers section */}
+                {/* Collections management — name + order + cover in one place */}
                 <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
-                    <h2 className="font-bebas text-3xl text-kuraRed mb-1">PORTADAS DE COLECCIONES</h2>
-                    <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
-                        Imagen que aparece al compartir el link de una colección en WhatsApp, Instagram o Telegram.
+                    <h2 className="font-bebas text-3xl text-kuraRed mb-1">COLECCIONES</h2>
+                    <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                        Crea y ordena las colecciones. La portada aparece al compartir el link en redes sociales.
+                        Tocá la imagen (o el cuadro gris) para cambiarla.
                     </p>
+
+                    {/* Add new collection */}
+                    <div className="flex gap-2 mb-5">
+                        <input
+                            type="text" placeholder="NOMBRE DE NUEVA COLECCIÓN..."
+                            className="brutalist-input flex-1 mt-0 text-sm"
+                            value={newCatInput}
+                            onChange={e => setNewCatInput(e.target.value.toUpperCase())}
+                            onKeyDown={e => { if (e.key === 'Enter' && newCatInput.trim()) { handleAddCategory(newCatInput); setNewCatInput(''); } }}
+                        />
+                        <button
+                            onClick={() => { if (newCatInput.trim()) { handleAddCategory(newCatInput); setNewCatInput(''); } }}
+                            className="brutalist-btn px-5 py-2 text-sm whitespace-nowrap">+ AÑADIR</button>
+                    </div>
+
                     {uniqueCategories.length === 0 ? (
-                        <p className="text-zinc-600 text-sm font-mono italic py-6 text-center">No hay colecciones creadas todavía.</p>
+                        <p className="text-zinc-600 text-sm font-mono italic py-6 text-center">No hay colecciones. Añade una arriba.</p>
                     ) : (
-                        <div className="space-y-3">
-                            {uniqueCategories.map(cat => {
+                        <div className="space-y-2">
+                            {uniqueCategories.map((cat, idx) => {
                                 const coverUrl = storeConfig.categoryCovers?.[cat];
                                 return (
-                                    <div key={cat} className="flex gap-4 border border-zinc-800 p-3 items-center bg-black">
-                                        {coverUrl ? (
-                                            <img src={coverUrl} className="w-20 h-14 object-cover border border-zinc-700 shrink-0" />
-                                        ) : (
-                                            <div className="w-20 h-14 bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center shrink-0">
-                                                <span className="text-zinc-600 text-[9px] font-mono text-center leading-tight">SIN<br/>PORTADA</span>
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bebas text-lg leading-none mb-2">{cat}</p>
-                                            <input
-                                                type="file" accept="image/*"
-                                                onChange={e => e.target.files[0] && handleCategoryCoversUpload(cat, e.target.files[0])}
-                                                className="text-xs w-full text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700"
-                                            />
+                                    <div key={cat} className="flex gap-3 border border-zinc-800 p-3 items-center bg-black">
+                                        {/* Reorder */}
+                                        <div className="flex flex-col shrink-0">
+                                            <button onClick={() => handleMoveCategoryUp(idx)} disabled={idx === 0} className="text-zinc-600 hover:text-white disabled:opacity-20 leading-none px-1 py-0.5 text-xs">▲</button>
+                                            <button onClick={() => handleMoveCategoryDown(idx)} disabled={idx === uniqueCategories.length - 1} className="text-zinc-600 hover:text-white disabled:opacity-20 leading-none px-1 py-0.5 text-xs">▼</button>
                                         </div>
+
+                                        {/* Cover — click to upload */}
+                                        <label className="cursor-pointer shrink-0 group relative">
+                                            {coverUrl ? (
+                                                <img src={coverUrl} className="w-16 h-11 object-cover border border-zinc-700 group-hover:opacity-70 transition-opacity" />
+                                            ) : (
+                                                <div className="w-16 h-11 bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center group-hover:border-kuraRed transition-colors">
+                                                    <span className="text-zinc-600 text-[8px] font-mono text-center leading-tight group-hover:text-kuraRed">PORTADA</span>
+                                                </div>
+                                            )}
+                                            <input type="file" accept="image/*" className="hidden"
+                                                onChange={e => e.target.files[0] && handleCategoryCoversUpload(cat, e.target.files[0])} />
+                                        </label>
+
+                                        {/* Name */}
+                                        <p className="font-bebas text-xl flex-1 leading-none">{cat}</p>
+
+                                        {/* Remove cover */}
                                         {coverUrl && (
-                                            <button
-                                                onClick={() => handleCategoryCoversUpload(cat, null)}
-                                                className="text-red-500 font-bold px-3 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors shrink-0">✕</button>
+                                            <button onClick={() => handleCategoryCoversUpload(cat, null)}
+                                                className="text-zinc-600 hover:text-white text-xs font-mono px-2 py-1 border border-zinc-800 hover:border-zinc-600 transition-colors shrink-0">
+                                                SIN PORTADA
+                                            </button>
                                         )}
+
+                                        {/* Delete collection */}
+                                        <button onClick={() => handleRemoveCategory(cat)}
+                                            className="text-red-500 font-bold px-3 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors shrink-0">✕</button>
                                     </div>
                                 );
                             })}
