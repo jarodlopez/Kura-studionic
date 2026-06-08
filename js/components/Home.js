@@ -30,7 +30,7 @@ const SectionHeader = ({ title, onViewAll }) => (
             {title}
         </h3>
         {onViewAll && (
-            <button onClick={onViewAll} className="text-[11px] font-mono text-zinc-500 hover:text-kuraRed transition-colors tracking-widest whitespace-nowrap ml-4">
+            <button onClick={onViewAll} className="text-[11px] font-mono text-kuraRed hover:text-white transition-colors tracking-widest whitespace-nowrap ml-4" style={{textShadow:'0 0 8px rgba(255,0,60,0.8)'}}>
                 VER TODO →
             </button>
         )}
