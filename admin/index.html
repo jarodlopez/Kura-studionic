@@ -404,7 +404,7 @@
                     });
                     const data = { ...formData, price: Number(formData.price), discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null, stock: Number(formData.stock), details: formData.details.split('\n').filter(d => d), stockBySizes: cleanStock };
                     if (editingId) await db.collection("products").doc(editingId).update(data);
-                    else await db.collection("products").add(data);
+                    else await db.collection("products").add({ ...data, createdAt: new Date().toISOString() });
                     setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stockBySizes: {}, stock: '', images: [] });
                     setEditingId(null); fetchProducts();
                     showToast(editingId ? 'Prenda actualizada.' : 'Prenda añadida al catálogo.');
