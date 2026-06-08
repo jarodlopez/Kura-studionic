@@ -2,23 +2,23 @@ window.OrderConfirmModal = ({ order, onClose }) => {
     if (!order) return null;
     return (
         <div className="fixed inset-0 z-[400] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="relative w-full max-w-md border-2 border-kuraRed bg-black animate-slideUp shadow-[8px_8px_0px_0px_#ff003c]">
+            <div className="relative w-full max-w-md border border-kuraRed bg-black animate-slideUp shadow-[0_8px_40px_rgba(255,0,60,0.35)] rounded-2xl overflow-hidden">
 
                 {/* Cabecera */}
                 <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">
-                    <span className="text-2xl">🩸</span>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                     <h2 className="font-bebas text-3xl text-black tracking-widest leading-none">ORDEN CONFIRMADA</h2>
                 </div>
 
                 <div className="p-6">
                     {/* Número de orden */}
-                    <div className="border border-zinc-800 bg-zinc-950 p-4 mb-6 text-center">
+                    <div className="border border-zinc-800 bg-zinc-950 p-4 mb-6 text-center rounded-xl">
                         <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Tu número de orden</p>
                         <p className="font-bebas text-4xl text-kuraRed tracking-widest">#{order.orderNumber}</p>
                     </div>
 
                     {/* Estado */}
-                    <div className="flex items-start gap-3 mb-6 border border-zinc-800 p-4 bg-zinc-950">
+                    <div className="flex items-start gap-3 mb-6 border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
                         <span className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 shrink-0 animate-pulse"></span>
                         <div>
                             <p className="text-white font-bold text-sm mb-1">EN PROCESO DE VERIFICACIÓN</p>
@@ -53,7 +53,7 @@ window.OrderConfirmModal = ({ order, onClose }) => {
 
                     <button
                         onClick={onClose}
-                        className="w-full py-3 text-xs font-bold tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 hover:border-zinc-600"
+                        className="w-full py-3 text-xs font-bold tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 hover:border-zinc-600 rounded-xl"
                     >
                         CERRAR Y VOLVER A LA TIENDA
                     </button>

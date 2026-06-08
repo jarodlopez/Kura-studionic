@@ -2,7 +2,7 @@ window.SizeModal = ({ isSizeModalOpen, setIsSizeModalOpen, storeConfig }) => {
     if (!isSizeModalOpen) return null;
     return (
         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsSizeModalOpen(false)}>
-            <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] rounded-2xl" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white font-bebas text-2xl">✕</button>
                 <h3 className="font-bebas text-3xl text-kuraRed mb-6">GUÍA DE MEDIDAS</h3>
                 {storeConfig.sizeGuide ? (
@@ -29,13 +29,13 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                 {selectedProduct.images?.length > 1 && (
                     <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
                         {selectedProduct.images.map((img, idx) => (
-                            <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
+                            <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 rounded-lg overflow-hidden ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
                                 <SmoothImage src={img} width={200} className="w-full h-full object-cover" alt={`${selectedProduct.title} – imagen ${idx + 1}`} />
                             </button>
                         ))}
                     </div>
                 )}
-                <div className="w-full border border-zinc-800 bg-zinc-950 relative">
+                <div className="w-full border border-zinc-800 bg-zinc-950 relative rounded-xl overflow-hidden">
                     <SmoothImage src={selectedProduct.images?.[mainImageIndex]} width={900} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – KURA STUDIO`} eager />
                 </div>
             </div>
@@ -67,7 +67,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     <ul className="mb-8 space-y-2 border-t border-zinc-900 pt-6">
                         {selectedProduct.details.map((detail, idx) => (
                             <li key={idx} className="flex gap-3 text-zinc-300">
-                                <span className="text-kuraRed">■</span> {detail}
+                                <span className="text-kuraRed">—</span> {detail}
                             </li>
                         ))}
                     </ul>
@@ -86,7 +86,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                                 <button
                                     key={size}
                                     onClick={() => setSelectedSize(size)}
-                                    className={`font-bebas text-2xl w-14 h-14 border-2 transition-all ${selectedSize === size ? 'bg-kuraRed border-kuraRed text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-kuraRed hover:text-white'}`}
+                                    className={`font-bebas text-2xl w-14 h-14 border-2 rounded-xl transition-all ${selectedSize === size ? 'bg-kuraRed border-kuraRed text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-kuraRed hover:text-white'}`}
                                 >
                                     {size}
                                 </button>

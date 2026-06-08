@@ -17,7 +17,7 @@ window.CartModal = ({
     if (!isCartOpen) return null;
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex justify-end">
-            <div className="bg-[#050505] w-full md:w-[450px] h-full border-l border-zinc-800 shadow-2xl flex flex-col animate-slideUp">
+            <div className="bg-[#050505] w-full md:w-[450px] h-full border-l border-zinc-800 shadow-2xl flex flex-col animate-slideUp md:rounded-l-2xl overflow-hidden">
                 <div className="p-6 border-b border-zinc-800 flex justify-between items-center bg-black shrink-0">
                     <h2 className="font-bebas text-3xl tracking-widest flex items-center gap-3">
                         <span className="w-3 h-3 bg-kuraRed inline-block"></span>
@@ -30,15 +30,15 @@ window.CartModal = ({
                     {!pendingOrder ? (
                         cart.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-zinc-600 space-y-4">
-                                <span className="text-4xl">🛒</span>
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-600"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
                                 <p className="font-bebas text-2xl tracking-widest">CARRITO VACÍO</p>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-8 pb-4">
                                 <div className="space-y-4">
                                     {cart.map(item => (
-                                        <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm">
-                                            <img src={optimizeImg(item.images?.[0], 160)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="w-20 h-24 object-cover border border-zinc-900 shrink-0" decoding="async" draggable={false} alt={item.title} />
+                                        <div key={item.cartId} className="flex gap-4 border border-zinc-800 p-3 bg-black relative shadow-sm rounded-xl">
+                                            <img src={optimizeImg(item.images?.[0], 160)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="w-20 h-24 object-cover border border-zinc-900 shrink-0 rounded-lg" decoding="async" draggable={false} alt={item.title} />
                                             <div className="flex-1 pt-1 overflow-hidden">
                                                 <p className="font-bebas text-lg pr-6 leading-none text-zinc-100 line-clamp-2">{item.title}</p>
                                                 <p className="text-xs text-zinc-500 mt-2 font-bold tracking-wider">TALLA: {item.selectedSize}</p>
@@ -61,7 +61,7 @@ window.CartModal = ({
                                         <span className="w-2 h-2 bg-kuraRed inline-block"></span> RESUMEN Y ENVÍO
                                     </h3>
 
-                                    <div className="bg-zinc-950 border border-zinc-800 p-4 font-mono text-sm mb-6">
+                                    <div className="bg-zinc-950 border border-zinc-800 p-4 font-mono text-sm mb-6 rounded-xl">
                                         <div className="flex justify-between mb-2 text-zinc-400"><span>SUBTOTAL</span> <span>NIO {cartSubtotal}</span></div>
                                         {discountAmount > 0 && (
                                             <div className="flex justify-between mb-2 text-green-400 font-bold">
@@ -76,7 +76,7 @@ window.CartModal = ({
                                         </div>
                                     </div>
 
-                                    <div className="border border-zinc-800 p-4 bg-zinc-950 mb-6">
+                                    <div className="border border-zinc-800 p-4 bg-zinc-950 mb-6 rounded-xl">
                                         <p className="text-[10px] text-zinc-500 mb-3 font-bold uppercase tracking-widest">CÓDIGO DE DESCUENTO</p>
                                         {appliedDiscount ? (
                                             <div className="flex items-center justify-between bg-kuraRed/10 border border-kuraRed p-3">
@@ -95,9 +95,9 @@ window.CartModal = ({
                                                     placeholder="INGRESA TU CÓDIGO"
                                                     value={discountInput}
                                                     onChange={e => { setDiscountInput(e.target.value.toUpperCase()); }}
-                                                    className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-kuraRed transition-colors font-mono tracking-widest"
+                                                    className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-kuraRed transition-colors font-mono tracking-widest rounded-lg"
                                                 />
-                                                <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-kuraRed hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap">APLICAR</button>
+                                                <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-kuraRed hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap rounded-lg">APLICAR</button>
                                             </div>
                                         )}
                                         {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
@@ -106,16 +106,16 @@ window.CartModal = ({
                                     <div className="mb-6">
                                         <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">SELECCIONA ZONA DE ENVÍO</p>
                                         <div className="flex flex-row gap-2">
-                                            <button type="button" onClick={() => setShippingZone('managua')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800'}`}>MANAGUA (NIO 100)</button>
-                                            <button type="button" onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800'}`}>DEPARTAMENTOS (NIO 165)</button>
+                                            <button type="button" onClick={() => setShippingZone('managua')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all rounded-xl ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800'}`}>MANAGUA (NIO 100)</button>
+                                            <button type="button" onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 px-2 text-xs md:text-sm font-bold transition-all rounded-xl ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-2 border-kuraRed' : 'bg-transparent text-zinc-500 border-2 border-zinc-800'}`}>DEPARTAMENTOS (NIO 165)</button>
                                         </div>
                                     </div>
 
                                     <form onSubmit={handleProceedToPayment} className="space-y-4">
                                         <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest border-t border-zinc-800 pt-6">DATOS DE ENTREGA</p>
-                                        <input required type="text" placeholder="NOMBRE COMPLETO" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors" />
-                                        <input required type="tel" placeholder="TELÉFONO (Ej: 8888 8888)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors" />
-                                        <textarea required placeholder="DIRECCIÓN EXACTA" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed h-24 resize-none transition-colors"></textarea>
+                                        <input required type="text" placeholder="NOMBRE COMPLETO" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors rounded-xl" />
+                                        <input required type="tel" placeholder="TELÉFONO (Ej: 8888 8888)" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors rounded-xl" />
+                                        <textarea required placeholder="DIRECCIÓN EXACTA" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})} className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed h-24 resize-none transition-colors rounded-xl"></textarea>
                                         <button type="submit" className="brutalist-btn w-full py-4 text-xl mt-4">IR A PAGAR</button>
                                     </form>
                                 </div>
@@ -123,16 +123,16 @@ window.CartModal = ({
                         )
                     ) : (
                         <div className="flex flex-col pb-10 animate-slideUp">
-                            <div className="bg-[#111] border border-kuraRed p-4 mb-6">
+                            <div className="bg-[#111] border border-kuraRed p-4 mb-6 rounded-xl">
                                 <h4 className="text-kuraRed font-bebas text-xl mb-1 flex items-center gap-2">
-                                    <span className="text-lg">⚠️</span> AVISO DE ENTREGA
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> AVISO DE ENTREGA
                                 </h4>
                                 <p className="text-zinc-400 text-xs font-mono">
                                     Recuerda que los envíos se realizan de 24 a 72 horas hábiles posteriores a la confirmación de tu pago. Te contactaremos vía WhatsApp para coordinar la entrega de tu paquete.
                                 </p>
                             </div>
 
-                            <div className="bg-zinc-950 border border-zinc-800 p-6 mb-6 relative shadow-lg">
+                            <div className="bg-zinc-950 border border-zinc-800 p-6 mb-6 relative shadow-lg rounded-2xl">
                                 <div className="absolute -right-4 -top-4 w-16 h-16 bg-kuraRed opacity-10 rotate-45 pointer-events-none"></div>
                                 <p className="text-zinc-500 text-[10px] uppercase mb-1">ORDEN RESERVADA</p>
                                 <h3 className="text-white font-bebas text-3xl mb-4 tracking-wider">#{pendingOrder.orderNumber}</h3>
@@ -148,7 +148,7 @@ window.CartModal = ({
                                     </div>
                                 </div>
 
-                                <div className="bg-black border border-zinc-800 p-4 text-xs text-zinc-300 font-mono">
+                                <div className="bg-black border border-zinc-800 p-4 text-xs text-zinc-300 font-mono rounded-xl">
                                     <p className="font-bold text-white mb-3 text-sm flex items-center gap-2">
                                         <span className="w-2 h-2 bg-green-500 inline-block"></span> DATOS DE TRANSFERENCIA
                                     </p>
@@ -167,16 +167,16 @@ window.CartModal = ({
 
                             <div className="mb-6">
                                 <p className="text-xs text-white mb-3 font-bold border-l-2 border-kuraRed pl-2">ADJUNTA TU COMPROBANTE:</p>
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-700 border-dashed hover:border-kuraRed hover:bg-zinc-900 transition-colors cursor-pointer relative">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-700 border-dashed hover:border-kuraRed hover:bg-zinc-900 transition-colors cursor-pointer relative rounded-xl">
                                     {receiptFile ? (
                                         <div className="text-center p-2">
-                                            <span className="text-3xl mb-2 block">📄</span>
+                                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed mx-auto mb-2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
                                             <span className="text-kuraRed font-bold text-xs block truncate max-w-[200px]">{receiptFile.name}</span>
                                             <span className="text-zinc-500 text-[10px] mt-1 block">(Clic para cambiar)</span>
                                         </div>
                                     ) : (
                                         <div className="text-center text-zinc-500">
-                                            <span className="text-2xl mb-2 block">↑</span>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3"/></svg>
                                             <span className="text-xs">Toca para subir la captura</span>
                                         </div>
                                     )}
@@ -184,7 +184,7 @@ window.CartModal = ({
                                 </label>
                             </div>
 
-                            <label className="flex items-start gap-3 cursor-pointer text-xs text-zinc-400 mb-8 p-3 border border-zinc-800 bg-black">
+                            <label className="flex items-start gap-3 cursor-pointer text-xs text-zinc-400 mb-8 p-3 border border-zinc-800 bg-black rounded-xl">
                                 <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="mt-0.5 accent-kuraRed w-4 h-4 shrink-0" />
                                 <span className="leading-tight">Acepto la <a href="#" className="text-white underline">política de envios</a> de Kura Studio.</span>
                             </label>
