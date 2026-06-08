@@ -4,6 +4,7 @@
   "installCommand": "echo skip",
   "rewrites": [
     { "source": "/admin", "destination": "/admin/index.html" },
-    { "source": "/admin/", "destination": "/admin/index.html" }
+    { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/checkout", "destination": "/checkout.html" }
   ]
 }

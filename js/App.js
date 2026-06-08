@@ -15,13 +15,8 @@ function KuraStudio() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
     const [toastMsg, setToastMsg] = useState('');
-    const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
 
     const [shippingZone, setShippingZone] = useState('managua');
-    const [receiptFile, setReceiptFile] = useState(null);
-    const [isUploading, setIsUploading] = useState(false);
-    const [acceptTerms, setAcceptTerms] = useState(false);
-
     const [discountCodes, setDiscountCodes] = useState([]);
     const [discountInput, setDiscountInput] = useState('');
     const [appliedDiscount, setAppliedDiscount] = useState(null);
@@ -30,16 +25,11 @@ function KuraStudio() {
     const [popupBanners, setPopupBanners] = useState([]);
     const [isPopupVisible, setIsPopupVisible] = useState(false);
 
-    const [confirmedOrder, setConfirmedOrder] = useState(null);
-
-    const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch (e) { return []; } });
+    const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch { return []; } });
     useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-    const [pendingOrder, setPendingOrder] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_pending_order')) || null; } catch (e) { return null; } });
-    useEffect(() => {
-        if (pendingOrder) localStorage.setItem('kura_pending_order', JSON.stringify(pendingOrder));
-        else localStorage.removeItem('kura_pending_order');
-    }, [pendingOrder]);
+    // Pulsing dot on cart icon if a pending order exists (set by checkout page)
+    const [hasPendingOrder] = useState(() => !!localStorage.getItem('kura_pending_order'));
 
     const shippingRates = { managua: 100, departamentos: 165 };
     const currentShippingCost = shippingRates[shippingZone] || 0;
@@ -131,89 +121,10 @@ function KuraStudio() {
         trackEvent('add_to_cart', { productId: product.id, productTitle: product.title, price: getPrice(product) });
     };
 
-    const handleProceedToPayment = (e) => {
-        e.preventDefault();
-        if (cart.length === 0) return;
-        trackEvent('checkout_started', { itemCount: cart.length, subtotal: cartSubtotal });
-        const orderNum = `KURA-${Math.floor(100000 + Math.random() * 900000)}`;
-        const orderData = {
-            orderNumber: orderNum,
-            customer: formData,
-            items: cart,
-            subtotal: cartSubtotal,
-            discountCode: appliedDiscount ? appliedDiscount.code : null,
-            discountAmount: discountAmount,
-            shippingZone: shippingZone === 'managua' ? 'Managua' : 'Departamentos',
-            shippingCost: currentShippingCost,
-            total: cartTotal,
-            date: new Date().toISOString()
-        };
-        setPendingOrder(orderData);
-    };
-
-    const syncToHubSpot = async (orderData) => {
-        try {
-            const detalles = orderData.items.map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
-            await fetch('/api/hubspot', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderNumber: orderData.orderNumber,
-                    name: orderData.customer.name,
-                    phone: orderData.customer.phone,
-                    address: `${orderData.customer.address} (${orderData.shippingZone})`,
-                    total: orderData.total,
-                    orderDetails: detalles
-                })
-            });
-        } catch (error) { console.error("Error conectando con API", error); }
-    };
-
-    const handleFinalizeOrder = async () => {
-        if (!receiptFile) return alert("Por favor, adjunta tu comprobante de pago.");
-        setIsUploading(true);
-        try {
-            const receiptUrl = await uploadToImgBB(receiptFile);
-            const finalOrder = { ...pendingOrder, receiptUrl, status: 'paid_pending_verification' };
-            await db.collection("orders").doc(pendingOrder.orderNumber).set(finalOrder);
-            syncToHubSpot(finalOrder);
-
-            let m = `*NUEVA ORDEN: #${pendingOrder.orderNumber}* 🩸\n\n`;
-            m += `*Cliente:* ${pendingOrder.customer.name}\n`;
-            m += `*Tel:* ${pendingOrder.customer.phone}\n`;
-            m += `*Dirección:* ${pendingOrder.customer.address} (${pendingOrder.shippingZone})\n\n`;
-            m += `*ARSENAL:*\n`;
-            pendingOrder.items.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) - NIO ${getPrice(i)}\n`; });
-            m += `\n*Subtotal:* NIO ${pendingOrder.subtotal}\n`;
-            if (pendingOrder.discountAmount > 0) m += `*Descuento (${pendingOrder.discountCode}):* - NIO ${pendingOrder.discountAmount}\n`;
-            m += `*Envío:* NIO ${pendingOrder.shippingCost}\n`;
-            m += `*TOTAL PAGADO:* NIO ${pendingOrder.total}\n\n`;
-            m += `*Comprobante Adjunto:* ${receiptUrl}`;
-
-            const whatsappUrl = `https://wa.me/50587091008?text=${encodeURIComponent(m)}`;
-            if (appliedDiscount) {
-                db.collection("discountCodes").doc(appliedDiscount.id).update({
-                    usageCount: firebase.firestore.FieldValue.increment(1)
-                });
-            }
-            setCart([]);
-            setReceiptFile(null);
-            setAcceptTerms(false);
-            setAppliedDiscount(null);
-            setDiscountInput('');
-            setIsCartOpen(false);
-            setConfirmedOrder({ orderNumber: pendingOrder.orderNumber, customer: pendingOrder.customer, shippingZone: pendingOrder.shippingZone, total: pendingOrder.total, whatsappUrl });
-            setPendingOrder(null);
-        } catch (error) {
-            alert("Ocurrió un error al procesar el pago. Verifica tu conexión e intenta de nuevo.");
-        }
-        setIsUploading(false);
-    };
-
     const categories = ['ALL', ...Array.from(new Set(products.map(p => p.category || 'UNKNOWN')))];
 
     return (
-        <div className="min-h-screen relative flex flex-col font-mono text-sm bg-black">
+        <div className="min-h-screen relative flex flex-col text-sm bg-black">
             <Toast message={toastMsg} isVisible={!!toastMsg} />
 
             <PopupBanner isPopupVisible={isPopupVisible} setIsPopupVisible={setIsPopupVisible} popupBanners={popupBanners} />
@@ -237,7 +148,7 @@ function KuraStudio() {
                             {cart.length > 9 ? '9+' : cart.length}
                         </span>
                     )}
-                    {pendingOrder && (
+                    {hasPendingOrder && (
                         <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-kuraRed opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-kuraRed"></span>
@@ -282,17 +193,11 @@ function KuraStudio() {
 
             <SizeModal isSizeModalOpen={isSizeModalOpen} setIsSizeModalOpen={setIsSizeModalOpen} storeConfig={storeConfig} />
 
-            <CartModal
+            <MiniCart
                 isCartOpen={isCartOpen}
                 setIsCartOpen={setIsCartOpen}
                 cart={cart}
                 setCart={setCart}
-                pendingOrder={pendingOrder}
-                setPendingOrder={setPendingOrder}
-                shippingZone={shippingZone}
-                setShippingZone={setShippingZone}
-                formData={formData}
-                setFormData={setFormData}
                 discountInput={discountInput}
                 setDiscountInput={setDiscountInput}
                 appliedDiscount={appliedDiscount}
@@ -303,18 +208,11 @@ function KuraStudio() {
                 cartSubtotal={cartSubtotal}
                 cartTotal={cartTotal}
                 currentShippingCost={currentShippingCost}
-                handleProceedToPayment={handleProceedToPayment}
-                receiptFile={receiptFile}
-                setReceiptFile={setReceiptFile}
-                isUploading={isUploading}
-                acceptTerms={acceptTerms}
-                setAcceptTerms={setAcceptTerms}
-                handleFinalizeOrder={handleFinalizeOrder}
+                shippingZone={shippingZone}
+                setShippingZone={setShippingZone}
             />
 
-            <OrderConfirmModal order={confirmedOrder} onClose={() => setConfirmedOrder(null)} />
-
-            {/* Floating cart button — visible only when cart has items */}
+            {/* Floating cart button */}
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"
