@@ -7,7 +7,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
     const cancelEdit = () => {
         setEditingId(null);
-        setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+        setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stockBySizes: {}, stock: '', images: [] });
         closeForm();
     };
 
@@ -63,12 +63,36 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
                 <div className="border-t border-zinc-800 pt-4">
                     <p className="text-xs text-zinc-500 mb-2 font-bold tracking-widest">TALLAS DISPONIBLES</p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 mb-3">
                         {['S', 'M', 'L', 'XL', 'XXL', 'ÚNICA'].map(s => (
-                            <button key={s} type="button" onClick={() => setFormData(p => ({ ...p, sizes: p.sizes.includes(s) ? p.sizes.filter(x => x !== s) : [...p.sizes, s] }))}
-                                className={`px-4 py-2 font-bebas text-lg transition-colors border ${formData.sizes.includes(s) ? 'bg-kuraRed border-kuraRed text-black' : 'border-zinc-700 text-zinc-400 hover:text-white'}`}>{s}</button>
+                            <button key={s} type="button" onClick={() => {
+                                const newSizes = formData.sizes.includes(s) ? formData.sizes.filter(x => x !== s) : [...formData.sizes, s];
+                                const newStock = { ...formData.stockBySizes };
+                                if (!newSizes.includes(s)) delete newStock[s];
+                                setFormData(p => ({ ...p, sizes: newSizes, stockBySizes: newStock }));
+                            }} className={`px-4 py-2 font-bebas text-lg transition-colors border rounded-lg ${formData.sizes.includes(s) ? 'bg-kuraRed border-kuraRed text-black' : 'border-zinc-700 text-zinc-400 hover:text-white'}`}>{s}</button>
                         ))}
                     </div>
+                    {formData.sizes.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-[10px] text-zinc-500 font-bold tracking-widest">STOCK POR TALLA <span className="text-zinc-600 font-normal normal-case">(dejar vacío = sin límite)</span></p>
+                            {formData.sizes.map(s => (
+                                <div key={s} className="flex items-center gap-2">
+                                    <span className="w-14 text-center font-bebas text-lg text-zinc-300 bg-zinc-900 border border-zinc-800 py-1.5 rounded-lg shrink-0">{s}</span>
+                                    <input
+                                        type="number" min="0"
+                                        placeholder="Sin límite"
+                                        className="brutalist-input mt-0 flex-1 text-sm"
+                                        value={formData.stockBySizes?.[s] ?? ''}
+                                        onChange={e => setFormData(p => ({ ...p, stockBySizes: { ...p.stockBySizes, [s]: e.target.value === '' ? '' : Number(e.target.value) } }))}
+                                    />
+                                    {(formData.stockBySizes?.[s] !== undefined && formData.stockBySizes?.[s] !== '' && Number(formData.stockBySizes?.[s]) === 0) && (
+                                        <span className="text-[10px] text-red-400 font-bold shrink-0">AGOTADO</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="border border-zinc-700 bg-black p-4">
@@ -124,6 +148,15 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                 <div className="p-3 flex-1 flex flex-col">
                                     <p className="font-bebas text-xl truncate leading-none mb-1">{p.title}</p>
                                     {p.sku && <p className="text-[10px] text-zinc-500 mb-1">SKU: {p.sku}</p>}
+                                    {p.stockBySizes && Object.keys(p.stockBySizes).length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-1.5">
+                                            {Object.entries(p.stockBySizes).map(([sz, qty]) => (
+                                                <span key={sz} className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-mono ${qty <= 0 ? 'bg-red-950 text-red-400' : qty <= 2 ? 'bg-yellow-950 text-yellow-400' : 'bg-zinc-800 text-zinc-400'}`}>
+                                                    {sz}:{qty <= 0 ? '✕' : qty}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                     <div className="mt-auto">
                                         {p.discountPrice && p.discountPrice > 0 ? (
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -138,7 +171,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                 <div className="flex border-t border-zinc-800">
                                     <button onClick={() => {
                                         setEditingId(p.id);
-                                        setFormData({ title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '', category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'), sizes: p.sizes || [], stock: p.stock || '', images: p.images || [] });
+                                        setFormData({ title: p.title || '', sku: p.sku || '', price: p.price || '', discountPrice: p.discountPrice || '', category: p.category || '', description: p.description || '', details: (p.details || []).join('\n'), sizes: p.sizes || [], stockBySizes: p.stockBySizes || {}, stock: p.stock || '', images: p.images || [] });
                                         setFormOpen(true);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });
                                     }} className="flex-1 text-xs text-zinc-400 py-2 hover:bg-zinc-800 transition-colors border-r border-zinc-800">EDITAR</button>
@@ -158,7 +191,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
             </div>
 
             {/* FAB — mobile only */}
-            <button className="fab" onClick={() => { setEditingId(null); setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] }); setFormOpen(true); }}>+</button>
+            <button className="fab" onClick={() => { setEditingId(null); setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stockBySizes: {}, stock: '', images: [] }); setFormOpen(true); }}>+</button>
         </div>
     );
 };

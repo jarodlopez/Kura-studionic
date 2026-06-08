@@ -8,6 +8,13 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
         return () => clearInterval(timer);
     }, [storeConfig.heroSlides]);
 
+    // Hide products where every tracked size is at 0 stock
+    const visibleProducts = filteredProducts.filter(product => {
+        const sb = product.stockBySizes;
+        if (!sb || Object.keys(sb).length === 0) return true;
+        return Object.values(sb).some(qty => Number(qty) > 0);
+    });
+
     return (
         <div className="animate-slideUp pb-20">
 
@@ -64,14 +71,14 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
 
             {/* GRILLA DE PRODUCTOS */}
             <main className="p-4 md:p-8 grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                {filteredProducts.length === 0 ? (
+                {visibleProducts.length === 0 ? (
                     <div className="col-span-full py-20 text-center flex flex-col items-center">
                         <span className="text-4xl mb-4">🛸</span>
                         <h3 className="font-bebas text-3xl text-zinc-600">NO SE ENCONTRÓ NADA</h3>
                         <p className="text-zinc-500 text-xs mt-2">Intenta buscar con otra palabra clave.</p>
                     </div>
                 ) : (
-                    filteredProducts.map(product => (
+                    visibleProducts.map(product => (
                         <div key={product.id} className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
                                 <SmoothImage src={product.images?.[0]} width={600} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – KURA STUDIO`} />

@@ -138,12 +138,12 @@
 
     <!-- Views (loaded first so globals are defined before AdminPanel uses them) -->
     <!-- ?v= cache-busting: bump on every view change to defeat browser HTTP cache -->
-    <script type="text/babel" src="views/InventoryView.js?v=5"></script>
-    <script type="text/babel" src="views/OrdersView.js?v=5"></script>
-    <script type="text/babel" src="views/DesignView.js?v=5"></script>
-    <script type="text/babel" src="views/DiscountsView.js?v=5"></script>
-    <script type="text/babel" src="views/BannersView.js?v=5"></script>
-    <script type="text/babel" src="views/AnalyticsView.js?v=5"></script>
+    <script type="text/babel" src="views/InventoryView.js?v=6"></script>
+    <script type="text/babel" src="views/OrdersView.js?v=6"></script>
+    <script type="text/babel" src="views/DesignView.js?v=6"></script>
+    <script type="text/babel" src="views/DiscountsView.js?v=6"></script>
+    <script type="text/babel" src="views/BannersView.js?v=6"></script>
+    <script type="text/babel" src="views/AnalyticsView.js?v=6"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -161,7 +161,7 @@
 
             const [products, setProducts] = useState([]);
             const [inventoryFilter, setInventoryFilter] = useState('TODAS');
-            const [formData, setFormData] = useState({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+            const [formData, setFormData] = useState({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stockBySizes: {}, stock: '', images: [] });
             const [editingId, setEditingId] = useState(null);
 
             const [storeConfig, setStoreConfig] = useState({ heroSlides: [], sizeGuide: '' });
@@ -395,10 +395,14 @@
                 e.preventDefault(); setIsSaving(true);
                 if (!formData.category) { showToast('Selecciona una categoría.', 'error'); setIsSaving(false); return; }
                 try {
-                    const data = { ...formData, price: Number(formData.price), discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null, stock: Number(formData.stock), details: formData.details.split('\n').filter(d => d) };
+                    const cleanStock = {};
+                    Object.entries(formData.stockBySizes || {}).forEach(([sz, val]) => {
+                        if (val !== '' && val !== null && val !== undefined) cleanStock[sz] = Number(val);
+                    });
+                    const data = { ...formData, price: Number(formData.price), discountPrice: formData.discountPrice ? Number(formData.discountPrice) : null, stock: Number(formData.stock), details: formData.details.split('\n').filter(d => d), stockBySizes: cleanStock };
                     if (editingId) await db.collection("products").doc(editingId).update(data);
                     else await db.collection("products").add(data);
-                    setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stock: '', images: [] });
+                    setFormData({ title: '', sku: '', price: '', discountPrice: '', category: '', description: '', details: '', sizes: [], stockBySizes: {}, stock: '', images: [] });
                     setEditingId(null); fetchProducts();
                     showToast(editingId ? 'Prenda actualizada.' : 'Prenda añadida al catálogo.');
                 } catch (error) { showToast("Error al guardar: " + error.message, 'error'); }
@@ -449,6 +453,15 @@
                     setSelectedOrder(null);
                     showToast('Orden eliminada.');
                 } catch (error) { showToast("Error al eliminar: " + error.message, 'error'); }
+            };
+
+            const markOrderSeen = async (id) => {
+                const order = orders.find(o => o.id === id);
+                if (!order || order.seenByAdmin) return;
+                try {
+                    await db.collection("orders").doc(id).update({ seenByAdmin: true });
+                    setOrders(prev => prev.map(o => o.id === id ? { ...o, seenByAdmin: true } : o));
+                } catch { /* no interrumpir UX */ }
             };
 
             const getPrice = (product) => product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
@@ -557,7 +570,7 @@
             const navItems = [
                 { id: 'INVENTORY', label: 'Inventario', short: 'Stock',   icon: IC.INVENTORY },
                 { id: 'DESIGN',    label: 'Diseño',     short: 'Diseño',  icon: IC.DESIGN },
-                { id: 'ORDERS',    label: 'Órdenes',    short: 'Órdenes', icon: IC.ORDERS,   badge: orders.length },
+                { id: 'ORDERS',    label: 'Órdenes',    short: 'Órdenes', icon: IC.ORDERS,   badge: orders.filter(o => !o.seenByAdmin).length || undefined },
                 { id: 'DISCOUNTS', label: 'Descuentos', short: 'Códigos', icon: IC.DISCOUNTS },
                 { id: 'BANNERS',   label: 'Pop-ups',    short: 'Banners', icon: IC.BANNERS },
                 { id: 'ANALYTICS', label: 'Analytics',  short: 'Stats',   icon: IC.ANALYTICS },
@@ -661,6 +674,7 @@
                                     selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder}
                                     orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery}
                                     deleteOrder={deleteOrder} formatDate={formatDate} getPrice={getPrice}
+                                    markOrderSeen={markOrderSeen}
                                 />
                             )}
                             {view === 'DISCOUNTS' && (

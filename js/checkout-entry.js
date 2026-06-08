@@ -104,7 +104,7 @@ function CheckoutApp() {
         setIsUploading(true);
         try {
             const receiptUrl = await uploadToImgBB(receiptFile);
-            const finalOrder = { ...pendingOrder, receiptUrl, status: 'paid_pending_verification' };
+            const finalOrder = { ...pendingOrder, receiptUrl, status: 'paid_pending_verification', seenByAdmin: false };
             await db.collection("orders").doc(pendingOrder.orderNumber).set(finalOrder);
             syncToHubSpot(finalOrder);
 

@@ -82,15 +82,22 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                             )}
                         </div>
                         <div className="flex flex-wrap gap-3">
-                            {selectedProduct.sizes.map(size => (
-                                <button
-                                    key={size}
-                                    onClick={() => setSelectedSize(size)}
-                                    className={`font-bebas text-2xl w-14 h-14 border-2 rounded-xl transition-all ${selectedSize === size ? 'bg-kuraRed border-kuraRed text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-kuraRed hover:text-white'}`}
-                                >
-                                    {size}
-                                </button>
-                            ))}
+                            {selectedProduct.sizes.map(size => {
+                                const sb = selectedProduct.stockBySizes;
+                                const isSoldOut = sb && sb[size] !== undefined && sb[size] !== '' && Number(sb[size]) <= 0;
+                                return (
+                                    <button
+                                        key={size}
+                                        onClick={() => !isSoldOut && setSelectedSize(size)}
+                                        disabled={isSoldOut}
+                                        className={`font-bebas text-2xl w-14 h-14 border-2 rounded-xl transition-all relative ${isSoldOut ? 'border-zinc-900 text-zinc-700 cursor-not-allowed line-through' : selectedSize === size ? 'bg-kuraRed border-kuraRed text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-kuraRed hover:text-white'}`}
+                                        title={isSoldOut ? 'Agotado' : size}
+                                    >
+                                        {size}
+                                        {isSoldOut && <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] text-red-600 font-mono whitespace-nowrap font-bold">AGOT.</span>}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
