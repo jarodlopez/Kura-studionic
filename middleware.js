@@ -73,8 +73,32 @@ export default async function middleware(request) {
 
       const { fields: f = {} } = await res.json();
       const covers = f.categoryCovers?.mapValue?.fields || {};
-      const image = covers[categoryId]?.stringValue || FALLBACK_IMG;
       const decodedCat = decodeURIComponent(categoryId);
+      let image = covers[categoryId]?.stringValue;
+
+      // No manual cover → fall back to the first product image in this category
+      if (!image) {
+        try {
+          const qRes = await fetch(`${FIRESTORE}:runQuery`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              structuredQuery: {
+                from: [{ collectionId: 'products' }],
+                where: { fieldFilter: { field: { fieldPath: 'category' }, op: 'EQUAL', value: { stringValue: decodedCat } } },
+                limit: 1,
+              },
+            }),
+          });
+          if (qRes.ok) {
+            const rows = await qRes.json();
+            const imgArr = rows[0]?.document?.fields?.images?.arrayValue?.values || [];
+            image = imgArr[0]?.stringValue;
+          }
+        } catch { /* ignore — keep falling through */ }
+      }
+
+      image = image || FALLBACK_IMG;
 
       meta = {
         title: `Colección ${decodedCat} – KURA STUDIO`,

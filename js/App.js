@@ -6,7 +6,7 @@ const DEFAULT_META = {
     url: SITE_URL + '/',
 };
 
-function updateMetaTags(product, category, storeConfig) {
+function updateMetaTags(product, category, storeConfig, categoryFallbackImg) {
     let meta;
     if (product) {
         meta = {
@@ -20,7 +20,7 @@ function updateMetaTags(product, category, storeConfig) {
         meta = {
             title: `Colección ${category} – KURA STUDIO`,
             description: `Descubrí la colección ${category} de KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
-            image: storeConfig?.categoryCovers?.[category] || DEFAULT_META.image,
+            image: storeConfig?.categoryCovers?.[category] || categoryFallbackImg || DEFAULT_META.image,
             url: `${SITE_URL}/?category=${encodeURIComponent(category)}`,
         };
     } else {
@@ -174,7 +174,8 @@ function KuraStudio() {
             if (found) openProduct(found);
         } else if (categoryParam) {
             setActiveCategory(categoryParam);
-            updateMetaTags(null, categoryParam, conf);
+            const fallbackImg = items.find(p => p.category === categoryParam)?.images?.[0];
+            updateMetaTags(null, categoryParam, conf, fallbackImg);
         }
     };
 
@@ -199,7 +200,8 @@ function KuraStudio() {
             updateMetaTags(null);
         } else {
             window.history.pushState(null, '', `?category=${encodeURIComponent(cat)}`);
-            updateMetaTags(null, cat, storeConfig);
+            const fallbackImg = products.find(p => p.category === cat)?.images?.[0];
+            updateMetaTags(null, cat, storeConfig, fallbackImg);
         }
     };
 
