@@ -1,4 +1,4 @@
-const SITE_URL = 'https://kurastudio.vercel.app';
+const SITE_URL = 'https://kura-studionic.vercel.app';
 const DEFAULT_META = {
     title: 'KURA STUDIO | Ropa Streetwear Nicaragua',
     description: 'KURA STUDIO – Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.',

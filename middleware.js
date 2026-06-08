@@ -1,5 +1,5 @@
 const BOT_UA = /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|googlebot|bingbot/i;
-const SITE = 'https://kurastudio.vercel.app';
+const SITE = 'https://kura-studionic.vercel.app';
 const PROJECT = 'kuranic-b1034';
 const FALLBACK_IMG = 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png';
 
