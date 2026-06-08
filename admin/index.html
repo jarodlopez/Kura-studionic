@@ -15,7 +15,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -23,7 +23,7 @@
             theme: {
                 extend: {
                     colors: { kuraRed: '#ff003c', kuraDark: '#050505' },
-                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] },
+                    fontFamily: { bebas: ['"Bebas Neue"', 'sans-serif'], jakarta: ['"Plus Jakarta Sans"', 'sans-serif'], mono: ['"Space Mono"', 'monospace'] },
                     animation: { 'slideUp': 'slideUp 0.3s ease-out' },
                     keyframes: { slideUp: { '0%': { transform: 'translateY(20px)', opacity: 0 }, '100%': { transform: 'translateY(0)', opacity: 1 } } }
                 }
@@ -54,13 +54,13 @@
     </script>
 
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Space Mono', monospace; }
-        .brutalist-input { width: 100%; background: #080808; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.75rem; font-size: 0.8rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; font-family: 'Space Mono', monospace; }
+        body { background-color: #000; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .brutalist-input { width: 100%; background: #080808; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.75rem; font-size: 0.8rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
         .brutalist-input:focus { border-color: #ff003c; background: #0d0d0d; }
         .brutalist-btn { background: #ff003c; color: black; padding: 0.65rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; letter-spacing: 0.05em; }
         .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 3px 3px 0px 0px #ff003c; }
         .brutalist-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: bold; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.75rem; font-weight: 600; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
 
