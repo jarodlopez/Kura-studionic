@@ -1,9 +1,41 @@
+const STATUS_CONFIG = {
+    paid_pending_verification: { label: 'PENDIENTE',   color: 'text-yellow-400', bg: 'bg-yellow-900/20 border-yellow-800' },
+    verified:                  { label: 'VERIFICADO',  color: 'text-blue-400',   bg: 'bg-blue-900/20 border-blue-800'   },
+    preparing:                 { label: 'PREPARANDO',  color: 'text-orange-400', bg: 'bg-orange-900/20 border-orange-800'},
+    shipped:                   { label: 'ENVIADO',     color: 'text-purple-400', bg: 'bg-purple-900/20 border-purple-800'},
+    delivered:                 { label: 'ENTREGADO',   color: 'text-green-400',  bg: 'bg-green-900/20 border-green-800' },
+    cancelled:                 { label: 'CANCELADO',   color: 'text-red-400',    bg: 'bg-red-900/20 border-red-800'     },
+};
+
+const WA_MESSAGES = {
+    verified:  (n, num) => `✅ Hola ${n}, tu orden *${num}* fue verificada y ya está en preparación. 🔥 KURA STUDIO`,
+    preparing: (n, num) => `📦 Hola ${n}, tu orden *${num}* está siendo preparada. ¡Pronto la recibirás!`,
+    shipped:   (n, num) => `🚚 Hola ${n}, tu orden *${num}* ya está en camino. En breve llega a tu dirección.`,
+    delivered: (n, num) => `🎉 Hola ${n}, tu orden *${num}* fue entregada. ¡Gracias por tu compra en KURA STUDIO! 🖤`,
+    cancelled: (n, num) => `❌ Hola ${n}, tu orden *${num}* fue cancelada. Si tenés dudas, escribinos.`,
+};
+
+const StatusBadge = ({ status, small }) => {
+    const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.paid_pending_verification;
+    return (
+        <span className={`font-bebas leading-none border rounded px-2 py-0.5 ${cfg.color} ${cfg.bg} ${small ? 'text-[10px]' : 'text-xs'}`}>
+            {cfg.label}
+        </span>
+    );
+};
+
 window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
-    orderSearchQuery, setOrderSearchQuery, deleteOrder, formatDate, getPrice, markOrderSeen }) => {
+    orderSearchQuery, setOrderSearchQuery, deleteOrder, formatDate, getPrice,
+    markOrderSeen, updateOrderStatus }) => {
 
     const openOrder = (order) => {
         setSelectedOrder(order);
         markOrderSeen(order.id);
+    };
+
+    const handleStatusChange = async (status) => {
+        if (!selectedOrder || selectedOrder.status === status) return;
+        await updateOrderStatus(selectedOrder.id, status);
     };
 
     const unseenCount = orders.filter(o => !o.seenByAdmin).length;
@@ -45,17 +77,17 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     onClick={() => openOrder(order)}
                                     style={{ cursor: 'pointer' }}
                                 >
-                                    {isNew && (
-                                        <span className="absolute top-3 right-3 bg-kuraRed text-black text-[9px] font-bold px-2 py-0.5 rounded-full tracking-widest">NUEVA</span>
-                                    )}
-                                    <div className="flex justify-between items-start mb-2 pr-14">
+                                    <div className="flex justify-between items-start mb-2">
                                         <span className="font-bebas text-lg text-white leading-none">{order.orderNumber}</span>
-                                        <span className="text-kuraRed font-bold text-sm font-mono">NIO {order.total}</span>
+                                        <div className="flex items-center gap-2">
+                                            {isNew && <span className="bg-kuraRed text-black text-[9px] font-bold px-2 py-0.5 rounded-full tracking-widest">NUEVA</span>}
+                                            <StatusBadge status={order.status} small />
+                                        </div>
                                     </div>
                                     <p className="text-zinc-300 text-xs font-mono mb-1">{order.customer?.name}</p>
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="text-zinc-600 text-[10px] font-mono">{formatDate(order.date)}</span>
-                                        <span className="text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-300 font-mono rounded">{order.shippingZone}</span>
+                                        <span className="text-kuraRed font-bold text-sm font-mono">NIO {order.total}</span>
                                     </div>
                                 </div>
                             );
@@ -82,14 +114,10 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     return (
                                         <tr key={order.id} className={`border-b border-zinc-900 transition-colors ${isNew ? 'bg-kuraRed/5 hover:bg-kuraRed/10' : (i % 2 === 0 ? 'bg-black hover:bg-zinc-900/60' : 'bg-zinc-950/40 hover:bg-zinc-900/60')}`}>
                                             <td className="px-4 py-3.5">
-                                                {isNew ? (
-                                                    <span className="inline-flex items-center gap-1.5">
-                                                        <span className="w-1.5 h-1.5 bg-kuraRed rounded-full animate-pulse shrink-0"></span>
-                                                        <span className="text-[10px] font-bold text-kuraRed tracking-widest">NUEVA</span>
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] text-zinc-600">Vista</span>
-                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {isNew && <span className="w-1.5 h-1.5 bg-kuraRed rounded-full animate-pulse shrink-0" title="Nueva"></span>}
+                                                    <StatusBadge status={order.status} small />
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3.5 font-bold text-white">{order.orderNumber}</td>
                                             <td className="px-4 py-3.5 text-zinc-500">{formatDate(order.date)}</td>
@@ -117,7 +145,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
             {selectedOrder && (
                 <div className="fixed inset-0 z-[350] bg-black/90 flex items-end justify-center backdrop-blur-sm" onClick={() => setSelectedOrder(null)} style={{ alignItems: 'flex-end' }}>
                     <div className="bg-zinc-950 border border-zinc-800 w-full max-w-4xl max-h-[92vh] overflow-y-auto animate-slideUp flex flex-col shadow-2xl" onClick={e => e.stopPropagation()} style={{ borderRadius: '12px 12px 0 0' }}>
-                        {/* Modal header — sticky */}
+                        {/* Modal header */}
                         <div className="flex items-center justify-between p-4 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
                             <div>
                                 <h2 className="font-bebas text-3xl text-kuraRed leading-none">ORDEN {selectedOrder.orderNumber}</h2>
@@ -129,62 +157,93 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                             </div>
                         </div>
 
-                        <div className="flex flex-col" style={{ minHeight: 0 }}>
-                            <div className="flex flex-col">
-                                <div className="p-5 border-b border-zinc-800">
-                                    <div className="mb-5 bg-black p-4 border border-zinc-800 rounded-xl">
-                                        <p className="font-bold text-white mb-2 text-sm border-b border-zinc-800 pb-2">DATOS DEL CLIENTE</p>
-                                        <p className="text-sm py-0.5"><span className="text-zinc-500">Nombre: </span>{selectedOrder.customer?.name}</p>
-                                        <p className="text-sm py-0.5"><span className="text-zinc-500">Teléfono: </span>{selectedOrder.customer?.phone}</p>
-                                        <p className="text-sm py-0.5"><span className="text-zinc-500">Dirección: </span>{selectedOrder.customer?.address}</p>
-                                        <p className="text-sm py-0.5"><span className="text-zinc-500">Zona: </span><span className="text-kuraRed font-bold">{selectedOrder.shippingZone}</span></p>
-                                    </div>
+                        <div className="flex flex-col">
+                            {/* Customer + products */}
+                            <div className="p-5 border-b border-zinc-800">
+                                <div className="mb-5 bg-black p-4 border border-zinc-800 rounded-xl">
+                                    <p className="font-bold text-white mb-2 text-sm border-b border-zinc-800 pb-2">DATOS DEL CLIENTE</p>
+                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Nombre: </span>{selectedOrder.customer?.name}</p>
+                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Teléfono: </span>{selectedOrder.customer?.phone}</p>
+                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Dirección: </span>{selectedOrder.customer?.address}</p>
+                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Zona: </span><span className="text-kuraRed font-bold">{selectedOrder.shippingZone}</span></p>
+                                </div>
 
-                                    <div>
-                                        <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">PRODUCTOS COMPRADOS</p>
-                                        <div className="space-y-3">
-                                            {selectedOrder.items?.map((item, idx) => (
-                                                <div key={idx} className="flex gap-3 bg-black p-2 border border-zinc-900 rounded-xl">
-                                                    <img src={item.images?.[0]} className="w-12 h-16 object-cover border border-zinc-800 shrink-0 rounded-lg" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-bebas text-lg leading-none truncate">{item.title}</p>
-                                                        <p className="text-[10px] text-zinc-400 font-bold mt-1">TALLA: {item.selectedSize}{item.sku && ` | SKU: ${item.sku}`}</p>
-                                                        <p className="text-kuraRed font-bold text-xs mt-1">NIO {getPrice(item)}</p>
-                                                    </div>
+                                <div>
+                                    <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">PRODUCTOS COMPRADOS</p>
+                                    <div className="space-y-3">
+                                        {selectedOrder.items?.map((item, idx) => (
+                                            <div key={idx} className="flex gap-3 bg-black p-2 border border-zinc-900 rounded-xl">
+                                                <img src={item.images?.[0]} className="w-12 h-16 object-cover border border-zinc-800 shrink-0 rounded-lg" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bebas text-lg leading-none truncate">{item.title}</p>
+                                                    <p className="text-[10px] text-zinc-400 font-bold mt-1">TALLA: {item.selectedSize}{item.sku && ` | SKU: ${item.sku}`}</p>
+                                                    <p className="text-kuraRed font-bold text-xs mt-1">NIO {getPrice(item)}</p>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-5 pt-4 border-t border-zinc-800 space-y-1 text-sm">
-                                        <div className="flex justify-between text-zinc-400"><span>Subtotal:</span><span>NIO {selectedOrder.subtotal}</span></div>
-                                        {selectedOrder.discountAmount > 0 && (
-                                            <div className="flex justify-between text-green-400 font-bold"><span>Descuento ({selectedOrder.discountCode}):</span><span>- NIO {selectedOrder.discountAmount}</span></div>
-                                        )}
-                                        <div className="flex justify-between text-zinc-400"><span>Envío:</span><span>NIO {selectedOrder.shippingCost}</span></div>
-                                        <div className="flex justify-between text-white font-bold text-lg pt-2 mt-2 border-t border-zinc-800">
-                                            <span>TOTAL PAGADO:</span><span className="text-kuraRed">NIO {selectedOrder.total}</span>
-                                        </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="p-5 bg-zinc-900 flex flex-col">
-                                    <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">COMPROBANTE DE PAGO</p>
-                                    {selectedOrder.receiptUrl ? (
-                                        <div className="border border-zinc-700 bg-black flex flex-col rounded-xl overflow-hidden">
-                                            <a href={selectedOrder.receiptUrl} target="_blank" className="flex items-center justify-center p-2 hover:opacity-80 transition-opacity">
-                                                <img src={selectedOrder.receiptUrl} className="max-h-64 w-full object-contain" />
-                                            </a>
-                                            <a href={selectedOrder.receiptUrl} target="_blank" className="bg-zinc-800 text-center py-2.5 text-xs font-bold hover:bg-kuraRed hover:text-black transition-colors block border-t border-zinc-700">
-                                                ABRIR IMAGEN COMPLETA ↗
-                                            </a>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center border border-dashed border-zinc-700 text-zinc-500 text-sm p-8 rounded-xl">
-                                            Sin comprobante adjunto
-                                        </div>
+                                <div className="mt-5 pt-4 border-t border-zinc-800 space-y-1 text-sm">
+                                    <div className="flex justify-between text-zinc-400"><span>Subtotal:</span><span>NIO {selectedOrder.subtotal}</span></div>
+                                    {selectedOrder.discountAmount > 0 && (
+                                        <div className="flex justify-between text-green-400 font-bold"><span>Descuento ({selectedOrder.discountCode}):</span><span>- NIO {selectedOrder.discountAmount}</span></div>
                                     )}
+                                    <div className="flex justify-between text-zinc-400"><span>Envío:</span><span>NIO {selectedOrder.shippingCost}</span></div>
+                                    <div className="flex justify-between text-white font-bold text-lg pt-2 mt-2 border-t border-zinc-800">
+                                        <span>TOTAL PAGADO:</span><span className="text-kuraRed">NIO {selectedOrder.total}</span>
+                                    </div>
                                 </div>
+                            </div>
+
+                            {/* Order status management */}
+                            <div className="p-5 border-b border-zinc-800">
+                                <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">ESTADO DE LA ORDEN</p>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => handleStatusChange(key)}
+                                            className={`font-bebas text-base px-3 py-1.5 border transition-all rounded ${
+                                                (selectedOrder.status || 'paid_pending_verification') === key
+                                                    ? `${cfg.bg} ${cfg.color}`
+                                                    : 'bg-transparent text-zinc-600 border-zinc-800 hover:border-zinc-500 hover:text-zinc-300'
+                                            }`}
+                                        >{cfg.label}</button>
+                                    ))}
+                                </div>
+
+                                {/* WhatsApp notification */}
+                                {WA_MESSAGES[selectedOrder.status] && selectedOrder.customer?.phone && (
+                                    <a
+                                        href={`https://wa.me/505${selectedOrder.customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(WA_MESSAGES[selectedOrder.status](selectedOrder.customer.name, selectedOrder.orderNumber))}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center justify-center gap-2 w-full bg-[#25D366] text-black font-bebas text-lg py-3 px-4 rounded-xl hover:opacity-90 transition-opacity"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                        NOTIFICAR AL CLIENTE
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Receipt */}
+                            <div className="p-5 bg-zinc-900 flex flex-col">
+                                <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2">COMPROBANTE DE PAGO</p>
+                                {selectedOrder.receiptUrl ? (
+                                    <div className="border border-zinc-700 bg-black flex flex-col rounded-xl overflow-hidden">
+                                        <a href={selectedOrder.receiptUrl} target="_blank" className="flex items-center justify-center p-2 hover:opacity-80 transition-opacity">
+                                            <img src={selectedOrder.receiptUrl} className="max-h-64 w-full object-contain" />
+                                        </a>
+                                        <a href={selectedOrder.receiptUrl} target="_blank" className="bg-zinc-800 text-center py-2.5 text-xs font-bold hover:bg-kuraRed hover:text-black transition-colors block border-t border-zinc-700">
+                                            ABRIR IMAGEN COMPLETA ↗
+                                        </a>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center border border-dashed border-zinc-700 text-zinc-500 text-sm p-8 rounded-xl">
+                                        Sin comprobante adjunto
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

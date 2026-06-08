@@ -509,6 +509,14 @@
                 } catch { /* no interrumpir UX */ }
             };
 
+            const updateOrderStatus = async (id, status) => {
+                try {
+                    await db.collection("orders").doc(id).update({ status });
+                    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+                    setSelectedOrder(prev => prev?.id === id ? { ...prev, status } : prev);
+                } catch { showToast('Error al actualizar estado', 'error'); }
+            };
+
             const getPrice = (product) => product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
             const formatDate = (iso) => { if (!iso) return 'Fecha desconocida'; return new Date(iso).toLocaleString('es-NI', { dateStyle: 'medium', timeStyle: 'short' }); };
 
@@ -722,7 +730,7 @@
                                     selectedOrder={selectedOrder} setSelectedOrder={setSelectedOrder}
                                     orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery}
                                     deleteOrder={deleteOrder} formatDate={formatDate} getPrice={getPrice}
-                                    markOrderSeen={markOrderSeen}
+                                    markOrderSeen={markOrderSeen} updateOrderStatus={updateOrderStatus}
                                 />
                             )}
                             {view === 'DISCOUNTS' && (
