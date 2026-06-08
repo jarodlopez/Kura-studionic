@@ -103,7 +103,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
                 {/* List */}
                 <div className="flex-1 min-w-0 flex flex-col">
-                    <div className="bg-black border border-zinc-800 p-4 mb-4 flex flex-wrap gap-2 items-center">
+                    <div className="bg-black border border-zinc-800 p-4 mb-4 flex flex-wrap gap-2 items-center rounded-xl">
                         <span className="text-xs text-zinc-500 font-bold mr-2">FILTRAR:</span>
                         <button onClick={() => setInventoryFilter('TODAS')} className={`brutalist-btn-outline px-3 py-1 ${inventoryFilter === 'TODAS' ? 'active' : ''}`}>TODAS</button>
                         {uniqueCategories.map(cat => (
@@ -113,7 +113,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
                     <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
                         {filteredInventory.map(p => (
-                            <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group">
+                            <div key={p.id} className="border border-zinc-800 flex flex-col bg-zinc-950 relative group rounded-xl overflow-hidden">
                                 <div className="relative bg-black border-b border-zinc-800 overflow-hidden" style={{ aspectRatio: '4/5' }}>
                                     <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                     {p.discountPrice && p.discountPrice > 0 && (

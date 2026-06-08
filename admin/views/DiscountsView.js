@@ -88,7 +88,7 @@ window.DiscountsView = ({ discountCodes, codeForm, setCodeForm, editingCodeId, s
                     ) : (
                         <div className="space-y-3">
                             {discountCodes.map(c => (
-                                <div key={c.id} className={`bg-zinc-950 border p-4 flex flex-col gap-4 ${c.active ? 'border-zinc-800' : 'border-zinc-900 opacity-50'}`}>
+                                <div key={c.id} className={`bg-zinc-950 border p-4 flex flex-col gap-4 rounded-xl ${c.active ? 'border-zinc-800' : 'border-zinc-900 opacity-50'}`}>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-1">
                                             <span className="font-bebas text-2xl text-white">{c.code}</span>

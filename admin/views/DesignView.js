@@ -54,7 +54,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                     </div>
 
                     {/* Portadas activas list */}
-                    <div className="flex-1 min-w-0 border border-zinc-800 p-5 bg-zinc-950">
+                    <div className="flex-1 min-w-0 border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="font-bebas text-2xl border-b border-zinc-800 pb-2 flex-1">PORTADAS ACTIVAS ({storeConfig.heroSlides?.length || 0})</h3>
                         </div>
@@ -78,7 +78,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                 </div>
 
                 {/* Size Guide section — always full width below */}
-                <div className="border border-zinc-800 p-5 bg-zinc-950">
+                <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
                     <h2 className="font-bebas text-3xl text-kuraRed mb-3">GUÍA DE TALLAS GLOBAL</h2>
                     <p className="text-xs text-zinc-400 mb-5 leading-relaxed">Sube una imagen con la tabla de medidas. Aparecerá cuando el cliente toque "Guía de Medidas" al ver una prenda.</p>
                     <div className="border border-zinc-800 p-4 bg-black mb-5">

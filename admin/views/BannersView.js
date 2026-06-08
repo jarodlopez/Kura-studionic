@@ -91,7 +91,7 @@ window.BannersView = ({ popupBanners, bannerForm, setBannerForm, editingBannerId
                     ) : (
                         <div className="space-y-4">
                             {popupBanners.map(b => (
-                                <div key={b.id} className={`bg-zinc-950 border flex flex-col gap-4 ${b.active ? 'border-zinc-800' : 'border-zinc-900 opacity-50'}`}>
+                                <div key={b.id} className={`bg-zinc-950 border flex flex-col gap-4 rounded-xl overflow-hidden ${b.active ? 'border-zinc-800' : 'border-zinc-900 opacity-50'}`}>
                                     <img src={b.image} className="w-full h-40 object-cover shrink-0" />
                                     <div className="flex flex-col flex-1 px-4 pb-4">
                                         <div className="flex items-center gap-2 mb-1">

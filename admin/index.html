@@ -55,12 +55,12 @@
 
     <style>
         body { background-color: #000; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .brutalist-input { width: 100%; background: #080808; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.75rem; font-size: 0.8rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .brutalist-input:focus { border-color: #ff003c; background: #0d0d0d; }
-        .brutalist-btn { background: #ff003c; color: black; padding: 0.65rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; letter-spacing: 0.05em; }
+        .brutalist-input { width: 100%; background: #0d0d0d; border: 1px solid #2a2a2a; color: white; padding: 0.65rem 0.85rem; font-size: 0.82rem; margin-top: 0.25rem; outline: none; transition: border-color 0.2s, background 0.2s; font-family: 'Plus Jakarta Sans', sans-serif; border-radius: 10px; }
+        .brutalist-input:focus { border-color: #ff003c; background: #111; }
+        .brutalist-btn { background: #ff003c; color: black; padding: 0.65rem 1.5rem; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; cursor: pointer; text-transform: uppercase; border: 2px solid #ff003c; transition: all 0.2s; letter-spacing: 0.05em; border-radius: 10px; }
         .brutalist-btn:hover { background: #000; color: #ff003c; box-shadow: 3px 3px 0px 0px #ff003c; }
         .brutalist-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.75rem; font-weight: 600; }
+        .brutalist-btn-outline { background: #000; color: #fff; border: 1px solid #2a2a2a; transition: all 0.2s ease; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 0.75rem; font-weight: 600; border-radius: 8px; }
         .brutalist-btn-outline:hover, .brutalist-btn-outline.active { border-color: #ff003c; color: #ff003c; }
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
 
@@ -88,11 +88,12 @@
             overflow-y: auto; transform: translateY(100%);
             transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+            border-radius: 24px 24px 0 0;
         }
         .form-sheet.is-open { transform: translateY(0); }
 
         /* Desktop form sidebar (hidden on mobile) */
-        .desk-form { display: none; }
+        .desk-form { display: none; border-radius: 16px; overflow: hidden; }
 
         /* Floating action button (mobile only) */
         .fab {
@@ -137,12 +138,12 @@
 
     <!-- Views (loaded first so globals are defined before AdminPanel uses them) -->
     <!-- ?v= cache-busting: bump on every view change to defeat browser HTTP cache -->
-    <script type="text/babel" src="views/InventoryView.js?v=4"></script>
-    <script type="text/babel" src="views/OrdersView.js?v=4"></script>
-    <script type="text/babel" src="views/DesignView.js?v=4"></script>
-    <script type="text/babel" src="views/DiscountsView.js?v=4"></script>
-    <script type="text/babel" src="views/BannersView.js?v=4"></script>
-    <script type="text/babel" src="views/AnalyticsView.js?v=4"></script>
+    <script type="text/babel" src="views/InventoryView.js?v=5"></script>
+    <script type="text/babel" src="views/OrdersView.js?v=5"></script>
+    <script type="text/babel" src="views/DesignView.js?v=5"></script>
+    <script type="text/babel" src="views/DiscountsView.js?v=5"></script>
+    <script type="text/babel" src="views/BannersView.js?v=5"></script>
+    <script type="text/babel" src="views/AnalyticsView.js?v=5"></script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -519,7 +520,7 @@
                                 <h1 className="font-bebas text-6xl text-white leading-none">KURA<span className="text-kuraRed">STUDIO</span></h1>
                                 <p className="text-zinc-600 font-mono text-[11px] tracking-[0.3em] mt-2">PANEL DE ADMINISTRACIÓN</p>
                             </div>
-                            <div className="bg-zinc-950 border border-zinc-800 p-8">
+                            <div className="bg-zinc-950 border border-zinc-800 p-8 rounded-2xl">
                                 {loginError && (
                                     <div className="flex items-center gap-2 bg-red-950/50 border border-red-900 text-red-300 text-xs p-3 mb-5 font-mono">
                                         <span className="text-red-500">✕</span> {loginError}
@@ -569,7 +570,7 @@
                     {/* TOASTS */}
                     <div className="fixed top-4 right-4 z-[500] flex flex-col gap-2 w-64 pointer-events-none">
                         {toasts.map(t => (
-                            <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-kuraRed text-white'}`}>
+                            <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 rounded-xl ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-kuraRed text-white'}`}>
                                 <span className={`text-base shrink-0 ${t.type === 'error' ? 'text-red-500' : 'text-kuraRed'}`}>{t.type === 'error' ? '✕' : '✓'}</span>
                                 <span className="leading-tight">{t.msg}</span>
                             </div>
@@ -631,7 +632,7 @@
 
                         <main className="flex-1 overflow-y-auto p-4 admin-main-padding">
                             {isSaving && (
-                                <div className="admin-saving-offset fixed left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl">
+                                <div className="admin-saving-offset fixed left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl rounded-full">
                                     <span className="w-3 h-3 border-2 border-kuraRed border-t-transparent rounded-full animate-spin shrink-0"></span>
                                     Guardando...
                                 </div>

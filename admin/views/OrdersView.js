@@ -2,7 +2,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
     orderSearchQuery, setOrderSearchQuery, deleteOrder, formatDate, getPrice }) => {
 
     return (
-        <div className="view-animate bg-zinc-950 border border-zinc-900 min-h-[50vh]">
+        <div className="view-animate bg-zinc-950 border border-zinc-900 min-h-[50vh] rounded-2xl overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-900">
                 <input
                     type="text"
@@ -23,7 +23,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                     {/* Mobile cards */}
                     <div className="order-cards p-3">
                         {filteredOrders.map(order => (
-                            <div key={order.id} className="bg-zinc-900 border border-zinc-800 p-4 active:bg-zinc-800 transition-colors" onClick={() => setSelectedOrder(order)} style={{ cursor: 'pointer' }}>
+                            <div key={order.id} className="bg-zinc-900 border border-zinc-800 p-4 active:bg-zinc-800 transition-colors rounded-xl" onClick={() => setSelectedOrder(order)} style={{ cursor: 'pointer' }}>
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="font-bebas text-lg text-white leading-none">{order.orderNumber}</span>
                                     <span className="text-kuraRed font-bold text-sm font-mono">NIO {order.total}</span>

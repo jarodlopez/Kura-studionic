@@ -92,7 +92,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                     {/* KPI Cards: 2 cols on mobile, 4 on desktop */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }} className="kpi-grid">
                         {kpiCards.map((kpi, i) => (
-                            <div key={i} className="bg-zinc-950 border border-zinc-800 p-4">
+                            <div key={i} className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl">
                                 <p className="text-[9px] text-zinc-500 font-bold tracking-widest mb-2 uppercase leading-tight">{kpi.label}</p>
                                 <p className={`font-bebas text-3xl ${kpi.color} leading-none mb-1`}>{kpi.value}</p>
                                 <p className="text-zinc-600 text-xs">{kpi.sub}</p>
@@ -101,7 +101,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                     </div>
 
                     {/* Funnel */}
-                    <div className="bg-zinc-950 border border-zinc-800 p-5">
+                    <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
                         <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> EMBUDO DE CONVERSIÓN</h3>
                         <div className="space-y-3">
                             {funnelSteps.map((step, i) => {
@@ -132,7 +132,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                     </div>
 
                     {/* Daily sales chart */}
-                    <div className="bg-zinc-950 border border-zinc-800 p-5">
+                    <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
                         <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> VENTAS DIARIAS (NIO)</h3>
                         {chartDays.every(d => d.revenue === 0) ? (
                             <p className="text-zinc-600 text-center py-10 font-bebas text-xl">SIN DATOS DE VENTAS EN ESTE PERÍODO</p>
@@ -154,7 +154,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
 
                     {/* Top products + zones + categories */}
                     <div className="space-y-6">
-                        <div className="bg-zinc-950 border border-zinc-800 p-5">
+                        <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
                             <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> TOP PRODUCTOS VENDIDOS</h3>
                             {topProducts.length === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-xl text-center py-10">SIN VENTAS EN ESTE PERÍODO</p>
@@ -181,7 +181,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                             )}
                         </div>
 
-                        <div className="bg-zinc-950 border border-zinc-800 p-5">
+                        <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
                             <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> ZONAS DE ENVÍO</h3>
                             {ordersCompleted === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-lg text-center py-4">SIN DATOS</p>
@@ -202,7 +202,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                             )}
                         </div>
 
-                        <div className="bg-zinc-950 border border-zinc-800 p-5">
+                        <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
                             <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> CATEGORÍAS VISTAS</h3>
                             {topCats.length === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-lg text-center py-4">SIN DATOS</p>
