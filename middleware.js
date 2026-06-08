@@ -1,6 +1,7 @@
 const BOT_UA = /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|googlebot|bingbot/i;
 const SITE = 'https://kura-studionic.vercel.app';
 const PROJECT = 'kuranic-b1034';
+const API_KEY = 'AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U';
 const FALLBACK_IMG = 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png';
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
@@ -51,7 +52,7 @@ export default async function middleware(request) {
     let meta;
 
     if (productId) {
-      const res = await fetch(`${FIRESTORE}/products/${productId}`, { signal: controller.signal });
+      const res = await fetch(`${FIRESTORE}/products/${productId}?key=${API_KEY}`, { signal: controller.signal });
       clearTimeout(timer);
       if (!res.ok) return;
 
@@ -67,7 +68,7 @@ export default async function middleware(request) {
 
     } else {
       // Category: read cover from settings/store.categoryCovers
-      const res = await fetch(`${FIRESTORE}/settings/store`, { signal: controller.signal });
+      const res = await fetch(`${FIRESTORE}/settings/store?key=${API_KEY}`, { signal: controller.signal });
       clearTimeout(timer);
       if (!res.ok) return;
 
@@ -79,7 +80,7 @@ export default async function middleware(request) {
       // No manual cover → fall back to the first product image in this category
       if (!image) {
         try {
-          const qRes = await fetch(`${FIRESTORE}:runQuery`, {
+          const qRes = await fetch(`${FIRESTORE}:runQuery?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
