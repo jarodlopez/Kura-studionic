@@ -1,3 +1,56 @@
+const SITE_URL = 'https://kurastudio.vercel.app';
+const DEFAULT_META = {
+    title: 'KURA STUDIO | Ropa Streetwear Nicaragua',
+    description: 'KURA STUDIO – Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.',
+    image: 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png',
+    url: SITE_URL + '/',
+};
+
+function updateMetaTags(product) {
+    const meta = product ? {
+        title: `${product.title} – KURA STUDIO`,
+        description: (product.description || '').slice(0, 155) ||
+            `${product.title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+        image: product.images?.[0] || DEFAULT_META.image,
+        url: `${SITE_URL}/?product=${product.id}`,
+    } : DEFAULT_META;
+
+    document.title = meta.title;
+    const setMeta = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val); };
+    setMeta('meta[name="description"]', 'content', meta.description);
+    setMeta('link[rel="canonical"]', 'href', meta.url);
+    setMeta('meta[property="og:title"]', 'content', meta.title);
+    setMeta('meta[property="og:description"]', 'content', meta.description);
+    setMeta('meta[property="og:image"]', 'content', meta.image);
+    setMeta('meta[property="og:url"]', 'content', meta.url);
+    setMeta('meta[name="twitter:title"]', 'content', meta.title);
+    setMeta('meta[name="twitter:description"]', 'content', meta.description);
+    setMeta('meta[name="twitter:image"]', 'content', meta.image);
+
+    const existing = document.getElementById('product-jsonld');
+    if (existing) existing.remove();
+    if (product) {
+        const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
+        const ld = {
+            '@context': 'https://schema.org', '@type': 'Product',
+            name: product.title, description: meta.description,
+            image: product.images || [meta.image],
+            sku: product.sku || product.id,
+            brand: { '@type': 'Brand', name: 'KURA STUDIO' },
+            offers: {
+                '@type': 'Offer', url: meta.url, priceCurrency: 'NIO', price: price,
+                availability: 'https://schema.org/InStock',
+                seller: { '@type': 'Organization', name: 'KURA STUDIO' }
+            }
+        };
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.id = 'product-jsonld';
+        script.textContent = JSON.stringify(ld);
+        document.head.appendChild(script);
+    }
+}
+
 function KuraStudio() {
     const { useState, useEffect } = React;
 
@@ -101,17 +154,22 @@ function KuraStudio() {
 
     const checkDynamicLink = (items) => {
         const id = new URLSearchParams(window.location.search).get('product');
-        if (id) { const found = items.find(p => p.id === id); if (found) openProduct(found); }
+        if (id) { const found = items.find(p => p.id === id); if (found) { openProduct(found); updateMetaTags(found); } }
     };
 
     const openProduct = (product) => {
         setSelectedProduct(product); setSelectedSize(''); setMainImageIndex(0);
         window.history.pushState(null, '', `?product=${product.id}`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        updateMetaTags(product);
         trackEvent('product_view', { productId: product.id, productTitle: product.title, category: product.category || '' });
     };
 
-    const closeProduct = () => { setSelectedProduct(null); window.history.pushState(null, '', window.location.pathname); };
+    const closeProduct = () => {
+        setSelectedProduct(null);
+        window.history.pushState(null, '', window.location.pathname);
+        updateMetaTags(null);
+    };
 
     const addToCart = (product) => {
         if (!selectedSize && product.sizes?.length > 0) return alert('SELECCIONA UNA TALLA PARA CONTINUAR');
