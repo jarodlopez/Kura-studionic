@@ -74,7 +74,7 @@ export default async function middleware(request) {
       const { fields: f = {} } = await res.json();
       const covers = f.categoryCovers?.mapValue?.fields || {};
       const decodedCat = decodeURIComponent(categoryId);
-      let image = covers[categoryId]?.stringValue;
+      let image = covers[decodedCat]?.stringValue;
 
       // No manual cover → fall back to the first product image in this category
       if (!image) {
