@@ -75,22 +75,31 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                     </div>
                     {formData.sizes.length > 0 && (
                         <div className="space-y-2">
-                            <p className="text-[10px] text-zinc-500 font-bold tracking-widest">STOCK POR TALLA <span className="text-zinc-600 font-normal normal-case">(dejar vacío = sin límite)</span></p>
-                            {formData.sizes.map(s => (
-                                <div key={s} className="flex items-center gap-2">
-                                    <span className="w-14 text-center font-bebas text-lg text-zinc-300 bg-zinc-900 border border-zinc-800 py-1.5 rounded-lg shrink-0">{s}</span>
-                                    <input
-                                        type="number" min="0"
-                                        placeholder="Sin límite"
-                                        className="brutalist-input mt-0 flex-1 text-sm"
-                                        value={formData.stockBySizes?.[s] ?? ''}
-                                        onChange={e => setFormData(p => ({ ...p, stockBySizes: { ...p.stockBySizes, [s]: e.target.value === '' ? '' : Number(e.target.value) } }))}
-                                    />
-                                    {(formData.stockBySizes?.[s] !== undefined && formData.stockBySizes?.[s] !== '' && Number(formData.stockBySizes?.[s]) === 0) && (
-                                        <span className="text-[10px] text-red-400 font-bold shrink-0">AGOTADO</span>
-                                    )}
-                                </div>
-                            ))}
+                            <p className="text-[10px] text-zinc-500 font-bold tracking-widest">STOCK POR TALLA <span className="text-zinc-600 font-normal normal-case">(vacío = sin límite)</span></p>
+                            {formData.sizes.map(s => {
+                                const val = formData.stockBySizes?.[s];
+                                const isOut = val !== undefined && val !== '' && Number(val) === 0;
+                                return (
+                                    <div key={s} className="flex items-center gap-2">
+                                        <span className={`w-14 text-center py-1.5 rounded-lg shrink-0 border flex flex-col items-center justify-center gap-0.5 ${isOut ? 'bg-red-950 border-red-900 text-red-400' : 'bg-zinc-900 border-zinc-800 text-zinc-300'}`}>
+                                            <span className="font-bebas text-base leading-none">{s}</span>
+                                            {isOut && <span className="text-[8px] font-mono font-bold leading-none">AGOT.</span>}
+                                        </span>
+                                        <div className="flex-1 relative">
+                                            <input
+                                                type="number" min="0"
+                                                placeholder="Sin límite"
+                                                className="brutalist-input mt-0 w-full text-sm"
+                                                value={val ?? ''}
+                                                onChange={e => setFormData(p => ({ ...p, stockBySizes: { ...p.stockBySizes, [s]: e.target.value === '' ? '' : Number(e.target.value) } }))}
+                                            />
+                                            {!isOut && val !== '' && val !== undefined && (
+                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 font-mono pointer-events-none">uds</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
