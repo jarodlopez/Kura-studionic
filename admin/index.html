@@ -65,10 +65,16 @@
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; } ::-webkit-scrollbar-thumb:hover { background: #ff003c; }
 
         /* Responsive sidebar / bottom nav */
-        .admin-sidebar { display: none; flex-direction: column; width: 13rem; background: #000; border-right: 1px solid #18181b; flex-shrink: 0; }
-        .admin-bottom-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 400; background: #000; border-top: 1px solid #18181b; }
-        .admin-main-padding { padding-bottom: 7rem; }
-        .admin-saving-offset { bottom: 7.5rem; }
+        .admin-sidebar { display: none; flex-direction: column; width: 13rem; background: #000; border-right: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
+        .admin-bottom-nav {
+            display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 400;
+            background: rgba(0,0,0,0.88);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        .admin-main-padding { padding-bottom: 6.5rem; }
+        .admin-saving-offset { bottom: 7rem; }
         @media (min-width: 768px) {
             .admin-sidebar { display: flex; }
             .admin-bottom-nav { display: none; }
@@ -76,15 +82,12 @@
             .admin-saving-offset { bottom: 1.5rem; }
         }
 
-        /* Safe area iPhone X+ */
-        .admin-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
-
-        /* Form slide-up sheet (mobile) */
+        /* Form slide-up sheet — z-index above nav so content is never clipped */
         .form-sheet {
-            position: fixed; inset: 0; z-index: 300; background: #09090b;
+            position: fixed; inset: 0; z-index: 500; background: #0a0a0a;
             overflow-y: auto; transform: translateY(100%);
-            transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
-            padding-bottom: env(safe-area-inset-bottom, 1rem);
+            transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
         }
         .form-sheet.is-open { transform: translateY(0); }
 
@@ -93,15 +96,15 @@
 
         /* Floating action button (mobile only) */
         .fab {
-            position: fixed; bottom: 6.5rem; right: 1rem; z-index: 250;
-            width: 56px; height: 56px; background: #ff003c; color: #000;
+            position: fixed; bottom: 6rem; right: 1.25rem; z-index: 450;
+            width: 54px; height: 54px; background: #ff003c; color: #000;
             border-radius: 50%; border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; font-weight: 900;
-            box-shadow: 0 4px 20px rgba(255,0,60,0.55);
-            transition: transform 0.15s; touch-action: manipulation;
+            font-size: 1.5rem; font-weight: 900;
+            box-shadow: 0 4px 24px rgba(255,0,60,0.5), 0 1px 4px rgba(0,0,0,0.6);
+            transition: transform 0.15s, box-shadow 0.15s; touch-action: manipulation;
         }
-        .fab:active { transform: scale(0.9); }
+        .fab:active { transform: scale(0.91); box-shadow: 0 2px 12px rgba(255,0,60,0.4); }
 
         /* Orders: cards on mobile, table on desktop */
         .order-cards { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -542,13 +545,21 @@
                 );
             }
 
+            const IC = {
+                INVENTORY: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
+                DESIGN:    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+                ORDERS:    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12l2 2 4-4"/></svg>,
+                DISCOUNTS: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>,
+                BANNERS:   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
+                ANALYTICS: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
+            };
             const navItems = [
-                { id: 'INVENTORY', label: 'Inventario', icon: '▣' },
-                { id: 'DESIGN',    label: 'Diseño',     icon: '◈' },
-                { id: 'ORDERS',    label: 'Órdenes',    icon: '≡', badge: orders.length },
-                { id: 'DISCOUNTS', label: 'Descuentos', icon: '◇' },
-                { id: 'BANNERS',   label: 'Pop-ups',    icon: '▭' },
-                { id: 'ANALYTICS', label: 'Analytics',  icon: '▦' },
+                { id: 'INVENTORY', label: 'Inventario', short: 'Stock',   icon: IC.INVENTORY },
+                { id: 'DESIGN',    label: 'Diseño',     short: 'Diseño',  icon: IC.DESIGN },
+                { id: 'ORDERS',    label: 'Órdenes',    short: 'Órdenes', icon: IC.ORDERS,   badge: orders.length },
+                { id: 'DISCOUNTS', label: 'Descuentos', short: 'Códigos', icon: IC.DISCOUNTS },
+                { id: 'BANNERS',   label: 'Pop-ups',    short: 'Banners', icon: IC.BANNERS },
+                { id: 'ANALYTICS', label: 'Analytics',  short: 'Stats',   icon: IC.ANALYTICS },
             ];
 
             const viewTitles = { INVENTORY: 'INVENTARIO', DESIGN: 'DISEÑO WEB', ORDERS: 'ÓRDENES', DISCOUNTS: 'DESCUENTOS', BANNERS: 'POP-UPS', ANALYTICS: 'ANALYTICS' };
@@ -576,12 +587,12 @@
                                 <button
                                     key={id}
                                     onClick={() => handleNavClick(id)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-bold rounded-sm transition-all text-left ${view === id ? 'bg-zinc-800 text-white' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/60'}`}
+                                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-medium rounded-lg transition-all text-left ${view === id ? 'bg-zinc-900 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'}`}
                                 >
-                                    <span className={`text-sm ${view === id ? 'text-kuraRed' : 'text-zinc-700'}`}>{icon}</span>
+                                    <span className={`w-5 h-5 flex items-center justify-center shrink-0 ${view === id ? 'text-kuraRed' : 'text-zinc-500'}`}>{icon}</span>
                                     {label}
                                     {badge !== undefined && (
-                                        <span className={`ml-auto text-[10px] px-1.5 py-0.5 font-mono ${view === id ? 'bg-kuraRed text-black' : 'bg-zinc-900 text-zinc-500'}`}>{badge}</span>
+                                        <span className={`ml-auto text-[10px] px-1.5 py-0.5 font-mono rounded ${view === id ? 'bg-kuraRed text-black' : 'bg-zinc-800 text-zinc-500'}`}>{badge}</span>
                                     )}
                                 </button>
                             ))}
@@ -679,20 +690,23 @@
 
                     {/* BOTTOM NAV — mobile only (hidden on desktop via CSS) */}
                     <nav className="admin-bottom-nav">
-                        {navItems.map(({ id, label, icon, badge }) => (
+                        {navItems.map(({ id, short, label, icon, badge }) => (
                             <button
                                 key={id}
                                 onClick={() => handleNavClick(id)}
-                                className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}
+                                className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all relative ${view === id ? 'text-kuraRed' : 'text-zinc-500'}`}
                                 style={{ touchAction: 'manipulation' }}
                             >
-                                <span className="text-2xl leading-none relative">
+                                {view === id && (
+                                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-kuraRed rounded-full" />
+                                )}
+                                <span className="relative flex items-center justify-center">
                                     {icon}
                                     {badge !== undefined && badge > 0 && (
-                                        <span className="absolute -top-1 -right-2.5 bg-kuraRed text-black text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{badge > 9 ? '9+' : badge}</span>
+                                        <span className="absolute -top-1.5 -right-2 bg-kuraRed text-black text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>
                                     )}
                                 </span>
-                                <span className={`text-[11px] font-bold tracking-wide leading-none ${view === id ? 'text-kuraRed' : 'text-zinc-600'}`}>{label}</span>
+                                <span className="text-[10px] font-medium leading-none tracking-tight">{short || label}</span>
                             </button>
                         ))}
                     </nav>
