@@ -71,13 +71,20 @@ window.uploadToImgBB = async (file) => {
 // las convierte a WebP y las redimensiona al ancho necesario, on-the-fly.
 // Optimiza también las imágenes ya subidas, sin re-subir nada.
 // Si la URL no es de ImgBB (data:, relativa, etc.) se deja intacta.
+//
+// El ancho pedido se normaliza a pocos tamaños fijos (600/1200/1600) para
+// que todas las vistas compartan la MISMA URL por imagen: la miniatura del
+// carrito reutiliza la variante ya descargada en el grid en lugar de
+// generar una nueva en frío en el proxy.
 window.optimizeImg = (url, width) => {
     if (!url || typeof url !== 'string') return url;
     if (!/^https?:\/\/i\.ibb\.co\//i.test(url)) return url;
     const clean = url.replace(/^https?:\/\//i, '');
-    const w = width ? `&w=${width}` : '';
+    const bucket = width ? (width <= 600 ? 600 : width <= 1200 ? 1200 : 1600) : 0;
+    const w = bucket ? `&w=${bucket}` : '';
     // &we = no agrandar imágenes más chicas que el ancho pedido
-    return `https://wsrv.nl/?url=${encodeURIComponent(clean)}${w}&output=webp&q=82&we`;
+    // &il = WebP progresivo: se ve algo borroso de inmediato en vez de nada
+    return `https://wsrv.nl/?url=${encodeURIComponent(clean)}${w}&output=webp&q=82&we&il`;
 };
 
 window.getPrice = (product) =>
