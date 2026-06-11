@@ -5,15 +5,18 @@ const API_KEY = 'AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U';
 const FALLBACK_IMG = 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png';
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
-// Only runs on the root path — admin, checkout, assets are not touched
-export const config = { matcher: '/' };
+export const config = { matcher: ['/', '/producto/:id*'] };
 
 export default async function middleware(request) {
   const url = new URL(request.url);
-  const productId = url.searchParams.get('product');
+
+  // Detect product ID — from clean URL (/producto/ID) or legacy query (?product=ID)
+  const pathProduct = url.pathname.startsWith('/producto/')
+    ? url.pathname.replace('/producto/', '')
+    : null;
+  const productId = pathProduct || url.searchParams.get('product');
   const categoryId = url.searchParams.get('category');
 
-  // No recognisable param → pass through to index.html as normal
   if (!productId && !categoryId) return;
 
   // Real user → pass through, let React handle it
@@ -63,11 +66,13 @@ export default async function middleware(request) {
         `${title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`;
       const imgArr = f.images?.arrayValue?.values || [];
       const image = imgArr[0]?.stringValue || FALLBACK_IMG;
+      const productUrl = pathProduct
+        ? `${SITE}/producto/${productId}`
+        : `${SITE}/?product=${productId}`;
 
-      meta = { title: `${title} – KURA STUDIO`, desc, image, url: `${SITE}/?product=${productId}`, type: 'product' };
+      meta = { title: `${title} – KURA STUDIO`, desc, image, url: productUrl, type: 'product' };
 
     } else {
-      // Category: read cover from settings/store.categoryCovers
       const res = await fetch(`${FIRESTORE}/settings/store?key=${API_KEY}`, { signal: controller.signal });
       clearTimeout(timer);
       if (!res.ok) return;
@@ -77,7 +82,6 @@ export default async function middleware(request) {
       const decodedCat = decodeURIComponent(categoryId);
       let image = covers[decodedCat]?.stringValue;
 
-      // No manual cover → fall back to the first product image in this category
       if (!image) {
         try {
           const qRes = await fetch(`${FIRESTORE}:runQuery?key=${API_KEY}`, {
@@ -96,7 +100,7 @@ export default async function middleware(request) {
             const imgArr = rows[0]?.document?.fields?.images?.arrayValue?.values || [];
             image = imgArr[0]?.stringValue;
           }
-        } catch { /* ignore — keep falling through */ }
+        } catch { /* ignore */ }
       }
 
       image = image || FALLBACK_IMG;
@@ -115,7 +119,6 @@ export default async function middleware(request) {
     });
 
   } catch {
-    // Timeout, network error, parse error → always pass through, never crash the site
     return;
   }
 }

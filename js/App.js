@@ -14,7 +14,7 @@ function updateMetaTags(product, category, storeConfig, categoryFallbackImg) {
             description: (product.description || '').slice(0, 155) ||
                 `${product.title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
             image: product.images?.[0] || DEFAULT_META.image,
-            url: `${SITE_URL}/?product=${product.id}`,
+            url: `${SITE_URL}/producto/${product.id}`,
         };
     } else if (category && category !== 'ALL') {
         meta = {
@@ -41,29 +41,9 @@ function updateMetaTags(product, category, storeConfig, categoryFallbackImg) {
 
     const existing = document.getElementById('product-jsonld');
     if (existing) existing.remove();
-    if (product) {
-        const price = product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
-        const ld = {
-            '@context': 'https://schema.org', '@type': 'Product',
-            name: product.title, description: meta.description,
-            image: product.images || [meta.image],
-            sku: product.sku || product.id,
-            brand: { '@type': 'Brand', name: 'KURA STUDIO' },
-            offers: {
-                '@type': 'Offer', url: meta.url, priceCurrency: 'NIO', price: price,
-                availability: 'https://schema.org/InStock',
-                seller: { '@type': 'Organization', name: 'KURA STUDIO' }
-            }
-        };
-        const script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.id = 'product-jsonld';
-        script.textContent = JSON.stringify(ld);
-        document.head.appendChild(script);
-    }
 }
 
-// Permite que el admin limpie el caché del cliente añadiendo ?refresh=1 a la URL
+// Permite limpiar el caché añadiendo ?refresh=1 a la URL
 if (new URLSearchParams(window.location.search).get('refresh') === '1') {
     try { localStorage.removeItem('kura_store_cache'); } catch {}
 }
@@ -76,15 +56,10 @@ function KuraStudio() {
     const [storeConfig, setStoreConfig] = useState({ heroSlides: [] });
     const [isLoading, setIsLoading] = useState(true);
 
-    const [selectedProduct, setSelectedProduct] = useState(null);
     const [activeCategory, setActiveCategory] = useState('ALL');
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedSize, setSelectedSize] = useState('');
-    const [mainImageIndex, setMainImageIndex] = useState(0);
 
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const [isSizeModalOpen, setIsSizeModalOpen] = useState(false);
-    const [toastMsg, setToastMsg] = useState('');
 
     const [shippingZone, setShippingZone] = useState('managua');
     const [discountCodes, setDiscountCodes] = useState([]);
@@ -98,7 +73,6 @@ function KuraStudio() {
     const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch { return []; } });
     useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-    // Pulsing dot on cart icon if a pending order exists (set by checkout page)
     const [hasPendingOrder] = useState(() => !!localStorage.getItem('kura_pending_order'));
 
     const shippingRates = { managua: 100, departamentos: 165 };
@@ -125,7 +99,7 @@ function KuraStudio() {
 
     useEffect(() => {
         const CACHE_KEY = 'kura_store_cache';
-        const CACHE_TTL = 20 * 60 * 1000; // 20 minutos
+        const CACHE_TTL = 20 * 60 * 1000;
 
         const loadFromCache = () => {
             try {
@@ -140,7 +114,7 @@ function KuraStudio() {
         const saveToCache = (products, config, codes, banners) => {
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), products, config, codes, banners }));
-            } catch { /* storage lleno, ignorar */ }
+            } catch {}
         };
 
         const fetchData = async () => {
@@ -208,8 +182,8 @@ function KuraStudio() {
         const productId = params.get('product');
         const categoryParam = params.get('category');
         if (productId) {
-            const found = items.find(p => p.id === productId);
-            if (found) openProduct(found);
+            // Redirect legacy ?product=ID links to the new product page
+            window.location.replace(`/producto/${productId}`);
         } else if (categoryParam) {
             setActiveCategory(categoryParam);
             const fallbackImg = items.find(p => p.category === categoryParam)?.images?.[0];
@@ -218,17 +192,7 @@ function KuraStudio() {
     };
 
     const openProduct = (product) => {
-        setSelectedProduct(product); setSelectedSize(''); setMainImageIndex(0);
-        window.history.pushState(null, '', `?product=${product.id}`);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        updateMetaTags(product);
-        trackEvent('product_view', { productId: product.id, productTitle: product.title, category: product.category || '' });
-    };
-
-    const closeProduct = () => {
-        setSelectedProduct(null);
-        window.history.pushState(null, '', window.location.pathname);
-        updateMetaTags(null);
+        window.location.href = `/producto/${product.id}`;
     };
 
     const openCategory = (cat) => {
@@ -243,14 +207,6 @@ function KuraStudio() {
         }
     };
 
-    const addToCart = (product) => {
-        if (!selectedSize && product.sizes?.length > 0) return alert('SELECCIONA UNA TALLA PARA CONTINUAR');
-        const sizeToSave = selectedSize || 'ÚNICA';
-        setCart([...cart, { ...product, selectedSize: sizeToSave, cartId: Date.now() }]);
-        setToastMsg(`AGREGADO: ${product.title}`); setTimeout(() => setToastMsg(''), 3000);
-        trackEvent('add_to_cart', { productId: product.id, productTitle: product.title, price: getPrice(product) });
-    };
-
     const productCats = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
     const managedCats = storeConfig.categories || [];
     const orderedCats = managedCats.length > 0
@@ -260,8 +216,6 @@ function KuraStudio() {
 
     return (
         <div className="min-h-screen relative flex flex-col text-sm bg-black">
-            <Toast message={toastMsg} isVisible={!!toastMsg} />
-
             <PopupBanner isPopupVisible={isPopupVisible} setIsPopupVisible={setIsPopupVisible} popupBanners={popupBanners} />
 
             <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
@@ -269,7 +223,7 @@ function KuraStudio() {
             </div>
 
             <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
-                <div className="cursor-pointer" onClick={closeProduct}>
+                <div className="cursor-pointer" onClick={() => { setActiveCategory('ALL'); window.history.pushState(null, '', '/'); updateMetaTags(null); }}>
                     <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
                 </div>
                 <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
@@ -297,7 +251,7 @@ function KuraStudio() {
                     <div className="flex flex-col items-center justify-center h-[70vh] bg-black">
                         <p className="text-4xl md:text-6xl font-bebas text-zinc-800 animate-pulse">CARGANDO SISTEMA...</p>
                     </div>
-                ) : !selectedProduct ? (
+                ) : (
                     <HomeView
                         storeConfig={storeConfig}
                         filteredProducts={filteredProducts}
@@ -309,24 +263,14 @@ function KuraStudio() {
                         setSearchQuery={setSearchQuery}
                         openProduct={openProduct}
                     />
-                ) : (
-                    <ProductDetailView
-                        selectedProduct={selectedProduct}
-                        closeProduct={closeProduct}
-                        products={products}
-                        openProduct={openProduct}
-                        setIsSizeModalOpen={setIsSizeModalOpen}
-                        addToCart={addToCart}
-                        selectedSize={selectedSize}
-                        setSelectedSize={setSelectedSize}
-                        mainImageIndex={mainImageIndex}
-                        setMainImageIndex={setMainImageIndex}
-                        storeConfig={storeConfig}
-                    />
                 )}
             </div>
 
-            <SizeModal isSizeModalOpen={isSizeModalOpen} setIsSizeModalOpen={setIsSizeModalOpen} storeConfig={storeConfig} />
+            <footer className="py-4 text-center border-t border-zinc-900/50">
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 300, letterSpacing: '0.08em' }} className="text-[10px] text-zinc-700">
+                    powered by <span className="text-zinc-500">Kodialabs</span>
+                </p>
+            </footer>
 
             <MiniCart
                 isCartOpen={isCartOpen}
@@ -347,13 +291,6 @@ function KuraStudio() {
                 setShippingZone={setShippingZone}
             />
 
-            <footer className="py-4 text-center border-t border-zinc-900/50">
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 300, letterSpacing: '0.08em' }} className="text-[10px] text-zinc-700">
-                    powered by <span className="text-zinc-500">Kodialabs</span>
-                </p>
-            </footer>
-
-            {/* Floating cart button */}
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"

@@ -30,10 +30,16 @@ Promise.all([
     'js/utils.js',
     'js/components/PopupBanner.js',
     'js/components/Home.js',
-    'js/components/ProductDetail.js',
     'js/components/Cart.js',
     'js/App.js',
   ], 'dist/app.js'),
+
+  build([
+    'js/utils.js',
+    'js/components/ProductDetail.js',
+    'js/components/Cart.js',
+    'js/product-entry.js',
+  ], 'dist/product.js'),
 
   build([
     'js/utils.js',
