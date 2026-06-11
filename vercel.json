@@ -6,6 +6,6 @@
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/admin/", "destination": "/admin/index.html" },
     { "source": "/checkout", "destination": "/checkout.html" },
-    { "source": "/producto/:id", "destination": "/product.html" }
+    { "source": "/producto/:path*", "destination": "/product.html" }
   ]
 }

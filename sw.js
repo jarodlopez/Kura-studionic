@@ -1,4 +1,4 @@
-const CACHE = 'kura-store-v1';
+const CACHE = 'kura-store-v2';
 const FONT_CACHE = 'kura-fonts-v1';
 
 const PRECACHE = [

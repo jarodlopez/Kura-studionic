@@ -5,7 +5,7 @@ const API_KEY = 'AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U';
 const FALLBACK_IMG = 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png';
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
-export const config = { matcher: ['/', '/producto/:id*'] };
+export const config = { matcher: ['/', '/producto/:path*'] };
 
 export default async function middleware(request) {
   const url = new URL(request.url);

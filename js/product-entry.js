@@ -61,6 +61,7 @@ function KuraProduct() {
                 const snap = await db.collection("products").doc(productId).get();
                 if (!snap.exists) { setNotFound(true); setIsLoading(false); return; }
                 const prod = { id: snap.id, ...snap.data() };
+                if (!prod.title) { setNotFound(true); setIsLoading(false); return; }
                 setProduct(prod);
                 document.title = `${prod.title} – KURA STUDIO`;
 
@@ -94,7 +95,7 @@ function KuraProduct() {
                 setDiscountCodes(codes);
                 setAllProducts(prods);
                 trackEvent('product_view', { productId: prod.id, productTitle: prod.title, category: prod.category || '' });
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error(e); setNotFound(true); }
             setIsLoading(false);
         };
         load();
