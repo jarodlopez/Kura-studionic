@@ -195,6 +195,8 @@ function KuraProduct() {
                 setShippingZone={setShippingZone}
             />
 
+            <WhatsAppFab product={product} selectedSize={selectedSize} />
+
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"
