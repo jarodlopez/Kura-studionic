@@ -1,8 +1,8 @@
 const BRAND = 'MI TIENDA'; // PLANTILLA: nombre de la marca para meta tags de bots
 const BOT_UA = /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|googlebot|bingbot/i;
 const SITE = 'https://mitienda.vercel.app'; // PLANTILLA: dominio del cliente
-const PROJECT = 'TU_PROYECTO';
-const API_KEY = 'TU_FIREBASE_API_KEY';
+const PROJECT = 'kuranic-b1034';
+const API_KEY = 'AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U';
 const FALLBACK_IMG = '';
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
