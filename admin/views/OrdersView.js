@@ -8,10 +8,10 @@ const STATUS_CONFIG = {
 };
 
 const WA_MESSAGES = {
-    verified:  (n, num) => `✅ Hola ${n}, tu orden *${num}* fue verificada y ya está en preparación. 🔥 KURA STUDIO`,
+    verified:  (n, num) => `✅ Hola ${n}, tu orden *${num}* fue verificada y ya está en preparación. 🔥 ${window.__BRAND || ""}`,
     preparing: (n, num) => `📦 Hola ${n}, tu orden *${num}* está siendo preparada. ¡Pronto la recibirás!`,
     shipped:   (n, num) => `🚚 Hola ${n}, tu orden *${num}* ya está en camino. En breve llega a tu dirección.`,
-    delivered: (n, num) => `🎉 Hola ${n}, tu orden *${num}* fue entregada. ¡Gracias por tu compra en KURA STUDIO! 🖤`,
+    delivered: (n, num) => `🎉 Hola ${n}, tu orden *${num}* fue entregada. ¡Gracias por tu compra en ${window.__BRAND || "nuestra tienda"}! 🖤`,
     cancelled: (n, num) => `❌ Hola ${n}, tu orden *${num}* fue cancelada. Si tenés dudas, escribinos.`,
 };
 
@@ -87,7 +87,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     <p className="text-zinc-300 text-xs font-mono mb-1">{order.customer?.name}</p>
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="text-zinc-600 text-[10px] font-mono">{formatDate(order.date)}</span>
-                                        <span className="text-kuraRed font-bold text-sm font-mono">NIO {order.total}</span>
+                                        <span className="text-kuraRed font-bold text-sm font-mono">{fmtPrice(order.total)}</span>
                                     </div>
                                 </div>
                             );
@@ -125,7 +125,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                             <td className="px-4 py-3.5">
                                                 <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${order.shippingZone === 'Managua' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-700 text-white'}`}>{order.shippingZone}</span>
                                             </td>
-                                            <td className="px-4 py-3.5 text-kuraRed font-bold">NIO {order.total}</td>
+                                            <td className="px-4 py-3.5 text-kuraRed font-bold">{fmtPrice(order.total)}</td>
                                             <td className="px-4 py-3.5 text-center">
                                                 <div className="flex gap-1.5 justify-center">
                                                     <button onClick={() => openOrder(order)} className="px-3 py-1.5 text-[10px] font-bold bg-zinc-800 hover:bg-kuraRed hover:text-black text-zinc-300 transition-colors rounded">VER</button>
@@ -177,7 +177,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bebas text-lg leading-none truncate">{item.title}</p>
                                                     <p className="text-[10px] text-zinc-400 font-bold mt-1">TALLA: {item.selectedSize}{item.sku && ` | SKU: ${item.sku}`}</p>
-                                                    <p className="text-kuraRed font-bold text-xs mt-1">NIO {getPrice(item)}</p>
+                                                    <p className="text-kuraRed font-bold text-xs mt-1">{fmtPrice(getPrice(item))}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -185,13 +185,13 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                 </div>
 
                                 <div className="mt-5 pt-4 border-t border-zinc-800 space-y-1 text-sm">
-                                    <div className="flex justify-between text-zinc-400"><span>Subtotal:</span><span>NIO {selectedOrder.subtotal}</span></div>
+                                    <div className="flex justify-between text-zinc-400"><span>Subtotal:</span><span>{fmtPrice(selectedOrder.subtotal)}</span></div>
                                     {selectedOrder.discountAmount > 0 && (
-                                        <div className="flex justify-between text-green-400 font-bold"><span>Descuento ({selectedOrder.discountCode}):</span><span>- NIO {selectedOrder.discountAmount}</span></div>
+                                        <div className="flex justify-between text-green-400 font-bold"><span>Descuento ({selectedOrder.discountCode}):</span><span>- {fmtPrice(selectedOrder.discountAmount)}</span></div>
                                     )}
-                                    <div className="flex justify-between text-zinc-400"><span>Envío:</span><span>NIO {selectedOrder.shippingCost}</span></div>
+                                    <div className="flex justify-between text-zinc-400"><span>Envío:</span><span>{fmtPrice(selectedOrder.shippingCost)}</span></div>
                                     <div className="flex justify-between text-white font-bold text-lg pt-2 mt-2 border-t border-zinc-800">
-                                        <span>TOTAL PAGADO:</span><span className="text-kuraRed">NIO {selectedOrder.total}</span>
+                                        <span>TOTAL PAGADO:</span><span className="text-kuraRed">{fmtPrice(selectedOrder.total)}</span>
                                     </div>
                                 </div>
                             </div>

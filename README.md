@@ -1,4 +1,4 @@
-# KURA STUDIO
+# Kodia Shop — Plantilla de tienda online
 
 Tienda streetwear — React 18 (vía CDN) + Firebase Firestore. Sin framework
 de build pesado: el JSX se pre-compila a un solo archivo con esbuild y el CSS

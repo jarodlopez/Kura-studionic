@@ -1,5 +1,84 @@
 // Globals disponibles desde index.html: React, db, IMGBB_API_KEY
 
+// ============================================================
+// SISTEMA DE MARCA (white-label) — toda la identidad de la
+// tienda vive en Firestore (settings/store) y se edita desde el
+// admin. Estos son los valores neutros de la plantilla.
+// ============================================================
+window.BRAND_DEFAULTS = {
+    brandName: 'MI TIENDA',
+    logoUrl: '',
+    accentColor: '#ffffff',
+    marqueeText: 'BIENVENIDO A NUESTRA TIENDA // ENVÍOS A TODO EL PAÍS //',
+    whatsapp: '',            // sin número → se oculta el botón flotante
+    currency: 'C$',
+    variantLabel: 'TALLA',   // ropa: TALLA · ferretería: MEDIDA / PRESENTACIÓN
+    cartTitle: 'TU CARRITO',
+    orderPrefix: 'ORD',
+};
+
+// Módulos activables desde el Super Admin (settings/store.features)
+window.DEFAULT_FEATURES = {
+    heroSlider: true,
+    discounts: true,
+    banners: true,
+    sizeGuide: true,
+    whatsappFab: true,
+    analytics: true,
+};
+
+window.DEFAULT_ZONES = [{ id: 'local', label: 'ENTREGA LOCAL', cost: 0 }];
+
+let _brandCache = null;
+window.getBranding = () => {
+    if (_brandCache) return _brandCache;
+    try { _brandCache = { ...window.BRAND_DEFAULTS, ...(JSON.parse(localStorage.getItem('kodia_branding')) || {}) }; }
+    catch { _brandCache = { ...window.BRAND_DEFAULTS }; }
+    return _brandCache;
+};
+
+window.getFeatures = (storeConfig) => ({ ...window.DEFAULT_FEATURES, ...(storeConfig?.features || {}) });
+
+window.getZones = (storeConfig) =>
+    (Array.isArray(storeConfig?.shippingZones) && storeConfig.shippingZones.length > 0)
+        ? storeConfig.shippingZones
+        : window.DEFAULT_ZONES;
+
+const hexToRgbStr = (hex) => {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+    return m ? `${parseInt(m[1], 16)} ${parseInt(m[2], 16)} ${parseInt(m[3], 16)}` : '255 255 255';
+};
+
+const setAccentVars = (hex) => {
+    const s = document.documentElement.style;
+    s.setProperty('--accent', hex);
+    s.setProperty('--accent-rgb', hexToRgbStr(hex));
+};
+
+// Aplica la marca del storeConfig (color como variables CSS) y la
+// cachea en localStorage para que no haya "flash" en la próxima visita.
+window.applyBranding = (storeConfig = {}) => {
+    const branding = { ...window.BRAND_DEFAULTS, ...(storeConfig.branding || {}) };
+    _brandCache = branding;
+    setAccentVars(branding.accentColor);
+    try { localStorage.setItem('kodia_branding', JSON.stringify(branding)); } catch {}
+    return branding;
+};
+
+// Aplicar de inmediato la marca cacheada, antes del fetch a Firestore
+setAccentVars(window.getBranding().accentColor);
+
+window.fmtPrice = (n) => `${window.getBranding().currency} ${n}`;
+
+// Logo del header: imagen si el cliente subió una, texto si no
+window.BrandLogo = () => {
+    const b = window.getBranding();
+    return b.logoUrl
+        ? <img src={b.logoUrl} alt={b.brandName} className="h-9 md:h-12 w-auto object-contain" draggable={false} />
+        : <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">{b.brandName}</h1>;
+};
+
+
 window.trackEvent = async (type, data = {}) => {
     try {
         await db.collection("analytics").add({
@@ -91,19 +170,22 @@ window.getPrice = (product) =>
     product.discountPrice && product.discountPrice > 0 ? product.discountPrice : product.price;
 
 // Botón flotante de WhatsApp. Si recibe un producto, el mensaje lleva su
-// detalle (título, talla elegida, precio y link); si no, un saludo genérico.
-window.WhatsAppFab = ({ product, selectedSize }) => {
+// detalle (título, variante elegida, precio y link); si no, un saludo genérico.
+// Se oculta si la tienda no configuró número o el módulo está desactivado.
+window.WhatsAppFab = ({ product, selectedSize, storeConfig }) => {
+    const b = getBranding();
+    if (!b.whatsapp || getFeatures(storeConfig).whatsappFab === false) return null;
     const lines = product
         ? [
-            'Hola KURA STUDIO 👋 Me interesa este producto:',
+            `Hola ${b.brandName} 👋 Me interesa este producto:`,
             '',
             `*${product.title}*`,
-            selectedSize ? `Talla: ${selectedSize}` : null,
-            `Precio: NIO ${getPrice(product)}`,
+            selectedSize ? `${b.variantLabel}: ${selectedSize}` : null,
+            `Precio: ${fmtPrice(getPrice(product))}`,
             `${window.location.origin}/producto/${product.id}`,
         ].filter(l => l !== null)
-        : ['Hola KURA STUDIO 👋 Quiero más información sobre sus productos.'];
-    const href = `https://wa.me/50587091008?text=${encodeURIComponent(lines.join('\n'))}`;
+        : [`Hola ${b.brandName} 👋 Quiero más información sobre sus productos.`];
+    const href = `https://wa.me/${b.whatsapp}?text=${encodeURIComponent(lines.join('\n'))}`;
     return (
         <a
             href={href}
@@ -143,7 +225,7 @@ window.SmoothImage = ({ src, className, alt, eager, width }) => (
                 e.target.src = original;
             }
         }}
-        alt={alt || "KURA STUDIO"}
+        alt={alt || window.getBranding().brandName}
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         draggable={false}

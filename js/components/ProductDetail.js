@@ -6,7 +6,7 @@ window.SizeModal = ({ isSizeModalOpen, setIsSizeModalOpen, storeConfig }) => {
                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white font-bebas text-2xl">✕</button>
                 <h3 className="font-bebas text-3xl text-kuraRed mb-6">GUÍA DE MEDIDAS</h3>
                 {storeConfig.sizeGuide ? (
-                    <img src={optimizeImg(storeConfig.sizeGuide, 1400)} onError={(e) => { if (storeConfig.sizeGuide && e.target.src !== storeConfig.sizeGuide) e.target.src = storeConfig.sizeGuide; }} className="w-full h-auto border border-zinc-800" decoding="async" draggable={false} alt="Guía de tallas KURA STUDIO" />
+                    <img src={optimizeImg(storeConfig.sizeGuide, 1400)} onError={(e) => { if (storeConfig.sizeGuide && e.target.src !== storeConfig.sizeGuide) e.target.src = storeConfig.sizeGuide; }} className="w-full h-auto border border-zinc-800" decoding="async" draggable={false} alt="Guía de medidas" />
                 ) : (
                     <p className="text-zinc-500">Guía no disponible temporalmente.</p>
                 )}
@@ -36,12 +36,12 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     </div>
                 )}
                 <div className="w-full border border-zinc-800 bg-zinc-950 relative rounded-xl overflow-hidden">
-                    <SmoothImage src={selectedProduct.images?.[mainImageIndex]} width={900} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – KURA STUDIO`} eager />
+                    <SmoothImage src={selectedProduct.images?.[mainImageIndex]} width={900} className="w-full h-auto aspect-[4/5] object-cover" alt={`${selectedProduct.title} – ${getBranding().brandName}`} eager />
                 </div>
             </div>
 
             <div className="w-full md:w-[45%] flex flex-col">
-                <p className="text-kuraRed font-mono text-sm tracking-widest mb-2 font-bold uppercase">{selectedProduct.category} FIT</p>
+                <p className="text-kuraRed font-mono text-sm tracking-widest mb-2 font-bold uppercase">{selectedProduct.category}</p>
                 <h2 className="text-5xl md:text-7xl font-bebas mb-2 leading-none tracking-wide">{selectedProduct.title}</h2>
 
                 {selectedProduct.sku && (
@@ -53,11 +53,11 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                 <div className="flex items-end gap-4 mb-8">
                     {selectedProduct.discountPrice && selectedProduct.discountPrice > 0 ? (
                         <>
-                            <span className="text-4xl md:text-5xl font-mono text-kuraRed font-bold">NIO {selectedProduct.discountPrice}</span>
-                            <span className="text-xl md:text-2xl font-mono text-zinc-500 line-through mb-1">NIO {selectedProduct.price}</span>
+                            <span className="text-4xl md:text-5xl font-mono text-kuraRed font-bold">{fmtPrice(selectedProduct.discountPrice)}</span>
+                            <span className="text-xl md:text-2xl font-mono text-zinc-500 line-through mb-1">{fmtPrice(selectedProduct.price)}</span>
                         </>
                     ) : (
-                        <span className="text-4xl md:text-5xl font-mono text-white">NIO {selectedProduct.price}</span>
+                        <span className="text-4xl md:text-5xl font-mono text-white">{fmtPrice(selectedProduct.price)}</span>
                     )}
                 </div>
 
@@ -76,8 +76,8 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                 {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
                     <div className="mb-8 border-t border-zinc-900 pt-6">
                         <div className="flex justify-between items-center mb-4">
-                            <p className="text-xs text-zinc-500 tracking-widest">SELECCIONA TALLA</p>
-                            {storeConfig.sizeGuide && (
+                            <p className="text-xs text-zinc-500 tracking-widest">SELECCIONA {getBranding().variantLabel}</p>
+                            {getFeatures(storeConfig).sizeGuide !== false && storeConfig.sizeGuide && (
                                 <button onClick={() => setIsSizeModalOpen(true)} className="text-kuraRed text-xs underline decoration-kuraRed/50 hover:text-white transition-colors">GUÍA DE MEDIDAS</button>
                             )}
                         </div>
@@ -118,14 +118,14 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     {products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 4).map(item => (
                         <div key={item.id} className="brutalist-card cursor-pointer group flex flex-col" onClick={() => openProduct(item)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
-                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – KURA STUDIO`} loading="lazy" decoding="async" draggable={false} />
+                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – ${getBranding().brandName}`} loading="lazy" decoding="async" draggable={false} />
                                 {item.discountPrice && item.discountPrice > 0 && (
                                     <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
                                 )}
                             </div>
                             <div className="p-3 flex flex-col flex-1">
                                 <p className="font-bebas text-lg truncate leading-none mb-1">{item.title}</p>
-                                <p className="text-kuraRed text-xs font-bold font-mono mt-auto">NIO {getPrice(item)}</p>
+                                <p className="text-kuraRed text-xs font-bold font-mono mt-auto">{fmtPrice(getPrice(item))}</p>
                             </div>
                         </div>
                     ))}
@@ -143,7 +143,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     {products.filter(p => p.category !== selectedProduct.category).sort(() => 0.5 - Math.random()).slice(0, 4).map(item => (
                         <div key={item.id} className="brutalist-card cursor-pointer grayscale hover:grayscale-0 transition-all duration-300 flex flex-col" onClick={() => openProduct(item)}>
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – KURA STUDIO`} loading="lazy" decoding="async" draggable={false} />
+                                <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover" alt={`${item.title} – ${getBranding().brandName}`} loading="lazy" decoding="async" draggable={false} />
                             </div>
                             <div className="p-3 flex flex-col flex-1">
                                 <p className="font-bebas text-lg truncate text-zinc-300 leading-none mb-1">{item.title}</p>

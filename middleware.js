@@ -1,8 +1,9 @@
+const BRAND = 'MI TIENDA'; // PLANTILLA: nombre de la marca para meta tags de bots
 const BOT_UA = /whatsapp|facebookexternalhit|facebot|twitterbot|telegrambot|linkedinbot|slackbot|discordbot|googlebot|bingbot/i;
-const SITE = 'https://kura-studionic.vercel.app';
-const PROJECT = 'kuranic-b1034';
-const API_KEY = 'AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U';
-const FALLBACK_IMG = 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png';
+const SITE = 'https://mitienda.vercel.app'; // PLANTILLA: dominio del cliente
+const PROJECT = 'TU_PROYECTO';
+const API_KEY = 'TU_FIREBASE_API_KEY';
+const FALLBACK_IMG = '';
 const FIRESTORE = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
 
 export const config = { matcher: ['/', '/producto/:path*'] };
@@ -41,7 +42,7 @@ export default async function middleware(request) {
 <meta property="og:image" content="${h(meta.image)}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="1500">
-<meta property="og:site_name" content="KURA STUDIO">
+<meta property="og:site_name" content="${BRAND}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${h(meta.title)}">
 <meta name="twitter:description" content="${h(meta.desc)}">
@@ -60,17 +61,17 @@ export default async function middleware(request) {
       if (!res.ok) return;
 
       const { fields: f = {} } = await res.json();
-      const title = f.title?.stringValue || 'KURA STUDIO';
+      const title = f.title?.stringValue || BRAND;
       const rawDesc = f.description?.stringValue || '';
       const desc = rawDesc.slice(0, 155) ||
-        `${title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`;
+        `${title} en ${BRAND}.`;
       const imgArr = f.images?.arrayValue?.values || [];
       const image = imgArr[0]?.stringValue || FALLBACK_IMG;
       const productUrl = pathProduct
         ? `${SITE}/producto/${productId}`
         : `${SITE}/?product=${productId}`;
 
-      meta = { title: `${title} – KURA STUDIO`, desc, image, url: productUrl, type: 'product' };
+      meta = { title: `${title} – ${BRAND}`, desc, image, url: productUrl, type: 'product' };
 
     } else {
       const res = await fetch(`${FIRESTORE}/settings/store?key=${API_KEY}`, { signal: controller.signal });
@@ -106,8 +107,8 @@ export default async function middleware(request) {
       image = image || FALLBACK_IMG;
 
       meta = {
-        title: `Colección ${decodedCat} – KURA STUDIO`,
-        desc: `Descubrí la colección ${decodedCat} de KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+        title: `Colección ${decodedCat} – ${BRAND}`,
+        desc: `Descubrí la colección ${decodedCat} de ${BRAND}.`,
         image,
         url: `${SITE}/?category=${categoryId}`,
         type: 'website',

@@ -21,7 +21,7 @@ function KuraProduct() {
     const [isCartOpen, setIsCartOpen] = useState(false);
 
     const [cart, setCart] = useState(() => { try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch { return []; } });
-    const [shippingZone, setShippingZone] = useState('managua');
+    const [shippingZone, setShippingZone] = useState('');
     const [discountCodes, setDiscountCodes] = useState([]);
     const [discountInput, setDiscountInput] = useState('');
     const [appliedDiscount, setAppliedDiscount] = useState(null);
@@ -29,8 +29,9 @@ function KuraProduct() {
 
     useEffect(() => { localStorage.setItem('kura_cart', JSON.stringify(cart)); }, [cart]);
 
-    const shippingRates = { managua: 100, departamentos: 165 };
-    const currentShippingCost = shippingRates[shippingZone] || 0;
+    const zones = getZones(storeConfig);
+    const activeZone = zones.find(z => z.id === shippingZone) || zones[0];
+    const currentShippingCost = activeZone ? Number(activeZone.cost) : 0;
     const cartSubtotal = cart.reduce((a, b) => a + getPrice(b), 0);
     const discountAmount = appliedDiscount
         ? (appliedDiscount.type === 'percent'
@@ -63,7 +64,7 @@ function KuraProduct() {
                 const prod = { id: snap.id, ...snap.data() };
                 if (!prod.title) { setNotFound(true); setIsLoading(false); return; }
                 setProduct(prod);
-                document.title = `${prod.title} – KURA STUDIO`;
+                document.title = `${prod.title} – ${getBranding().brandName}`;
 
                 let conf = {}, codes = [], prods = [];
                 try {
@@ -92,6 +93,7 @@ function KuraProduct() {
                 }
 
                 setStoreConfig(conf);
+                applyBranding(conf);
                 setDiscountCodes(codes);
                 setAllProducts(prods);
                 trackEvent('product_view', { productId: prod.id, productTitle: prod.title, category: prod.category || '' });
@@ -115,7 +117,7 @@ function KuraProduct() {
     );
 
     const addToCart = (prod) => {
-        if (!selectedSize && prod.sizes?.length > 0) return alert('SELECCIONA UNA TALLA PARA CONTINUAR');
+        if (!selectedSize && prod.sizes?.length > 0) return alert(`SELECCIONA UNA ${getBranding().variantLabel} PARA CONTINUAR`);
         const sizeToSave = selectedSize || 'ÚNICA';
         setCart([...cart, { ...prod, selectedSize: sizeToSave, cartId: Date.now() }]);
         setToastMsg(`AGREGADO: ${prod.title}`);
@@ -131,12 +133,12 @@ function KuraProduct() {
             <Toast message={toastMsg} isVisible={!!toastMsg} />
 
             <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
-                <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS //</div>
+                <div className="marquee-content animate-marquee">{getBranding().marqueeText}</div>
             </div>
 
             <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
                 <div className="cursor-pointer" onClick={() => window.location.href = '/'}>
-                    <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
+                    <BrandLogo />
                 </div>
                 <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -191,17 +193,18 @@ function KuraProduct() {
                 cartSubtotal={cartSubtotal}
                 cartTotal={cartTotal}
                 currentShippingCost={currentShippingCost}
-                shippingZone={shippingZone}
+                shippingZone={activeZone?.id}
                 setShippingZone={setShippingZone}
+                storeConfig={storeConfig}
             />
 
-            <WhatsAppFab product={product} selectedSize={selectedSize} />
+            <WhatsAppFab product={product} selectedSize={selectedSize} storeConfig={storeConfig} />
 
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"
                 className={`fixed bottom-6 right-4 z-[100] flex items-center gap-2 bg-kuraRed text-black font-bebas text-lg rounded-full transition-all duration-300 ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-                style={{ padding: '0.7rem 1.4rem 0.7rem 1.1rem', boxShadow: '0 4px 28px rgba(255,0,60,0.55), 0 2px 8px rgba(0,0,0,0.5)' }}
+                style={{ padding: '0.7rem 1.4rem 0.7rem 1.1rem', boxShadow: '0 4px 28px rgb(var(--accent-rgb) / 0.55), 0 2px 8px rgba(0,0,0,0.5)' }}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>

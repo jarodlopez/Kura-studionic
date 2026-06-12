@@ -6,8 +6,13 @@ window.MiniCart = ({
     discountError,
     discountAmount, cartSubtotal, cartTotal, currentShippingCost,
     shippingZone, setShippingZone,
+    storeConfig,
 }) => {
     if (!isCartOpen) return null;
+
+    const branding = getBranding();
+    const features = getFeatures(storeConfig);
+    const zones = getZones(storeConfig);
 
     const handleGoToCheckout = () => {
         localStorage.setItem('kura_checkout_meta', JSON.stringify({ shippingZone, appliedDiscount }));
@@ -21,7 +26,7 @@ window.MiniCart = ({
                 <div className="p-5 border-b border-zinc-800 flex justify-between items-center bg-black shrink-0">
                     <h2 className="font-bebas text-3xl tracking-widest flex items-center gap-3">
                         <span className="w-2.5 h-2.5 bg-kuraRed inline-block rounded-full"></span>
-                        TU ARSENAL
+                        {branding.cartTitle}
                     </h2>
                     <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-kuraRed text-xl leading-none p-1">✕</button>
                 </div>
@@ -42,14 +47,14 @@ window.MiniCart = ({
                                         <img src={optimizeImg(item.images?.[0], 160)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="w-16 h-20 object-cover border border-zinc-900 shrink-0 rounded-lg" decoding="async" draggable={false} alt={item.title} />
                                         <div className="flex-1 pt-1 overflow-hidden">
                                             <p className="font-bebas text-lg pr-6 leading-none text-zinc-100 line-clamp-2">{item.title}</p>
-                                            <p className="text-xs text-zinc-500 mt-1 font-bold tracking-wider">TALLA: {item.selectedSize}</p>
+                                            <p className="text-xs text-zinc-500 mt-1 font-bold tracking-wider">{branding.variantLabel}: {item.selectedSize}</p>
                                             {item.discountPrice && item.discountPrice > 0 ? (
                                                 <div className="mt-1 flex items-center gap-2">
-                                                    <span className="text-kuraRed text-sm font-bold">NIO {item.discountPrice}</span>
-                                                    <span className="text-zinc-600 text-[10px] line-through">NIO {item.price}</span>
+                                                    <span className="text-kuraRed text-sm font-bold">{fmtPrice(item.discountPrice)}</span>
+                                                    <span className="text-zinc-600 text-[10px] line-through">{fmtPrice(item.price)}</span>
                                                 </div>
                                             ) : (
-                                                <p className="text-kuraRed text-sm mt-1 font-bold">NIO {item.price}</p>
+                                                <p className="text-kuraRed text-sm mt-1 font-bold">{fmtPrice(item.price)}</p>
                                             )}
                                         </div>
                                         <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-1.5 leading-none">✕</button>
@@ -58,6 +63,7 @@ window.MiniCart = ({
                             </div>
 
                             {/* Discount code */}
+                            {features.discounts !== false && (
                             <div className="border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
                                 <p className="text-[10px] text-zinc-500 mb-3 font-bold uppercase tracking-widest">CÓDIGO DE DESCUENTO</p>
                                 {appliedDiscount ? (
@@ -65,7 +71,7 @@ window.MiniCart = ({
                                         <div>
                                             <span className="text-kuraRed font-bebas text-xl">{appliedDiscount.code}</span>
                                             <span className="text-green-400 text-xs font-mono ml-3">
-                                                {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% OFF` : `NIO ${appliedDiscount.value} OFF`}
+                                                {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% OFF` : `${fmtPrice(appliedDiscount.value)} OFF`}
                                             </span>
                                         </div>
                                         <button type="button" onClick={removeDiscount} className="text-zinc-500 hover:text-white text-xs font-bold">✕ QUITAR</button>
@@ -84,33 +90,33 @@ window.MiniCart = ({
                                 )}
                                 {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
                             </div>
+                            )}
 
                             {/* Shipping zone */}
                             <div>
                                 <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShippingZone('managua')} className={`flex-1 py-3 text-xs font-bold transition-all rounded-xl border-2 ${shippingZone === 'managua' ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
-                                        MANAGUA<br /><span className="font-mono font-normal">NIO 100</span>
-                                    </button>
-                                    <button type="button" onClick={() => setShippingZone('departamentos')} className={`flex-1 py-3 text-xs font-bold transition-all rounded-xl border-2 ${shippingZone === 'departamentos' ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
-                                        DEPTO.<br /><span className="font-mono font-normal">NIO 165</span>
-                                    </button>
+                                <div className="flex gap-2 flex-wrap">
+                                    {zones.map(zone => (
+                                        <button key={zone.id} type="button" onClick={() => setShippingZone(zone.id)} className={`flex-1 min-w-[40%] py-3 text-xs font-bold transition-all rounded-xl border-2 ${shippingZone === zone.id ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
+                                            {zone.label}<br /><span className="font-mono font-normal">{fmtPrice(zone.cost)}</span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
                             {/* Summary */}
                             <div className="bg-zinc-950 border border-zinc-800 p-4 font-mono text-sm rounded-xl">
-                                <div className="flex justify-between mb-2 text-zinc-400"><span>SUBTOTAL</span><span>NIO {cartSubtotal}</span></div>
+                                <div className="flex justify-between mb-2 text-zinc-400"><span>SUBTOTAL</span><span>{fmtPrice(cartSubtotal)}</span></div>
                                 {discountAmount > 0 && (
                                     <div className="flex justify-between mb-2 text-green-400 font-bold">
                                         <span>DESCUENTO ({appliedDiscount.code})</span>
-                                        <span>- NIO {discountAmount}</span>
+                                        <span>- {fmtPrice(discountAmount)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO</span><span>NIO {currentShippingCost}</span></div>
+                                <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO</span><span>{fmtPrice(currentShippingCost)}</span></div>
                                 <div className="flex justify-between pt-3 border-t border-zinc-800 items-end mt-2">
                                     <span className="font-bebas text-lg text-white">TOTAL</span>
-                                    <span className="font-bebas text-3xl text-kuraRed leading-none">NIO {cartTotal}</span>
+                                    <span className="font-bebas text-3xl text-kuraRed leading-none">{fmtPrice(cartTotal)}</span>
                                 </div>
                             </div>
 

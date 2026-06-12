@@ -1,6 +1,6 @@
-const CACHE = 'kura-store-v3';
-const FONT_CACHE = 'kura-fonts-v1';
-const IMG_CACHE = 'kura-img-v1';
+const CACHE = 'kodia-store-v1';
+const FONT_CACHE = 'kodia-fonts-v1';
+const IMG_CACHE = 'kodia-img-v1';
 const IMG_CACHE_MAX = 150;
 
 const PRECACHE = [

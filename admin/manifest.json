@@ -1,7 +1,7 @@
 {
-  "name": "KURA STUDIO Admin",
-  "short_name": "KURA Admin",
-  "description": "Panel de administración — KURA STUDIO",
+  "name": "Admin de la Tienda",
+  "short_name": "Admin",
+  "description": "Panel de administración de la tienda",
   "start_url": "/admin/",
   "id": "/admin/",
   "display": "standalone",

@@ -29,21 +29,21 @@ window.DiscountsView = ({ discountCodes, codeForm, setCodeForm, editingCodeId, s
                 </div>
 
                 <div>
-                    <label className="text-xs text-zinc-400 font-bold">CÓDIGO (ej: KURA20)</label>
-                    <input required className="brutalist-input" placeholder="KURA20" value={codeForm.code} onChange={e => setCodeForm({ ...codeForm, code: e.target.value.toUpperCase() })} />
+                    <label className="text-xs text-zinc-400 font-bold">CÓDIGO (ej: DESCUENTO20)</label>
+                    <input required className="brutalist-input" placeholder="DESCUENTO20" value={codeForm.code} onChange={e => setCodeForm({ ...codeForm, code: e.target.value.toUpperCase() })} />
                 </div>
 
                 <div>
                     <label className="text-xs text-zinc-400 font-bold">TIPO DE DESCUENTO</label>
                     <select required className="brutalist-input" value={codeForm.type} onChange={e => setCodeForm({ ...codeForm, type: e.target.value })}>
                         <option value="percent">PORCENTAJE (%)</option>
-                        <option value="fixed">MONTO FIJO (NIO)</option>
+                        <option value="fixed">MONTO FIJO</option>
                     </select>
                 </div>
 
                 <div>
                     <label className="text-xs text-zinc-400 font-bold">VALOR DEL DESCUENTO</label>
-                    <input required type="number" min="1" className="brutalist-input" placeholder={codeForm.type === 'percent' ? '20 (= 20%)' : '100 (= NIO 100)'} value={codeForm.value} onChange={e => setCodeForm({ ...codeForm, value: e.target.value })} />
+                    <input required type="number" min="1" className="brutalist-input" placeholder={codeForm.type === 'percent' ? '20 (= 20%)' : '100'} value={codeForm.value} onChange={e => setCodeForm({ ...codeForm, value: e.target.value })} />
                 </div>
 
                 <div>
@@ -95,7 +95,7 @@ window.DiscountsView = ({ discountCodes, codeForm, setCodeForm, editingCodeId, s
                                             <span className={`text-[10px] font-bold px-2 py-0.5 ${c.active ? 'bg-green-900 text-green-400' : 'bg-zinc-800 text-zinc-500'}`}>{c.active ? 'ACTIVO' : 'INACTIVO'}</span>
                                         </div>
                                         <p className="text-zinc-400 text-xs font-mono">
-                                            {c.type === 'percent' ? `${c.value}% de descuento` : `NIO ${c.value} de descuento`}
+                                            {c.type === 'percent' ? `${c.value}% de descuento` : `${fmtPrice(c.value)} de descuento`}
                                             {c.expiryDate && ` · Expira: ${c.expiryDate}`}
                                             {' · '}{c.usageLimit > 0 ? `${c.usageCount}/${c.usageLimit} usos` : `${c.usageCount} usos (ilimitado)`}
                                         </p>

@@ -1,6 +1,6 @@
 window.InventoryView = ({ products, formData, setFormData, editingId, setEditingId,
     handleProductSubmit, handleProductImage, isSaving, uniqueCategories,
-    filteredInventory, inventoryFilter, setInventoryFilter, fetchProducts, db }) => {
+    filteredInventory, inventoryFilter, setInventoryFilter, fetchProducts, db, variantLabel = 'TALLA' }) => {
 
     const [formOpen, setFormOpen] = React.useState(false);
     const closeForm = () => setFormOpen(false);
@@ -41,7 +41,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
 
                 <div className="flex gap-2 bg-black p-2 border border-zinc-800">
                     <div className="w-1/2">
-                        <label className="text-[10px] text-zinc-500 font-bold block mb-1">PRECIO BASE (NIO)</label>
+                        <label className="text-[10px] text-zinc-500 font-bold block mb-1">PRECIO BASE</label>
                         <input required type="number" className="brutalist-input mt-0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
                     </div>
                     <div className="w-1/2">
@@ -54,7 +54,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                 <textarea placeholder="DETALLES TÉCNICOS (UNO POR LÍNEA)" className="brutalist-input h-20 resize-none" value={formData.details} onChange={e => setFormData({ ...formData, details: e.target.value })} />
 
                 <div className="border-t border-zinc-800 pt-4">
-                    <p className="text-xs text-zinc-500 mb-2 font-bold tracking-widest">TALLAS DISPONIBLES</p>
+                    <p className="text-xs text-zinc-500 mb-2 font-bold tracking-widest">{variantLabel}S DISPONIBLES (opcional)</p>
                     <div className="flex flex-wrap gap-2 mb-3">
                         {['S', 'M', 'L', 'XL', 'XXL', 'ÚNICA'].map(s => (
                             <button key={s} type="button" onClick={() => {
@@ -67,7 +67,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                     </div>
                     {formData.sizes.length > 0 && (
                         <div className="space-y-2">
-                            <p className="text-[10px] text-zinc-500 font-bold tracking-widest">STOCK POR TALLA <span className="text-zinc-600 font-normal normal-case">(vacío = sin límite)</span></p>
+                            <p className="text-[10px] text-zinc-500 font-bold tracking-widest">STOCK POR {variantLabel} <span className="text-zinc-600 font-normal normal-case">(vacío = sin límite)</span></p>
                             {formData.sizes.map(s => {
                                 const val = formData.stockBySizes?.[s];
                                 const isOut = val !== undefined && val !== '' && Number(val) === 0;
@@ -161,11 +161,11 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                     <div className="mt-auto">
                                         {p.discountPrice && p.discountPrice > 0 ? (
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-kuraRed font-mono text-xs font-bold">NIO {p.discountPrice}</span>
-                                                <span className="text-zinc-600 font-mono text-[10px] line-through">NIO {p.price}</span>
+                                                <span className="text-kuraRed font-mono text-xs font-bold">{fmtPrice(p.discountPrice)}</span>
+                                                <span className="text-zinc-600 font-mono text-[10px] line-through">{fmtPrice(p.price)}</span>
                                             </div>
                                         ) : (
-                                            <p className="text-white font-mono text-xs font-bold">NIO {p.price}</p>
+                                            <p className="text-white font-mono text-xs font-bold">{fmtPrice(p.price)}</p>
                                         )}
                                     </div>
                                 </div>

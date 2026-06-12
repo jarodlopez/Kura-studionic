@@ -2,7 +2,7 @@ window.OrderConfirmModal = ({ order, onClose }) => {
     if (!order) return null;
     return (
         <div className="fixed inset-0 z-[400] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="relative w-full max-w-md border border-kuraRed bg-black animate-slideUp shadow-[0_8px_40px_rgba(255,0,60,0.35)] rounded-2xl overflow-hidden">
+            <div className="relative w-full max-w-md border border-kuraRed bg-black animate-slideUp shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)] rounded-2xl overflow-hidden">
 
                 {/* Cabecera */}
                 <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">

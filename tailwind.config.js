@@ -3,7 +3,9 @@ module.exports = {
   content: ['./index.html', './js/**/*.js'],
   theme: {
     extend: {
-      colors: { kuraRed: '#ff003c', kuraDark: '#050505', kuraGrey: '#111' },
+      // kuraRed es ahora el "color de acento" de la marca: se define en
+      // runtime via la variable CSS --accent-rgb (configurable desde el admin)
+      colors: { kuraRed: 'rgb(var(--accent-rgb) / <alpha-value>)', kuraDark: '#050505', kuraGrey: '#111' },
       fontFamily: {
         bebas: ['"Bebas Neue"', 'sans-serif'],
         mono: ['"Space Mono"', 'monospace'],

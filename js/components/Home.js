@@ -3,7 +3,7 @@ const ITEMS_PER_PAGE = 12;
 const ProductCard = ({ product, openProduct }) => (
     <div className="brutalist-card flex flex-col cursor-pointer" onClick={() => openProduct(product)}>
         <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800">
-            <SmoothImage src={product.images?.[0]} width={600} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – KURA STUDIO`} />
+            <SmoothImage src={product.images?.[0]} width={600} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – ${getBranding().brandName}`} />
             <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
             {product.discountPrice && product.discountPrice > 0 && (
                 <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
@@ -13,11 +13,11 @@ const ProductCard = ({ product, openProduct }) => (
             <h2 className="text-xl md:text-2xl font-bebas tracking-wide leading-tight mb-1">{product.title}</h2>
             {product.discountPrice && product.discountPrice > 0 ? (
                 <div className="flex flex-col mt-auto pt-2">
-                    <p className="text-zinc-500 line-through text-xs font-mono">NIO {product.price}</p>
-                    <p className="text-kuraRed font-bold font-mono text-sm">NIO {product.discountPrice}</p>
+                    <p className="text-zinc-500 line-through text-xs font-mono">{fmtPrice(product.price)}</p>
+                    <p className="text-kuraRed font-bold font-mono text-sm">{fmtPrice(product.discountPrice)}</p>
                 </div>
             ) : (
-                <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">NIO {product.price}</p>
+                <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">{fmtPrice(product.price)}</p>
             )}
         </div>
     </div>
@@ -30,7 +30,7 @@ const SectionHeader = ({ title, onViewAll }) => (
             {title}
         </h3>
         {onViewAll && (
-            <button onClick={onViewAll} className="text-[11px] font-mono text-kuraRed hover:text-white transition-colors tracking-widest whitespace-nowrap ml-4" style={{textShadow:'0 0 8px rgba(255,0,60,0.8)'}}>
+            <button onClick={onViewAll} className="text-[11px] font-mono text-kuraRed hover:text-white transition-colors tracking-widest whitespace-nowrap ml-4" style={{textShadow:'0 0 8px rgb(var(--accent-rgb) / 0.8)'}}>
                 VER TODO →
             </button>
         )}
@@ -105,12 +105,12 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
         <div className="animate-slideUp pb-20">
 
             {/* HERO SLIDER */}
-            {storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
+            {getFeatures(storeConfig).heroSlider !== false && storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
                 <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
                     {storeConfig.heroSlides.map((slide, index) => (
                         <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
-                            <SmoothImage src={slide.image} width={1600} className="w-full h-full object-cover scale-105" alt={slide.title ? `KURA STUDIO – ${slide.title}` : "KURA STUDIO colección"} eager={index === 0} />
+                            <SmoothImage src={slide.image} width={1600} className="w-full h-full object-cover scale-105" alt={slide.title ? `${getBranding().brandName} – ${slide.title}` : getBranding().brandName} eager={index === 0} />
                             <div className="absolute bottom-10 left-4 md:left-12 z-20">
                                 <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
                                 <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>

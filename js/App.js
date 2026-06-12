@@ -1,25 +1,26 @@
-const SITE_URL = 'https://kura-studionic.vercel.app';
-const DEFAULT_META = {
-    title: 'KURA STUDIO | Ropa Streetwear Nicaragua',
-    description: 'KURA STUDIO – Ropa streetwear auténtica hecha para los fans reales. Entregas en 24 a 72 horas en Nicaragua.',
-    image: 'https://i.ibb.co/Q7V0K9jg/BOXY-DROP-KURA-12.png',
-    url: SITE_URL + '/',
-};
+const SITE_URL = window.location.origin;
 
 function updateMetaTags(product, category, storeConfig, categoryFallbackImg) {
+    const b = getBranding();
+    const DEFAULT_META = {
+        title: `${b.brandName} | Tienda Online`,
+        description: `${b.brandName} – Tienda online con entregas a todo el país.`,
+        image: b.logoUrl || '',
+        url: SITE_URL + '/',
+    };
     let meta;
     if (product) {
         meta = {
-            title: `${product.title} – KURA STUDIO`,
+            title: `${product.title} – ${b.brandName}`,
             description: (product.description || '').slice(0, 155) ||
-                `${product.title} en KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+                `${product.title} en ${b.brandName}.`,
             image: product.images?.[0] || DEFAULT_META.image,
             url: `${SITE_URL}/producto/${product.id}`,
         };
     } else if (category && category !== 'ALL') {
         meta = {
-            title: `Colección ${category} – KURA STUDIO`,
-            description: `Descubrí la colección ${category} de KURA STUDIO. Streetwear auténtico con entregas en Nicaragua.`,
+            title: `Colección ${category} – ${b.brandName}`,
+            description: `Descubrí la colección ${category} de ${b.brandName}.`,
             image: storeConfig?.categoryCovers?.[category] || categoryFallbackImg || DEFAULT_META.image,
             url: `${SITE_URL}/?category=${encodeURIComponent(category)}`,
         };
@@ -61,7 +62,7 @@ function KuraStudio() {
 
     const [isCartOpen, setIsCartOpen] = useState(false);
 
-    const [shippingZone, setShippingZone] = useState('managua');
+    const [shippingZone, setShippingZone] = useState('');
     const [discountCodes, setDiscountCodes] = useState([]);
     const [discountInput, setDiscountInput] = useState('');
     const [appliedDiscount, setAppliedDiscount] = useState(null);
@@ -75,8 +76,9 @@ function KuraStudio() {
 
     const [hasPendingOrder] = useState(() => !!localStorage.getItem('kura_pending_order'));
 
-    const shippingRates = { managua: 100, departamentos: 165 };
-    const currentShippingCost = shippingRates[shippingZone] || 0;
+    const zones = getZones(storeConfig);
+    const activeZone = zones.find(z => z.id === shippingZone) || zones[0];
+    const currentShippingCost = activeZone ? Number(activeZone.cost) : 0;
     const cartSubtotal = cart.reduce((a, b) => a + getPrice(b), 0);
     const discountAmount = appliedDiscount
         ? (appliedDiscount.type === 'percent'
@@ -128,6 +130,7 @@ function KuraStudio() {
                 if (cached) {
                     setProducts(cached.products); setFilteredProducts(cached.products);
                     setStoreConfig(cached.config);
+                    applyBranding(cached.config);
                     setDiscountCodes(cached.codes);
                     if (cached.banners.length > 0) {
                         setPopupBanners(cached.banners);
@@ -142,6 +145,7 @@ function KuraStudio() {
                     const confSnap = await db.collection("settings").doc("store").get();
                     const confData = confSnap.exists ? confSnap.data() : {};
                     setStoreConfig(confData);
+                    applyBranding(confData);
 
                     const codesSnap = await db.collection("discountCodes").get();
                     const codes = codesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -216,15 +220,17 @@ function KuraStudio() {
 
     return (
         <div className="min-h-screen relative flex flex-col text-sm bg-black">
-            <PopupBanner isPopupVisible={isPopupVisible} setIsPopupVisible={setIsPopupVisible} popupBanners={popupBanners} />
+            {getFeatures(storeConfig).banners !== false && (
+                <PopupBanner isPopupVisible={isPopupVisible} setIsPopupVisible={setIsPopupVisible} popupBanners={popupBanners} />
+            )}
 
             <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
-                <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS //</div>
+                <div className="marquee-content animate-marquee">{getBranding().marqueeText}</div>
             </div>
 
             <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
                 <div className="cursor-pointer" onClick={() => { setActiveCategory('ALL'); window.history.pushState(null, '', '/'); updateMetaTags(null); }}>
-                    <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
+                    <BrandLogo />
                 </div>
                 <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -287,17 +293,18 @@ function KuraStudio() {
                 cartSubtotal={cartSubtotal}
                 cartTotal={cartTotal}
                 currentShippingCost={currentShippingCost}
-                shippingZone={shippingZone}
+                shippingZone={activeZone?.id}
                 setShippingZone={setShippingZone}
+                storeConfig={storeConfig}
             />
 
-            <WhatsAppFab />
+            <WhatsAppFab storeConfig={storeConfig} />
 
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"
                 className={`fixed bottom-6 right-4 z-[100] flex items-center gap-2 bg-kuraRed text-black font-bebas text-lg rounded-full transition-all duration-300 ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}`}
-                style={{ padding: '0.7rem 1.4rem 0.7rem 1.1rem', boxShadow: '0 4px 28px rgba(255,0,60,0.55), 0 2px 8px rgba(0,0,0,0.5)' }}
+                style={{ padding: '0.7rem 1.4rem 0.7rem 1.1rem', boxShadow: '0 4px 28px rgb(var(--accent-rgb) / 0.55), 0 2px 8px rgba(0,0,0,0.5)' }}
             >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>

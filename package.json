@@ -1,7 +1,7 @@
 {
-  "name": "kura-studionic",
+  "name": "kodia-shop-template",
   "version": "1.0.0",
-  "description": "KURA STUDIO — tienda streetwear (React + Firebase, sin framework de build pesado).",
+  "description": "Kodia Shop — plantilla white-label de tienda online (React + Firebase).",
   "scripts": {
     "build:css": "tailwindcss -i src/input.css -o dist/styles.css --minify",
     "build:js": "node build.js",
