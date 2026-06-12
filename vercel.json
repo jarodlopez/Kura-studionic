@@ -1,0 +1,11 @@
+{
+  "buildCommand": "",
+  "outputDirectory": ".",
+  "installCommand": "echo skip",
+  "rewrites": [
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/admin/", "destination": "/admin/index.html" },
+    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/producto/:path*", "destination": "/product.html" }
+  ]
+}

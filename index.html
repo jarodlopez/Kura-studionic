@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- PLANTILLA: reemplaza "MI TIENDA", la descripción, el dominio y la
+         imagen OG con los datos del cliente. Ver TEMPLATE.md -->
+    <title>MI TIENDA | Tienda Online</title>
+    <meta name="description" content="MI TIENDA – Tienda online con entregas a todo el país.">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#000000">
+    <link rel="canonical" href="https://mitienda.vercel.app/">
+
+    <!-- Open Graph / Redes Sociales -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mitienda.vercel.app/">
+    <meta property="og:title" content="MI TIENDA | Tienda Online">
+    <meta property="og:description" content="Tienda online con entregas a todo el país.">
+    <meta property="og:image" content="">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="MI TIENDA">
+    <meta property="og:site_name" content="MI TIENDA">
+    <meta property="og:locale" content="es_NI">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MI TIENDA | Tienda Online">
+    <meta name="twitter:description" content="Tienda online con entregas a todo el país.">
+    <meta name="twitter:image" content="">
+    <meta name="twitter:image:alt" content="MI TIENDA">
+
+    <!-- Datos estructurados (JSON-LD) — ajusta @type a la vertical del cliente:
+         ClothingStore, HardwareStore, Store, etc. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": "MI TIENDA",
+      "description": "Tienda online con entregas a todo el país.",
+      "url": "https://mitienda.vercel.app/"
+    }
+    </script>
+
+    <link rel="preconnect" href="https://wsrv.nl">
+    <link rel="dns-prefetch" href="https://i.ibb.co">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <!-- CSS compilado (Tailwind + estilos propios). Generado con `npm run build`. -->
+    <link rel="stylesheet" href="/dist/styles.css">
+
+    <!-- Librerías de runtime (cacheadas por el navegador entre visitas). -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        // PLANTILLA: reemplaza con el proyecto Firebase y la key de ImgBB del cliente
+        var firebaseConfig = {
+            apiKey: "TU_FIREBASE_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO"
+        };
+        var IMGBB_API_KEY = "TU_IMGBB_API_KEY";
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        var db = firebase.firestore();
+    </script>
+    <!-- App pre-compilada (JSX ya transpilado). Generado con `npm run build`. -->
+    <script src="/dist/app.js" defer></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>
