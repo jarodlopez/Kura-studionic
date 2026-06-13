@@ -1,12 +1,17 @@
-// Globals: React, ReactDOM, db, IMGBB_API_KEY
+// Globals: React, ReactDOM, IMGBB_API_KEY
 // Utils: getPrice, optimizeImg, uploadToImgBB, compressImage
+//
+// La página de pago no lee Firestore directamente (las reglas protegen las
+// órdenes). Todo pasa por /api/payment, que se autentica como la cuenta de
+// servicio y valida el token del link.
 
 function PagoApp() {
     const { useState, useEffect } = React;
 
-    // 'loading' | 'invalid' | 'already_paid' | 'form' | 'done'
+    // 'loading' | 'invalid' | 'error' | 'already_paid' | 'form' | 'done'
     const [state, setState] = useState('loading');
     const [order, setOrder] = useState(null);
+    const [orderRef, setOrderRef] = useState({ orderNumber: null, token: null });
     const [receiptFile, setReceiptFile] = useState(null);
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -17,24 +22,22 @@ function PagoApp() {
         const orderNumber = parts[parts.length - 1];
         const token = new URLSearchParams(window.location.search).get('t');
 
-        if (!orderNumber || !token) { setState('invalid'); return; }
+        if (!orderNumber || !token || !orderNumber.startsWith('KURA-')) { setState('invalid'); return; }
+        setOrderRef({ orderNumber, token });
 
-        db.collection("orders").doc(orderNumber).get()
-            .then(doc => {
-                if (!doc.exists) { setState('invalid'); return; }
-                const data = { id: doc.id, ...doc.data() };
-                if (data.paymentToken !== token) { setState('invalid'); return; }
-                // Ya fue pagado
-                const paidStatuses = ['paid_pending_verification', 'verified', 'preparing', 'shipped', 'delivered'];
-                if (paidStatuses.includes(data.status)) {
-                    setOrder(data);
-                    setState('already_paid');
-                    return;
-                }
-                setOrder(data);
-                setState('form');
+        fetch('/api/payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get', orderNumber, token }),
+        })
+            .then(async (res) => {
+                if (res.status === 404 || res.status === 403) { setState('invalid'); return; }
+                if (!res.ok) { setState('error'); return; }
+                const { order } = await res.json();
+                setOrder(order);
+                setState(order.alreadyPaid ? 'already_paid' : 'form');
             })
-            .catch(() => setState('invalid'));
+            .catch(() => setState('error'));
     }, []);
 
     const handleConfirm = async () => {
@@ -42,31 +45,20 @@ function PagoApp() {
         setIsUploading(true);
         try {
             const receiptUrl = await uploadToImgBB(receiptFile);
-            await db.collection("orders").doc(order.orderNumber).update({
-                receiptUrl,
-                status: 'paid_pending_verification',
-                seenByAdmin: false,
-                paidAt: new Date().toISOString(),
+            const res = await fetch('/api/payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'pay',
+                    orderNumber: orderRef.orderNumber,
+                    token: orderRef.token,
+                    receiptUrl,
+                }),
             });
-            // Sync a HubSpot
-            try {
-                const detalles = (order.items || []).map(i => `${i.title} (Talla: ${i.selectedSize})`).join(' | ');
-                await fetch('/api/hubspot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        orderNumber: order.orderNumber,
-                        name: order.customer.name,
-                        phone: order.customer.phone,
-                        address: `${order.customer.address} (${order.shippingZone})`,
-                        total: order.total,
-                        orderDetails: detalles,
-                    })
-                });
-            } catch {}
+            if (!res.ok) throw new Error('pay_failed');
             setState('done');
         } catch {
-            alert("Error al subir el comprobante. Verifica tu conexión e intenta de nuevo.");
+            alert("Error al enviar el comprobante. Verifica tu conexión e intenta de nuevo.");
         }
         setIsUploading(false);
     };
@@ -87,6 +79,19 @@ function PagoApp() {
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-700"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <h1 className="font-bebas text-4xl text-zinc-600">LINK INVÁLIDO</h1>
                 <p className="text-zinc-500 text-sm max-w-xs">Este link de pago no existe o expiró. Escríbenos para recibir uno nuevo.</p>
+                <a href="https://wa.me/50587091008" target="_blank" rel="noopener noreferrer"
+                    className="brutalist-btn px-8 py-3 text-xl">CONTACTAR A KURA →</a>
+            </div>
+        );
+    }
+
+    // --- Error técnico (backend no disponible) ---
+    if (state === 'error') {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 p-8 text-center">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-700"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <h1 className="font-bebas text-4xl text-zinc-600">ALGO SALIÓ MAL</h1>
+                <p className="text-zinc-500 text-sm max-w-xs">No pudimos cargar tu orden en este momento. Escríbenos por WhatsApp y te ayudamos a completar tu pago.</p>
                 <a href="https://wa.me/50587091008" target="_blank" rel="noopener noreferrer"
                     className="brutalist-btn px-8 py-3 text-xl">CONTACTAR A KURA →</a>
             </div>
@@ -152,7 +157,7 @@ function PagoApp() {
                 <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl">
                     <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">ORDEN</p>
                     <h2 className="font-bebas text-3xl text-kuraRed leading-none">{order.orderNumber}</h2>
-                    <p className="text-zinc-400 text-xs mt-1 font-mono">{order.customer.name} · {order.shippingZone}</p>
+                    <p className="text-zinc-400 text-xs mt-1 font-mono">{order.customerName} · {order.shippingZone}</p>
 
                     <div className="mt-4 space-y-2">
                         {(order.items || []).map((item, i) => (

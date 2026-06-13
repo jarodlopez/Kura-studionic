@@ -17,20 +17,13 @@
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
     <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
-            authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034"
-        };
+        // La página de pago no usa Firebase directamente: todo pasa por
+        // /api/payment. Solo necesita la key de ImgBB para subir el comprobante.
         var IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        var db = firebase.firestore();
     </script>
     <script src="/dist/pago.js" defer></script>
 </body>
