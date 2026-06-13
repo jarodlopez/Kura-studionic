@@ -61,18 +61,23 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
     const deptos = filteredOrders.filter(o => o.shippingZone !== 'Managua').length;
     const zoneTotal = managua + deptos || 1;
 
-    // Usuarios únicos: distintos userId en el período
-    const uniqueUsers = new Set(evts.filter(e => e.userId).map(e => e.userId)).size;
+    // Identidad del visitante: la IP (hash) es lo más confiable porque la captura
+    // el servidor y no se puede falsificar. Caemos a userId/sessionId para eventos
+    // antiguos que aún no tengan ipHash.
+    const idOf = (e) => e.ipHash || e.userId || e.sessionId;
 
-    // Carritos abandonados: sesiones con add_to_cart pero sin checkout_started
-    const cartSessions = new Set(evts.filter(e => e.type === 'add_to_cart' && e.sessionId).map(e => e.sessionId));
-    const checkoutSessions = new Set(evts.filter(e => e.type === 'checkout_started' && e.sessionId).map(e => e.sessionId));
-    const abandonedCarts = [...cartSessions].filter(s => !checkoutSessions.has(s)).length;
-    const cartAbandonRate = cartSessions.size > 0 ? ((abandonedCarts / cartSessions.size) * 100).toFixed(0) : 0;
+    // Usuarios únicos: identidades distintas en el período (1 por IP real)
+    const uniqueUsers = new Set(evts.map(idOf).filter(Boolean)).size;
 
-    // Productos más abandonados (en sesiones sin checkout)
+    // Carritos abandonados: identidades con add_to_cart pero sin checkout_started
+    const cartIds = new Set(evts.filter(e => e.type === 'add_to_cart').map(idOf).filter(Boolean));
+    const checkoutIds = new Set(evts.filter(e => e.type === 'checkout_started').map(idOf).filter(Boolean));
+    const abandonedCarts = [...cartIds].filter(id => !checkoutIds.has(id)).length;
+    const cartAbandonRate = cartIds.size > 0 ? ((abandonedCarts / cartIds.size) * 100).toFixed(0) : 0;
+
+    // Productos más abandonados (agregados al carrito por quienes no iniciaron pago)
     const abandonedProductCounts = {};
-    evts.filter(e => e.type === 'add_to_cart' && e.sessionId && !checkoutSessions.has(e.sessionId))
+    evts.filter(e => e.type === 'add_to_cart' && !checkoutIds.has(idOf(e)))
         .forEach(e => {
             const k = e.productTitle || 'Desconocido';
             abandonedProductCounts[k] = (abandonedProductCounts[k] || 0) + 1;
@@ -180,7 +185,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                     </div>
                                 ))}
                                 <p className="text-zinc-600 text-[10px] mt-3 pt-3 border-t border-zinc-800">
-                                    {cartSessions.size} {cartSessions.size === 1 ? 'sesión' : 'sesiones'} con carrito · {abandonedCarts} sin pago ({cartAbandonRate}% abandono)
+                                    {cartIds.size} {cartIds.size === 1 ? 'usuario' : 'usuarios'} agregó al carrito · {abandonedCarts} sin iniciar pago ({cartAbandonRate}% abandono)
                                 </p>
                             </div>
                         )}

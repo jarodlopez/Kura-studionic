@@ -22,14 +22,23 @@ window.getOrCreateSessionId = () => {
     } catch { return 'anon_s'; }
 };
 
+// Enviamos el evento al endpoint /api/track del servidor en lugar de escribir
+// directo a Firestore: así el backend captura la IP REAL del visitante (que el
+// navegador no puede falsificar) y la deduplica en usuarios únicos confiables.
+// keepalive permite que el evento se envíe aunque la página esté navegando
+// (clave para checkout_started justo antes de cambiar de página).
 window.trackEvent = async (type, data = {}) => {
     try {
-        await db.collection("analytics").add({
-            type, ...data,
-            userId: window.getOrCreateUserId(),
-            sessionId: window.getOrCreateSessionId(),
-            timestamp: new Date().toISOString(),
-            date: new Date().toISOString().split('T')[0]
+        await fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type,
+                data,
+                userId: window.getOrCreateUserId(),
+                sessionId: window.getOrCreateSessionId(),
+            }),
+            keepalive: true,
         });
     } catch (e) { /* nunca interrumpir la UX por un error de tracking */ }
 };
