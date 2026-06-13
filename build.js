@@ -45,6 +45,11 @@ Promise.all([
     'js/utils.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),
+
+  build([
+    'js/utils.js',
+    'js/pago-entry.js',
+  ], 'dist/pago.js'),
 ]).catch((err) => {
   console.error(err);
   process.exit(1);

@@ -1,4 +1,6 @@
 const STATUS_CONFIG = {
+    awaiting_payment_link: { label: 'ESPERA LINK',  color: 'text-cyan-400',    bg: 'bg-cyan-900/20 border-cyan-800'     },
+    payment_link_sent:     { label: 'LINK ENVIADO', color: 'text-indigo-400',  bg: 'bg-indigo-900/20 border-indigo-800' },
     paid_pending_verification: { label: 'PENDIENTE',   color: 'text-yellow-400', bg: 'bg-yellow-900/20 border-yellow-800' },
     verified:                  { label: 'VERIFICADO',  color: 'text-blue-400',   bg: 'bg-blue-900/20 border-blue-800'   },
     preparing:                 { label: 'PREPARANDO',  color: 'text-orange-400', bg: 'bg-orange-900/20 border-orange-800'},
@@ -28,15 +30,55 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
     orderSearchQuery, setOrderSearchQuery, deleteOrder, formatDate, getPrice,
     markOrderSeen, updateOrderStatus }) => {
 
+    const [generatingLink, setGeneratingLink] = React.useState(false);
+    const [linkCopied, setLinkCopied] = React.useState(false);
+
     const openOrder = (order) => {
         setSelectedOrder(order);
         markOrderSeen(order.id);
+        setLinkCopied(false);
     };
 
     const handleStatusChange = async (status) => {
         if (!selectedOrder || selectedOrder.status === status) return;
         await updateOrderStatus(selectedOrder.id, status);
     };
+
+    const generatePaymentLink = async () => {
+        if (!selectedOrder || generatingLink) return;
+        setGeneratingLink(true);
+        try {
+            const token = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+            await db.collection("orders").doc(selectedOrder.id).update({
+                paymentToken: token,
+                status: 'payment_link_sent',
+            });
+            const updated = { ...selectedOrder, paymentToken: token, status: 'payment_link_sent' };
+            setSelectedOrder(updated);
+        } catch {}
+        setGeneratingLink(false);
+    };
+
+    const copyLink = (link) => {
+        navigator.clipboard.writeText(link).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 3000);
+        }).catch(() => {
+            // fallback for older browsers
+            const el = document.createElement('textarea');
+            el.value = link;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 3000);
+        });
+    };
+
+    const getPaymentLink = (order) => order?.paymentToken
+        ? `${window.location.origin}/pago/${order.orderNumber}?t=${order.paymentToken}`
+        : null;
 
     const unseenCount = orders.filter(o => !o.seenByAdmin).length;
 
@@ -195,6 +237,52 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Payment link generator */}
+                            {(selectedOrder.status === 'awaiting_payment_link' || selectedOrder.status === 'payment_link_sent') && (
+                                <div className="p-5 border-b border-zinc-800 bg-cyan-950/10">
+                                    <p className="font-bold text-white mb-3 text-sm border-b border-zinc-800 pb-2 flex items-center gap-2">
+                                        <span className="w-2 h-2 bg-cyan-400 rounded-full inline-block"></span>
+                                        LINK DE PAGO
+                                    </p>
+                                    {getPaymentLink(selectedOrder) ? (
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 bg-black border border-zinc-800 p-3 rounded-xl overflow-hidden">
+                                                <span className="text-zinc-500 text-[10px] font-mono truncate flex-1">{getPaymentLink(selectedOrder)}</span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => copyLink(getPaymentLink(selectedOrder))}
+                                                    className={`flex-1 py-2.5 text-xs font-bold transition-all rounded-xl border ${linkCopied ? 'bg-green-600 text-white border-green-600' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-kuraRed hover:text-black hover:border-kuraRed'}`}
+                                                >
+                                                    {linkCopied ? '✓ COPIADO' : '⎘ COPIAR LINK'}
+                                                </button>
+                                                {selectedOrder.customer?.phone && (
+                                                    <a
+                                                        href={`https://wa.me/505${selectedOrder.customer.phone.replace(/\D/g,'')}?text=${encodeURIComponent(`🔐 Hola ${selectedOrder.customer.name}, aquí está tu link de pago para la orden *${selectedOrder.orderNumber}*:\n\n${getPaymentLink(selectedOrder)}\n\nEntra al link, revisa el resumen y sube el comprobante cuando hayas transferido. 🖤 KURA STUDIO`)}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex-1 py-2.5 text-xs font-bold text-center transition-all rounded-xl border bg-[#25D366] text-black border-[#25D366] hover:opacity-90"
+                                                    >
+                                                        ENVIAR POR WA
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <p className="text-zinc-500 text-xs">Este cliente está esperando su link de pago. Genéralo y envíaselo por WhatsApp.</p>
+                                            <button
+                                                onClick={generatePaymentLink}
+                                                disabled={generatingLink}
+                                                className="brutalist-btn w-full py-3 text-base"
+                                            >
+                                                {generatingLink ? 'GENERANDO...' : '🔗 GENERAR LINK DE PAGO'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Order status management */}
                             <div className="p-5 border-b border-zinc-800">
