@@ -1,9 +1,33 @@
 // Globals disponibles desde index.html: React, db, IMGBB_API_KEY
 
+window.getOrCreateUserId = () => {
+    try {
+        let uid = localStorage.getItem('kura_uid');
+        if (!uid) {
+            uid = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+            localStorage.setItem('kura_uid', uid);
+        }
+        return uid;
+    } catch { return 'anon'; }
+};
+
+window.getOrCreateSessionId = () => {
+    try {
+        let sid = sessionStorage.getItem('kura_sid');
+        if (!sid) {
+            sid = 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+            sessionStorage.setItem('kura_sid', sid);
+        }
+        return sid;
+    } catch { return 'anon_s'; }
+};
+
 window.trackEvent = async (type, data = {}) => {
     try {
         await db.collection("analytics").add({
             type, ...data,
+            userId: window.getOrCreateUserId(),
+            sessionId: window.getOrCreateSessionId(),
             timestamp: new Date().toISOString(),
             date: new Date().toISOString().split('T')[0]
         });
