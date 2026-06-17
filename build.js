@@ -26,6 +26,18 @@ const build = (files, outFile) => {
 };
 
 Promise.all([
+  // Admin views — compiled to plain JS so they load synchronously,
+  // avoiding the race condition where Babel async-fetches external
+  // type="text/babel" scripts after Firebase auth has already resolved.
+  build([
+    'admin/views/InventoryView.js',
+    'admin/views/OrdersView.js',
+    'admin/views/DesignView.js',
+    'admin/views/DiscountsView.js',
+    'admin/views/BannersView.js',
+    'admin/views/AnalyticsView.js',
+  ], 'dist/admin-views.js'),
+
   build([
     'js/utils.js',
     'js/components/PopupBanner.js',
