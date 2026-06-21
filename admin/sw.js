@@ -55,11 +55,11 @@ self.addEventListener('push', (e) => {
   if (!e.data) return;
   const data = e.data.json();
   e.waitUntil(
-    self.registration.showNotification(data.title || 'KURA STUDIO', {
+    self.registration.showNotification(data.title || 'MI TIENDA', {
       body: data.body,
       icon: '/admin/icons/icon.svg',
       badge: '/admin/icons/icon.svg',
-      tag: data.tag || 'kura-notif',
+      tag: data.tag || 'tienda-notif',
       data: { url: data.url || '/admin/' },
       actions: [
         { action: 'open', title: 'Ver en admin' },

@@ -1,5 +1,7 @@
-// Compila los componentes JSX en bundles pre-transpilados.
-// Produce dist/app.js (tienda) y dist/checkout.js (checkout) de forma independiente.
+// Compila los componentes JSX en bundles pre-transpilados con esbuild.
+// Reemplaza a Babel Standalone: todo el JSX se transpila aquí (build) y el
+// navegador solo descarga JS plano. Produce los bundles de la tienda, el
+// checkout, la página de pago y el panel de admin de forma independiente.
 const esbuild = require('esbuild');
 const fs = require('fs');
 
@@ -26,7 +28,24 @@ const build = (files, outFile) => {
 };
 
 Promise.all([
+  // Admin — totalmente pre-compilado con esbuild, sin Babel Standalone en runtime.
+  // Las vistas van primero para que sus globals window.* existan cuando AdminPanel
+  // renderice. (Mismo orden que tenían los <script type="text/babel"> del HTML.)
   build([
+    'admin/views/InventoryView.js',
+    'admin/views/OrdersView.js',
+    'admin/views/DesignView.js',
+    'admin/views/DiscountsView.js',
+    'admin/views/BannersView.js',
+    'admin/views/AnalyticsView.js',
+    'admin/views/SuperAdminView.js',
+  ], 'dist/admin-views.js'),
+
+  build(['admin/admin-panel.js'], 'dist/admin-panel.js'),
+
+  // firebase-init.js va PRIMERO para definir db / IMGBB_API_KEY antes de utils.js.
+  build([
+    'js/firebase-init.js',
     'js/utils.js',
     'js/components/PopupBanner.js',
     'js/components/Home.js',
@@ -35,6 +54,7 @@ Promise.all([
   ], 'dist/app.js'),
 
   build([
+    'js/firebase-init.js',
     'js/utils.js',
     'js/components/ProductDetail.js',
     'js/components/Cart.js',
@@ -42,9 +62,17 @@ Promise.all([
   ], 'dist/product.js'),
 
   build([
+    'js/firebase-init.js',
     'js/utils.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),
+
+  // La página de pago NO usa Firestore directamente (todo pasa por /api/payment),
+  // por lo que no necesita firebase-init.js. Solo utils + la entry de pago.
+  build([
+    'js/utils.js',
+    'js/pago-entry.js',
+  ], 'dist/pago.js'),
 ]).catch((err) => {
   console.error(err);
   process.exit(1);

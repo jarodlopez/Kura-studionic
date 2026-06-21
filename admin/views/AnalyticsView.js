@@ -61,10 +61,36 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
     const deptos = filteredOrders.filter(o => o.shippingZone !== 'Managua').length;
     const zoneTotal = managua + deptos || 1;
 
+    // Identidad del visitante: la IP (hash) es lo más confiable porque la captura
+    // el servidor y no se puede falsificar. Caemos a userId/sessionId para eventos
+    // antiguos que aún no tengan ipHash.
+    const idOf = (e) => e.ipHash || e.userId || e.sessionId;
+
+    // Usuarios únicos: identidades distintas en el período (1 por IP real)
+    const uniqueUsers = new Set(evts.map(idOf).filter(Boolean)).size;
+
+    // Carritos abandonados: identidades con add_to_cart pero sin checkout_started
+    const cartIds = new Set(evts.filter(e => e.type === 'add_to_cart').map(idOf).filter(Boolean));
+    const checkoutIds = new Set(evts.filter(e => e.type === 'checkout_started').map(idOf).filter(Boolean));
+    const abandonedCarts = [...cartIds].filter(id => !checkoutIds.has(id)).length;
+    const cartAbandonRate = cartIds.size > 0 ? ((abandonedCarts / cartIds.size) * 100).toFixed(0) : 0;
+
+    // Productos más abandonados (agregados al carrito por quienes no iniciaron pago)
+    const abandonedProductCounts = {};
+    evts.filter(e => e.type === 'add_to_cart' && !checkoutIds.has(idOf(e)))
+        .forEach(e => {
+            const k = e.productTitle || 'Desconocido';
+            abandonedProductCounts[k] = (abandonedProductCounts[k] || 0) + 1;
+        });
+    const topAbandonedProducts = Object.entries(abandonedProductCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const maxAbandoned = topAbandonedProducts[0]?.[1] || 1;
+
     const kpiCards = [
         { label: 'INGRESOS TOTALES', value: `${fmtPrice(totalRevenue.toLocaleString())}`, sub: `${ordersCompleted} órdenes`, color: 'text-kuraRed' },
         { label: 'TICKET PROMEDIO', value: `${fmtPrice(avgTicket.toLocaleString())}`, sub: 'por orden', color: 'text-white' },
         { label: 'VISITAS', value: pageViews.toLocaleString(), sub: `en ${days} día${days > 1 ? 's' : ''}`, color: 'text-white' },
+        { label: 'USUARIOS ÚNICOS', value: uniqueUsers.toLocaleString(), sub: 'identificados', color: 'text-white' },
+        { label: 'CARRITOS ABANDONADOS', value: abandonedCarts.toLocaleString(), sub: `${cartAbandonRate}% tasa abandono`, color: abandonedCarts > 0 ? 'text-yellow-400' : 'text-white' },
         { label: 'TASA DE COMPRA', value: pageViews > 0 ? `${((ordersCompleted / pageViews) * 100).toFixed(1)}%` : '—', sub: 'visita → orden', color: 'text-white' },
     ];
 
@@ -92,7 +118,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                     {/* KPI Cards: 2 cols on mobile, 4 on desktop */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }} className="kpi-grid">
                         {kpiCards.map((kpi, i) => (
-                            <div key={i} className="bg-zinc-950 border border-zinc-800 p-4 rounded-xl">
+                            <div key={i} className={`bg-zinc-950 border p-4 rounded-xl ${kpi.label === 'CARRITOS ABANDONADOS' && abandonedCarts > 0 ? 'border-yellow-500/40 bg-yellow-950/20' : 'border-zinc-800'}`}>
                                 <p className="text-[9px] text-zinc-500 font-bold tracking-widest mb-2 uppercase leading-tight">{kpi.label}</p>
                                 <p className={`font-bebas text-3xl ${kpi.color} leading-none mb-1`}>{kpi.value}</p>
                                 <p className="text-zinc-600 text-xs">{kpi.sub}</p>
@@ -129,6 +155,40 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                 );
                             })}
                         </div>
+                    </div>
+
+                    {/* Abandoned Carts Detail */}
+                    <div className={`border p-5 rounded-2xl overflow-hidden ${abandonedCarts > 0 ? 'bg-yellow-950/10 border-yellow-500/30' : 'bg-zinc-950 border-zinc-800'}`}>
+                        <h3 className="font-bebas text-2xl text-white mb-1 flex items-center gap-3">
+                            <span className="w-6 h-[2px] bg-yellow-500 inline-block"></span> CARRITOS ABANDONADOS
+                            {abandonedCarts > 0 && (
+                                <span className="ml-auto font-bebas text-3xl text-yellow-400">{abandonedCarts}</span>
+                            )}
+                        </h3>
+                        <p className="text-zinc-500 text-xs mb-4">Sesiones que agregaron productos al carrito pero no completaron el pago</p>
+                        {topAbandonedProducts.length === 0 ? (
+                            <p className="text-zinc-600 font-bebas text-xl text-center py-6">SIN CARRITOS ABANDONADOS EN ESTE PERÍODO</p>
+                        ) : (
+                            <div className="space-y-3">
+                                {topAbandonedProducts.map(([title, count], i) => (
+                                    <div key={i}>
+                                        <div className="flex justify-between items-center mb-1">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="text-yellow-500 font-bebas text-xl w-5 text-center shrink-0">{i + 1}</span>
+                                                <span className="text-zinc-300 text-xs font-mono truncate">{title}</span>
+                                            </div>
+                                            <span className="font-bebas text-lg text-yellow-400 shrink-0 ml-2">{count} {count === 1 ? 'vez' : 'veces'}</span>
+                                        </div>
+                                        <div className="h-1.5 bg-zinc-900">
+                                            <div className="h-full bg-yellow-500/70" style={{ width: `${Math.round((count / maxAbandoned) * 100)}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <p className="text-zinc-600 text-[10px] mt-3 pt-3 border-t border-zinc-800">
+                                    {cartIds.size} {cartIds.size === 1 ? 'usuario' : 'usuarios'} agregó al carrito · {abandonedCarts} sin iniciar pago ({cartAbandonRate}% abandono)
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Daily sales chart */}

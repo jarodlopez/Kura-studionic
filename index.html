@@ -42,35 +42,39 @@
     }
     </script>
 
-    <link rel="preconnect" href="https://wsrv.nl">
-    <link rel="dns-prefetch" href="https://i.ibb.co">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- 4 preconnects (máximo de Lighthouse): CDN de imágenes, fuentes, React, Firebase -->
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://i.ibb.co">
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+
+    <!-- Fuentes: carga no bloqueante para eliminar el render-blocking stylesheet -->
+    <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"></noscript>
+
+    <!-- Preload de los scripts CDN para que el navegador los descargue en paralelo -->
+    <link rel="preload" as="script" crossorigin href="https://unpkg.com/react@18/umd/react.production.min.js">
+    <link rel="preload" as="script" crossorigin href="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js">
 
     <!-- CSS compilado (Tailwind + estilos propios). Generado con `npm run build`. -->
     <link rel="stylesheet" href="/dist/styles.css">
 
-    <!-- Librerías de runtime (cacheadas por el navegador entre visitas). -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <!-- Librerías de runtime (defer = no bloquean el render; se ejecutan en orden
+         antes de app.js, que contiene la init de Firebase como primer módulo). -->
+    <script defer crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script defer crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script>
-        // PLANTILLA: reemplaza con el proyecto Firebase y la key de ImgBB del cliente
-        var firebaseConfig = {
-            apiKey: "TU_FIREBASE_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROYECTO"
-        };
-        var IMGBB_API_KEY = "TU_IMGBB_API_KEY";
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        var db = firebase.firestore();
-    </script>
-    <!-- App pre-compilada (JSX ya transpilado). Generado con `npm run build`. -->
+    <!-- App pre-compilada (JSX ya transpilado + init de Firebase). Generado con `npm run build`. -->
     <script src="/dist/app.js" defer></script>
     <script>
         if ('serviceWorker' in navigator) {

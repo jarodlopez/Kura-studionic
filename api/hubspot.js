@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
         // 2. ENVIAR NOTIFICACIÓN A TELEGRAM
         if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-            const mensajeTelegram = `🚨 *NUEVA ORDEN EN KURA STUDIO* 🚨\n\n👤 *Cliente:* ${name}\n📱 *Tel:* ${phone}\n📍 *Zona/Dir:* ${address}\n\n🛒 *Arsenal:* ${orderDetails}\n\n💰 *Total:* NIO ${total}\n📦 *Orden:* #${orderNumber}`;
+            const mensajeTelegram = `🚨 *NUEVA ORDEN EN MI TIENDA* 🚨\n\n👤 *Cliente:* ${name}\n📱 *Tel:* ${phone}\n📍 *Zona/Dir:* ${address}\n\n🛒 *Pedido:* ${orderDetails}\n\n💰 *Total:* ${total}\n📦 *Orden:* #${orderNumber}`;
             
             await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                 method: 'POST',

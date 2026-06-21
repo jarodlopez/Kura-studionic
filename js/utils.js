@@ -79,12 +79,48 @@ window.BrandLogo = () => {
 };
 
 
+// Identidad anónima del visitante para deduplicar usuarios únicos. El backend
+// (/api/track) además captura el hash de la IP real, que es lo más confiable;
+// estos IDs son un respaldo para navegadores que sí conservan storage.
+window.getOrCreateUserId = () => {
+    try {
+        let uid = localStorage.getItem('kodia_uid');
+        if (!uid) {
+            uid = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+            localStorage.setItem('kodia_uid', uid);
+        }
+        return uid;
+    } catch { return 'anon'; }
+};
+
+window.getOrCreateSessionId = () => {
+    try {
+        let sid = sessionStorage.getItem('kodia_sid');
+        if (!sid) {
+            sid = 's_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+            sessionStorage.setItem('kodia_sid', sid);
+        }
+        return sid;
+    } catch { return 'anon_s'; }
+};
+
+// Enviamos el evento al endpoint /api/track del servidor en lugar de escribir
+// directo a Firestore: así el backend captura la IP REAL del visitante (que el
+// navegador no puede falsificar) y la deduplica en usuarios únicos confiables.
+// keepalive permite que el evento se envíe aunque la página esté navegando
+// (clave para checkout_started justo antes de cambiar de página).
 window.trackEvent = async (type, data = {}) => {
     try {
-        await db.collection("analytics").add({
-            type, ...data,
-            timestamp: new Date().toISOString(),
-            date: new Date().toISOString().split('T')[0]
+        await fetch('/api/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type,
+                data,
+                userId: window.getOrCreateUserId(),
+                sessionId: window.getOrCreateSessionId(),
+            }),
+            keepalive: true,
         });
     } catch (e) { /* nunca interrumpir la UX por un error de tracking */ }
 };
