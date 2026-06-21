@@ -40,6 +40,7 @@ Promise.all([
   build(['admin/admin-panel.js'], 'dist/admin-panel.js'),
 
   build([
+    'js/firebase-init.js',
     'js/utils.js',
     'js/components/PopupBanner.js',
     'js/components/Home.js',

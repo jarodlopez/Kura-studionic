@@ -73,25 +73,16 @@
     <!-- CSS compilado (Tailwind + estilos propios). Generado con `npm run build`. -->
     <link rel="stylesheet" href="/dist/styles.css">
 
-    <!-- Librerías de runtime (cacheadas por el navegador entre visitas). -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <!-- Librerías de runtime (defer = no bloquean el render; se ejecutan en orden
+         antes de app.js, que contiene la init de Firebase como primer módulo). -->
+    <script defer crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script defer crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div id="root"></div>
-    <script>
-        var firebaseConfig = {
-            apiKey: "AIzaSyB6YA-gSckDvi-fdFlRsvwRttr3VnGQ82U",
-            authDomain: "kuranic-b1034.firebaseapp.com",
-            projectId: "kuranic-b1034"
-        };
-        var IMGBB_API_KEY = "B922654effe3a1ab5ac85cc4c23f97b8";
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        var db = firebase.firestore();
-    </script>
-    <!-- App pre-compilada (JSX ya transpilado). Generado con `npm run build`. -->
+    <!-- App pre-compilada (JSX ya transpilado + init de Firebase). Generado con `npm run build`. -->
     <script src="/dist/app.js" defer></script>
     <script>
         if ('serviceWorker' in navigator) {
