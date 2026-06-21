@@ -50,12 +50,13 @@
     }
     </script>
 
-    <link rel="preconnect" href="https://wsrv.nl">
-    <link rel="dns-prefetch" href="https://i.ibb.co">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <!-- 4 preconnects (Lighthouse max): image CDN, font files, React CDN, Firebase CDN -->
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://unpkg.com" crossorigin>
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://i.ibb.co">
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
 
     <!-- Fonts: non-blocking load to eliminate render-blocking stylesheet -->
