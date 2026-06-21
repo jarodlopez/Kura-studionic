@@ -10,15 +10,15 @@ function CheckoutApp() {
     const { useState, useEffect } = React;
 
     const [cart] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('kura_cart')) || []; } catch { return []; }
+        try { return JSON.parse(localStorage.getItem('kodia_cart')) || []; } catch { return []; }
     });
     const [meta] = useState(() => {
-        try { return JSON.parse(localStorage.getItem('kura_checkout_meta')) || {}; } catch { return {}; }
+        try { return JSON.parse(localStorage.getItem('kodia_checkout_meta')) || {}; } catch { return {}; }
     });
 
     const [storeConfig, setStoreConfig] = useState(() => {
         try {
-            const parsed = JSON.parse(localStorage.getItem('kura_store_cache'));
+            const parsed = JSON.parse(localStorage.getItem('kodia_store_cache'));
             if (parsed && Date.now() - parsed.ts < 20 * 60 * 1000) return parsed.config || {};
         } catch {}
         return {};
@@ -136,8 +136,8 @@ function CheckoutApp() {
                 ? `https://wa.me/${branding.whatsapp}?text=${encodeURIComponent(m)}`
                 : '';
 
-            localStorage.removeItem('kura_cart');
-            localStorage.removeItem('kura_checkout_meta');
+            localStorage.removeItem('kodia_cart');
+            localStorage.removeItem('kodia_checkout_meta');
 
             setConfirmedOrder({
                 orderNumber: orderNum,
@@ -166,15 +166,15 @@ function CheckoutApp() {
     if (confirmedOrder) {
         return (
             <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-                <div className="w-full max-w-md border border-kuraRed bg-black rounded-2xl overflow-hidden shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)]">
-                    <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">
+                <div className="w-full max-w-md border border-accent bg-black rounded-2xl overflow-hidden shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)]">
+                    <div className="bg-accent px-6 py-4 flex items-center gap-3">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                         <h2 className="font-bebas text-3xl text-black tracking-widest">PEDIDO REGISTRADO</h2>
                     </div>
                     <div className="p-6 space-y-4">
                         <div className="border border-zinc-800 bg-zinc-950 p-4 text-center rounded-xl">
                             <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Tu número de orden</p>
-                            <p className="font-bebas text-4xl text-kuraRed tracking-widest">{confirmedOrder.orderNumber}</p>
+                            <p className="font-bebas text-4xl text-accent tracking-widest">{confirmedOrder.orderNumber}</p>
                         </div>
                         <div className="flex items-start gap-3 border border-yellow-800/40 p-4 bg-yellow-950/20 rounded-xl">
                             <span className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 shrink-0 animate-pulse"></span>
@@ -226,11 +226,11 @@ function CheckoutApp() {
                                         <p className="text-xs text-zinc-500 mt-1 font-bold">{branding.variantLabel}: {item.selectedSize}</p>
                                         {item.discountPrice && item.discountPrice > 0 ? (
                                             <div className="mt-1 flex items-center gap-2">
-                                                <span className="text-kuraRed text-sm font-bold">{fmtPrice(item.discountPrice)}</span>
+                                                <span className="text-accent text-sm font-bold">{fmtPrice(item.discountPrice)}</span>
                                                 <span className="text-zinc-600 text-[10px] line-through">{fmtPrice(item.price)}</span>
                                             </div>
                                         ) : (
-                                            <p className="text-kuraRed text-sm mt-1 font-bold">{fmtPrice(item.price)}</p>
+                                            <p className="text-accent text-sm mt-1 font-bold">{fmtPrice(item.price)}</p>
                                         )}
                                     </div>
                                 </div>
@@ -242,9 +242,9 @@ function CheckoutApp() {
                         <div className="border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
                             <p className="text-[10px] text-zinc-500 mb-3 font-bold uppercase tracking-widest">CÓDIGO DE DESCUENTO</p>
                             {appliedDiscount ? (
-                                <div className="flex items-center justify-between bg-kuraRed/10 border border-kuraRed p-3 rounded-lg">
+                                <div className="flex items-center justify-between bg-accent/10 border border-accent p-3 rounded-lg">
                                     <div>
-                                        <span className="text-kuraRed font-bebas text-xl">{appliedDiscount.code}</span>
+                                        <span className="text-accent font-bebas text-xl">{appliedDiscount.code}</span>
                                         <span className="text-green-400 text-xs ml-3">
                                             {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% OFF` : `${fmtPrice(appliedDiscount.value)} OFF`}
                                         </span>
@@ -253,8 +253,8 @@ function CheckoutApp() {
                                 </div>
                             ) : (
                                 <div className="flex gap-2">
-                                    <input type="text" placeholder="INGRESA TU CÓDIGO" value={discountInput} onChange={e => setDiscountInput(e.target.value.toUpperCase())} className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-kuraRed transition-colors font-mono tracking-widest rounded-lg" />
-                                    <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-kuraRed hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap rounded-lg">APLICAR</button>
+                                    <input type="text" placeholder="INGRESA TU CÓDIGO" value={discountInput} onChange={e => setDiscountInput(e.target.value.toUpperCase())} className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-accent transition-colors font-mono tracking-widest rounded-lg" />
+                                    <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-accent hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap rounded-lg">APLICAR</button>
                                 </div>
                             )}
                             {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
@@ -266,7 +266,7 @@ function CheckoutApp() {
                             <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
                             <div className="flex gap-2 flex-wrap">
                                 {zones.map(zone => (
-                                    <button key={zone.id} type="button" onClick={() => setShippingZone(zone.id)} className={`flex-1 min-w-[40%] py-3 text-xs font-bold transition-all rounded-xl border-2 ${activeZone?.id === zone.id ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
+                                    <button key={zone.id} type="button" onClick={() => setShippingZone(zone.id)} className={`flex-1 min-w-[40%] py-3 text-xs font-bold transition-all rounded-xl border-2 ${activeZone?.id === zone.id ? 'bg-accent text-black border-accent' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
                                         {zone.label}<br /><span className="font-mono font-normal">{fmtPrice(zone.cost)}</span>
                                     </button>
                                 ))}
@@ -284,7 +284,7 @@ function CheckoutApp() {
                             <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO ({activeZone?.label || ''})</span><span>{fmtPrice(currentShippingCost)}</span></div>
                             <div className="flex justify-between pt-3 border-t border-zinc-800 items-end mt-2">
                                 <span className="font-bebas text-lg text-white">TOTAL</span>
-                                <span className="font-bebas text-3xl text-kuraRed leading-none">{fmtPrice(cartTotal)}</span>
+                                <span className="font-bebas text-3xl text-accent leading-none">{fmtPrice(cartTotal)}</span>
                             </div>
                         </div>
                     </div>
@@ -294,16 +294,16 @@ function CheckoutApp() {
                         <h2 className="font-bebas text-xl text-zinc-500 tracking-widest border-b border-zinc-800 pb-3">DATOS DE ENTREGA</h2>
                         <input required type="text" placeholder="NOMBRE COMPLETO"
                             value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value.toUpperCase() })}
-                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors rounded-xl" />
+                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-accent transition-colors rounded-xl" />
                         <input required type="tel" placeholder="TELÉFONO (Ej: 8888 8888)"
                             value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed transition-colors rounded-xl" />
+                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-accent transition-colors rounded-xl" />
                         <textarea required placeholder="DIRECCIÓN EXACTA"
                             value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value.toUpperCase() })}
-                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed h-24 resize-none transition-colors rounded-xl"></textarea>
+                            className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-accent h-24 resize-none transition-colors rounded-xl"></textarea>
 
                         <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex items-start gap-3">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                             <p className="text-zinc-400 text-xs leading-relaxed">Al confirmar, te contactaremos por WhatsApp y te enviaremos un <strong className="text-white">link seguro de pago</strong>. No necesitas subir nada ahora.</p>
                         </div>
 

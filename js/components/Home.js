@@ -6,7 +6,7 @@ const ProductCard = ({ product, openProduct }) => (
             <SmoothImage src={product.images?.[0]} width={600} className="absolute inset-0 w-full h-full object-cover" alt={`${product.title} – ${getBranding().brandName}`} />
             <div className="absolute top-2 left-2 bg-white text-black font-bebas px-2 py-0.5 text-sm z-10">{product.category}</div>
             {product.discountPrice && product.discountPrice > 0 && (
-                <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
+                <div className="absolute top-2 right-2 bg-accent text-black font-bebas px-2 py-0.5 text-sm z-10 animate-pulse">OFERTA</div>
             )}
         </div>
         <div className="p-4 flex flex-col flex-1">
@@ -14,10 +14,10 @@ const ProductCard = ({ product, openProduct }) => (
             {product.discountPrice && product.discountPrice > 0 ? (
                 <div className="flex flex-col mt-auto pt-2">
                     <p className="text-zinc-500 line-through text-xs font-mono">{fmtPrice(product.price)}</p>
-                    <p className="text-kuraRed font-bold font-mono text-sm">{fmtPrice(product.discountPrice)}</p>
+                    <p className="text-accent font-bold font-mono text-sm">{fmtPrice(product.discountPrice)}</p>
                 </div>
             ) : (
-                <p className="text-kuraRed font-bold font-mono text-sm mt-auto pt-2">{fmtPrice(product.price)}</p>
+                <p className="text-accent font-bold font-mono text-sm mt-auto pt-2">{fmtPrice(product.price)}</p>
             )}
         </div>
     </div>
@@ -26,11 +26,11 @@ const ProductCard = ({ product, openProduct }) => (
 const SectionHeader = ({ title, onViewAll }) => (
     <div className="flex items-center justify-between mb-6 pt-2">
         <h3 className="font-bebas text-2xl md:text-3xl flex items-center gap-3">
-            <span className="w-6 h-[2px] bg-kuraRed inline-block shrink-0"></span>
+            <span className="w-6 h-[2px] bg-accent inline-block shrink-0"></span>
             {title}
         </h3>
         {onViewAll && (
-            <button onClick={onViewAll} className="text-[11px] font-mono text-kuraRed hover:text-white transition-colors tracking-widest whitespace-nowrap ml-4" style={{textShadow:'0 0 8px rgb(var(--accent-rgb) / 0.8)'}}>
+            <button onClick={onViewAll} className="text-[11px] font-mono text-accent hover:text-white transition-colors tracking-widest whitespace-nowrap ml-4" style={{textShadow:'0 0 8px rgb(var(--accent-rgb) / 0.8)'}}>
                 VER TODO →
             </button>
         )}
@@ -44,19 +44,19 @@ const Pagination = ({ page, totalPages, setPage }) => {
             <button
                 onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 disabled={page === 1}
-                className="font-bebas text-lg px-4 py-1.5 border border-zinc-800 text-zinc-500 hover:border-kuraRed hover:text-kuraRed disabled:opacity-30 transition-colors rounded-lg"
+                className="font-bebas text-lg px-4 py-1.5 border border-zinc-800 text-zinc-500 hover:border-accent hover:text-accent disabled:opacity-30 transition-colors rounded-lg"
             >←</button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <button
                     key={p}
                     onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`font-bebas text-lg w-9 h-9 border rounded-lg transition-colors ${p === page ? 'bg-kuraRed border-kuraRed text-black' : 'border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-white'}`}
+                    className={`font-bebas text-lg w-9 h-9 border rounded-lg transition-colors ${p === page ? 'bg-accent border-accent text-black' : 'border-zinc-800 text-zinc-500 hover:border-zinc-500 hover:text-white'}`}
                 >{p}</button>
             ))}
             <button
                 onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 disabled={page === totalPages}
-                className="font-bebas text-lg px-4 py-1.5 border border-zinc-800 text-zinc-500 hover:border-kuraRed hover:text-kuraRed disabled:opacity-30 transition-colors rounded-lg"
+                className="font-bebas text-lg px-4 py-1.5 border border-zinc-800 text-zinc-500 hover:border-accent hover:text-accent disabled:opacity-30 transition-colors rounded-lg"
             >→</button>
         </div>
     );
@@ -106,13 +106,13 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
 
             {/* HERO SLIDER */}
             {getFeatures(storeConfig).heroSlider !== false && storeConfig.heroSlides && storeConfig.heroSlides.length > 0 && (
-                <div className="relative w-full h-[50vh] md:h-[70vh] bg-kuraDark overflow-hidden border-b-2 border-zinc-900">
+                <div className="relative w-full h-[50vh] md:h-[70vh] bg-surface overflow-hidden border-b-2 border-zinc-900">
                     {storeConfig.heroSlides.map((slide, index) => (
                         <div key={slide.id} className={`absolute inset-0 transition-opacity duration-1000 ${index === currentHeroSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-10"></div>
                             <SmoothImage src={slide.image} width={1600} className="w-full h-full object-cover scale-105" alt={slide.title ? `${getBranding().brandName} – ${slide.title}` : getBranding().brandName} eager={index === 0} />
                             <div className="absolute bottom-10 left-4 md:left-12 z-20">
-                                <p className="text-kuraRed font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
+                                <p className="text-accent font-mono text-xs md:text-sm tracking-[0.3em] mb-2">{slide.subtitle}</p>
                                 <h2 className="text-5xl md:text-8xl font-bebas text-white leading-none mb-6">{slide.title}</h2>
                                 <button
                                     onClick={() => {
@@ -143,7 +143,7 @@ window.HomeView = ({ storeConfig, filteredProducts, products, activeCategory, se
                                 placeholder="BUSCAR PRENDA..."
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2 text-xs outline-none focus:border-kuraRed transition-colors pr-8 rounded-xl"
+                                className="w-full bg-zinc-950 border border-zinc-800 text-white px-4 py-2 text-xs outline-none focus:border-accent transition-colors pr-8 rounded-xl"
                             />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

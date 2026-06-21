@@ -116,7 +116,7 @@ function PagoApp() {
                         <h2 className="font-bebas text-3xl text-black tracking-widest">PAGO RECIBIDO</h2>
                     </div>
                     <div className="p-6 space-y-3">
-                        <p className="font-bebas text-2xl text-kuraRed">{order?.orderNumber}</p>
+                        <p className="font-bebas text-2xl text-accent">{order?.orderNumber}</p>
                         <p className="text-zinc-400 text-sm">Ya recibimos tu comprobante de pago. Te contactaremos pronto para coordinar la entrega.</p>
                         <a href="/" className="block w-full py-3 text-xs font-bold tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 hover:border-zinc-600 rounded-xl text-center mt-4">
                             VOLVER A LA TIENDA
@@ -131,13 +131,13 @@ function PagoApp() {
     if (state === 'done') {
         return (
             <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-                <div className="w-full max-w-md border border-kuraRed bg-black rounded-2xl overflow-hidden shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)]">
-                    <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">
+                <div className="w-full max-w-md border border-accent bg-black rounded-2xl overflow-hidden shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)]">
+                    <div className="bg-accent px-6 py-4 flex items-center gap-3">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                         <h2 className="font-bebas text-3xl text-black tracking-widest">COMPROBANTE ENVIADO</h2>
                     </div>
                     <div className="p-6 space-y-4">
-                        <p className="font-bebas text-2xl text-kuraRed">{order?.orderNumber}</p>
+                        <p className="font-bebas text-2xl text-accent">{order?.orderNumber}</p>
                         <div className="flex items-start gap-3 border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
                             <span className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 shrink-0 animate-pulse"></span>
                             <p className="text-zinc-400 text-xs leading-relaxed">Recibimos tu comprobante. Verificaremos el pago en las próximas 24 horas y te contactaremos por WhatsApp para coordinar la entrega.</p>
@@ -164,7 +164,7 @@ function PagoApp() {
                 {/* Resumen de la orden */}
                 <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl">
                     <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">ORDEN</p>
-                    <h2 className="font-bebas text-3xl text-kuraRed leading-none">{order.orderNumber}</h2>
+                    <h2 className="font-bebas text-3xl text-accent leading-none">{order.orderNumber}</h2>
                     <p className="text-zinc-400 text-xs mt-1 font-mono">{order.customerName} · {order.shippingZone}</p>
 
                     <div className="mt-4 space-y-2">
@@ -186,7 +186,7 @@ function PagoApp() {
                         <div className="flex justify-between text-zinc-500"><span>Envío ({order.shippingZone})</span><span>{fmtPrice(order.shippingCost)}</span></div>
                         <div className="flex justify-between items-end pt-2 mt-1 border-t border-zinc-800">
                             <span className="font-bebas text-xl text-white">TOTAL A PAGAR</span>
-                            <span className="font-bebas text-3xl text-kuraRed leading-none">{fmtPrice(order.total)}</span>
+                            <span className="font-bebas text-3xl text-accent leading-none">{fmtPrice(order.total)}</span>
                         </div>
                     </div>
                 </div>
@@ -208,12 +208,12 @@ function PagoApp() {
 
                 {/* Subir comprobante */}
                 <div>
-                    <p className="text-xs text-white mb-3 font-bold border-l-2 border-kuraRed pl-2">ADJUNTA TU COMPROBANTE DE PAGO:</p>
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-700 border-dashed hover:border-kuraRed hover:bg-zinc-900 transition-colors cursor-pointer rounded-xl">
+                    <p className="text-xs text-white mb-3 font-bold border-l-2 border-accent pl-2">ADJUNTA TU COMPROBANTE DE PAGO:</p>
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-zinc-700 border-dashed hover:border-accent hover:bg-zinc-900 transition-colors cursor-pointer rounded-xl">
                         {receiptFile ? (
                             <div className="text-center p-2">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed mx-auto mb-2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
-                                <span className="text-kuraRed font-bold text-xs block truncate max-w-[200px]">{receiptFile.name}</span>
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent mx-auto mb-2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                <span className="text-accent font-bold text-xs block truncate max-w-[200px]">{receiptFile.name}</span>
                                 <span className="text-zinc-500 text-[10px] mt-1 block">(Toca para cambiar)</span>
                             </div>
                         ) : (
@@ -228,8 +228,8 @@ function PagoApp() {
 
                 {/* Términos */}
                 <label className="flex items-start gap-3 cursor-pointer text-xs text-zinc-400 p-3 border border-zinc-800 bg-black rounded-xl">
-                    <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)} className="mt-0.5 accent-kuraRed w-4 h-4 shrink-0" />
-                    <span className="leading-tight">Confirmo que realicé el pago de <strong className="text-kuraRed">{fmtPrice(order.total)}</strong> y el comprobante adjunto es correcto.</span>
+                    <input type="checkbox" checked={acceptTerms} onChange={e => setAcceptTerms(e.target.checked)} className="mt-0.5 accent-accent w-4 h-4 shrink-0" />
+                    <span className="leading-tight">Confirmo que realicé el pago de <strong className="text-accent">{fmtPrice(order.total)}</strong> y el comprobante adjunto es correcto.</span>
                 </label>
 
                 {/* Botón confirmar */}

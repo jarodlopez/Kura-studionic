@@ -4,7 +4,7 @@ window.SizeModal = ({ isSizeModalOpen, setIsSizeModalOpen, storeConfig }) => {
         <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={() => setIsSizeModalOpen(false)}>
             <div className="relative max-w-3xl w-full border border-zinc-800 bg-[#0a0a0a] p-6 animate-slideUp overflow-y-auto max-h-[90vh] rounded-2xl" onClick={e => e.stopPropagation()}>
                 <button onClick={() => setIsSizeModalOpen(false)} className="absolute top-4 right-4 text-zinc-500 hover:text-white font-bebas text-2xl">✕</button>
-                <h3 className="font-bebas text-3xl text-kuraRed mb-6">GUÍA DE MEDIDAS</h3>
+                <h3 className="font-bebas text-3xl text-accent mb-6">GUÍA DE MEDIDAS</h3>
                 {storeConfig.sizeGuide ? (
                     <img src={optimizeImg(storeConfig.sizeGuide, 1400)} onError={(e) => { if (storeConfig.sizeGuide && e.target.src !== storeConfig.sizeGuide) e.target.src = storeConfig.sizeGuide; }} className="w-full h-auto border border-zinc-800" decoding="async" draggable={false} alt="Guía de medidas" />
                 ) : (
@@ -20,7 +20,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
 
         {/* BREADCRUMB */}
         <div className="flex gap-2 text-xs text-zinc-500 mb-6 font-mono uppercase">
-            <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-kuraRed">{selectedProduct.title}</span>
+            <span className="cursor-pointer hover:text-white" onClick={closeProduct}>INICIO</span> / <span className="text-accent">{selectedProduct.title}</span>
         </div>
 
         {/* GALERÍA + INFO */}
@@ -29,7 +29,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                 {selectedProduct.images?.length > 1 && (
                     <div className="flex md:flex-col gap-3 overflow-x-auto no-scrollbar md:w-24 shrink-0">
                         {selectedProduct.images.map((img, idx) => (
-                            <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 rounded-lg overflow-hidden ${mainImageIndex === idx ? 'border-kuraRed' : 'border-zinc-800'}`}>
+                            <button key={idx} onClick={() => setMainImageIndex(idx)} className={`w-20 h-24 md:w-full shrink-0 border-2 rounded-lg overflow-hidden ${mainImageIndex === idx ? 'border-accent' : 'border-zinc-800'}`}>
                                 <SmoothImage src={img} width={200} className="w-full h-full object-cover" alt={`${selectedProduct.title} – imagen ${idx + 1}`} />
                             </button>
                         ))}
@@ -41,7 +41,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
             </div>
 
             <div className="w-full md:w-[45%] flex flex-col">
-                <p className="text-kuraRed font-mono text-sm tracking-widest mb-2 font-bold uppercase">{selectedProduct.category}</p>
+                <p className="text-accent font-mono text-sm tracking-widest mb-2 font-bold uppercase">{selectedProduct.category}</p>
                 <h2 className="text-5xl md:text-7xl font-bebas mb-2 leading-none tracking-wide">{selectedProduct.title}</h2>
 
                 {selectedProduct.sku && (
@@ -53,7 +53,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                 <div className="flex items-end gap-4 mb-8">
                     {selectedProduct.discountPrice && selectedProduct.discountPrice > 0 ? (
                         <>
-                            <span className="text-4xl md:text-5xl font-mono text-kuraRed font-bold">{fmtPrice(selectedProduct.discountPrice)}</span>
+                            <span className="text-4xl md:text-5xl font-mono text-accent font-bold">{fmtPrice(selectedProduct.discountPrice)}</span>
                             <span className="text-xl md:text-2xl font-mono text-zinc-500 line-through mb-1">{fmtPrice(selectedProduct.price)}</span>
                         </>
                     ) : (
@@ -67,7 +67,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                     <ul className="mb-8 space-y-2 border-t border-zinc-900 pt-6">
                         {selectedProduct.details.map((detail, idx) => (
                             <li key={idx} className="flex gap-3 text-zinc-300">
-                                <span className="text-kuraRed">—</span> {detail}
+                                <span className="text-accent">—</span> {detail}
                             </li>
                         ))}
                     </ul>
@@ -78,7 +78,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                         <div className="flex justify-between items-center mb-4">
                             <p className="text-xs text-zinc-500 tracking-widest">SELECCIONA {getBranding().variantLabel}</p>
                             {getFeatures(storeConfig).sizeGuide !== false && storeConfig.sizeGuide && (
-                                <button onClick={() => setIsSizeModalOpen(true)} className="text-kuraRed text-xs underline decoration-kuraRed/50 hover:text-white transition-colors">GUÍA DE MEDIDAS</button>
+                                <button onClick={() => setIsSizeModalOpen(true)} className="text-accent text-xs underline decoration-accent/50 hover:text-white transition-colors">GUÍA DE MEDIDAS</button>
                             )}
                         </div>
                         <div className="flex flex-wrap gap-3">
@@ -90,7 +90,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                                         key={size}
                                         onClick={() => !isSoldOut && setSelectedSize(size)}
                                         disabled={isSoldOut}
-                                        className={`font-bebas text-2xl w-14 h-14 border-2 rounded-xl transition-all relative ${isSoldOut ? 'border-zinc-900 text-zinc-700 cursor-not-allowed line-through' : selectedSize === size ? 'bg-kuraRed border-kuraRed text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-kuraRed hover:text-white'}`}
+                                        className={`font-bebas text-2xl w-14 h-14 border-2 rounded-xl transition-all relative ${isSoldOut ? 'border-zinc-900 text-zinc-700 cursor-not-allowed line-through' : selectedSize === size ? 'bg-accent border-accent text-black scale-110' : 'border-zinc-800 text-zinc-400 hover:border-accent hover:text-white'}`}
                                         title={isSoldOut ? 'Agotado' : size}
                                     >
                                         {size}
@@ -112,7 +112,7 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
         {products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).length > 0 && (
             <div className="mb-12 border-t border-zinc-900 pt-10">
                 <h3 className="font-bebas text-3xl md:text-4xl mb-6 flex items-center gap-4">
-                    <span className="w-8 h-[2px] bg-kuraRed"></span> PRODUCTOS SIMILARES
+                    <span className="w-8 h-[2px] bg-accent"></span> PRODUCTOS SIMILARES
                 </h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {products.filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id).slice(0, 4).map(item => (
@@ -120,12 +120,12 @@ window.ProductDetailView = ({ selectedProduct, closeProduct, products, openProdu
                             <div className="relative w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-800 overflow-hidden">
                                 <img src={optimizeImg(item.images?.[0], 600)} onError={(e) => { if (item.images?.[0] && e.target.src !== item.images[0]) e.target.src = item.images[0]; }} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={`${item.title} – ${getBranding().brandName}`} loading="lazy" decoding="async" draggable={false} />
                                 {item.discountPrice && item.discountPrice > 0 && (
-                                    <div className="absolute top-2 right-2 bg-kuraRed text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
+                                    <div className="absolute top-2 right-2 bg-accent text-black font-bebas px-2 py-0.5 text-xs z-10">OFERTA</div>
                                 )}
                             </div>
                             <div className="p-3 flex flex-col flex-1">
                                 <p className="font-bebas text-lg truncate leading-none mb-1">{item.title}</p>
-                                <p className="text-kuraRed text-xs font-bold font-mono mt-auto">{fmtPrice(getPrice(item))}</p>
+                                <p className="text-accent text-xs font-bold font-mono mt-auto">{fmtPrice(getPrice(item))}</p>
                             </div>
                         </div>
                     ))}

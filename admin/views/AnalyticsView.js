@@ -86,7 +86,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
     const maxAbandoned = topAbandonedProducts[0]?.[1] || 1;
 
     const kpiCards = [
-        { label: 'INGRESOS TOTALES', value: `${fmtPrice(totalRevenue.toLocaleString())}`, sub: `${ordersCompleted} órdenes`, color: 'text-kuraRed' },
+        { label: 'INGRESOS TOTALES', value: `${fmtPrice(totalRevenue.toLocaleString())}`, sub: `${ordersCompleted} órdenes`, color: 'text-accent' },
         { label: 'TICKET PROMEDIO', value: `${fmtPrice(avgTicket.toLocaleString())}`, sub: 'por orden', color: 'text-white' },
         { label: 'VISITAS', value: pageViews.toLocaleString(), sub: `en ${days} día${days > 1 ? 's' : ''}`, color: 'text-white' },
         { label: 'USUARIOS ÚNICOS', value: uniqueUsers.toLocaleString(), sub: 'identificados', color: 'text-white' },
@@ -105,14 +105,14 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                 <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs text-zinc-500 font-bold">PERÍODO:</span>
                     {[['1', 'HOY'], ['7', '7 DÍAS'], ['30', '30 DÍAS']].map(([v, l]) => (
-                        <button key={v} onClick={() => setAnalyticsRange(v)} className={`font-bebas text-lg px-4 py-1 border transition-colors ${analyticsRange === v ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-700 hover:border-white hover:text-white'}`}>{l}</button>
+                        <button key={v} onClick={() => setAnalyticsRange(v)} className={`font-bebas text-lg px-4 py-1 border transition-colors ${analyticsRange === v ? 'bg-accent text-black border-accent' : 'bg-transparent text-zinc-500 border-zinc-700 hover:border-white hover:text-white'}`}>{l}</button>
                     ))}
                     <button onClick={() => { fetchAnalytics(); fetchOrders(); }} className="ml-1 text-zinc-500 hover:text-white text-xl" title="Actualizar">↻</button>
                 </div>
             </div>
 
             {analyticsLoading ? (
-                <div className="text-center py-20 font-bebas text-3xl text-kuraRed animate-pulse">CARGANDO DATOS...</div>
+                <div className="text-center py-20 font-bebas text-3xl text-accent animate-pulse">CARGANDO DATOS...</div>
             ) : (
                 <>
                     {/* KPI Cards: 2 cols on mobile, 4 on desktop */}
@@ -128,7 +128,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
 
                     {/* Funnel */}
                     <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
-                        <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> EMBUDO DE CONVERSIÓN</h3>
+                        <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-accent inline-block"></span> EMBUDO DE CONVERSIÓN</h3>
                         <div className="space-y-3">
                             {funnelSteps.map((step, i) => {
                                 const pct = Math.round((step.value / funnelMax) * 100);
@@ -145,10 +145,10 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                                     <span className="text-[9px] text-red-400 font-mono bg-red-900/20 px-1.5 py-0.5 border border-red-900 shrink-0">↓{dropPct}%</span>
                                                 )}
                                             </div>
-                                            <span className="font-bebas text-xl text-kuraRed shrink-0 ml-2">{step.value.toLocaleString()}</span>
+                                            <span className="font-bebas text-xl text-accent shrink-0 ml-2">{step.value.toLocaleString()}</span>
                                         </div>
                                         <div className="h-5 bg-zinc-900 border border-zinc-800 relative overflow-hidden">
-                                            <div className="h-full bg-kuraRed transition-all duration-700" style={{ width: `${pct}%`, opacity: 1 - i * 0.1 }}></div>
+                                            <div className="h-full bg-accent transition-all duration-700" style={{ width: `${pct}%`, opacity: 1 - i * 0.1 }}></div>
                                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 font-mono">{pct}%</span>
                                         </div>
                                     </div>
@@ -193,7 +193,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
 
                     {/* Daily sales chart */}
                     <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
-                        <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> VENTAS DIARIAS</h3>
+                        <h3 className="font-bebas text-2xl text-white mb-5 flex items-center gap-3"><span className="w-6 h-[2px] bg-accent inline-block"></span> VENTAS DIARIAS</h3>
                         {chartDays.every(d => d.revenue === 0) ? (
                             <p className="text-zinc-600 text-center py-10 font-bebas text-xl">SIN DATOS DE VENTAS EN ESTE PERÍODO</p>
                         ) : (
@@ -202,8 +202,8 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                     const barH = Math.max(Math.round((d.revenue / maxRevenue) * 100), d.revenue > 0 ? 4 : 0);
                                     return (
                                         <div key={i} className="flex flex-col items-center gap-1 flex-1 group cursor-default" style={{ minWidth: '24px' }} title={`${d.label}: ${fmtPrice(d.revenue)} (${d.orders} órdenes)`}>
-                                            {d.revenue > 0 && <span className="text-[9px] text-zinc-600 group-hover:text-kuraRed font-mono">{d.orders}</span>}
-                                            <div className="w-full bg-kuraRed group-hover:bg-white transition-colors" style={{ height: `${barH}%` }}></div>
+                                            {d.revenue > 0 && <span className="text-[9px] text-zinc-600 group-hover:text-accent font-mono">{d.orders}</span>}
+                                            <div className="w-full bg-accent group-hover:bg-white transition-colors" style={{ height: `${barH}%` }}></div>
                                             <span className="text-[9px] text-zinc-600 group-hover:text-white font-mono">{d.label}</span>
                                         </div>
                                     );
@@ -215,7 +215,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                     {/* Top products + zones + categories */}
                     <div className="space-y-6">
                         <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
-                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> TOP PRODUCTOS VENDIDOS</h3>
+                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-accent inline-block"></span> TOP PRODUCTOS VENDIDOS</h3>
                             {topProducts.length === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-xl text-center py-10">SIN VENTAS EN ESTE PERÍODO</p>
                             ) : (
@@ -224,16 +224,16 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                         <div key={i}>
                                             <div className="flex justify-between items-center mb-1">
                                                 <div className="flex items-center gap-2 min-w-0">
-                                                    <span className="text-kuraRed font-bebas text-xl w-5 text-center shrink-0">{i + 1}</span>
+                                                    <span className="text-accent font-bebas text-xl w-5 text-center shrink-0">{i + 1}</span>
                                                     <span className="text-white text-xs font-mono truncate">{p.title}</span>
                                                 </div>
                                                 <div className="flex items-center gap-3 shrink-0 ml-2">
                                                     <span className="text-zinc-500 text-xs font-mono">{fmtPrice(p.revenue.toLocaleString())}</span>
-                                                    <span className="text-kuraRed font-bebas text-lg">{p.count} uds.</span>
+                                                    <span className="text-accent font-bebas text-lg">{p.count} uds.</span>
                                                 </div>
                                             </div>
                                             <div className="h-1.5 bg-zinc-900">
-                                                <div className="h-full bg-kuraRed" style={{ width: `${Math.round((p.count / maxCount) * 100)}%` }}></div>
+                                                <div className="h-full bg-accent" style={{ width: `${Math.round((p.count / maxCount) * 100)}%` }}></div>
                                             </div>
                                         </div>
                                     ))}
@@ -242,7 +242,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                         </div>
 
                         <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
-                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> ZONAS DE ENVÍO</h3>
+                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-accent inline-block"></span> ZONAS DE ENVÍO</h3>
                             {ordersCompleted === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-lg text-center py-4">SIN DATOS</p>
                             ) : (
@@ -254,7 +254,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                                 <span className="font-bebas text-white text-lg leading-none">{count} <span className="text-zinc-500 text-xs">({Math.round((count / zoneTotal) * 100)}%)</span></span>
                                             </div>
                                             <div className="h-3 bg-zinc-900">
-                                                <div className="h-full bg-kuraRed" style={{ width: `${Math.round((count / zoneTotal) * 100)}%` }}></div>
+                                                <div className="h-full bg-accent" style={{ width: `${Math.round((count / zoneTotal) * 100)}%` }}></div>
                                             </div>
                                         </div>
                                     ))}
@@ -263,7 +263,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                         </div>
 
                         <div className="bg-zinc-950 border border-zinc-800 p-5 rounded-2xl overflow-hidden">
-                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-kuraRed inline-block"></span> CATEGORÍAS VISTAS</h3>
+                            <h3 className="font-bebas text-2xl text-white mb-4 flex items-center gap-3"><span className="w-6 h-[2px] bg-accent inline-block"></span> CATEGORÍAS VISTAS</h3>
                             {topCats.length === 0 ? (
                                 <p className="text-zinc-600 font-bebas text-lg text-center py-4">SIN DATOS</p>
                             ) : (
@@ -271,7 +271,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
                                     {topCats.map(([cat, cnt], i) => (
                                         <div key={i} className="flex justify-between items-center text-sm">
                                             <span className="font-mono text-zinc-400 truncate">{cat}</span>
-                                            <span className="font-bebas text-kuraRed text-lg ml-2 shrink-0">{cnt}</span>
+                                            <span className="font-bebas text-accent text-lg ml-2 shrink-0">{cnt}</span>
                                         </div>
                                     ))}
                                 </div>

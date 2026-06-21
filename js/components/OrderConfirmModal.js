@@ -2,10 +2,10 @@ window.OrderConfirmModal = ({ order, onClose }) => {
     if (!order) return null;
     return (
         <div className="fixed inset-0 z-[400] bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="relative w-full max-w-md border border-kuraRed bg-black animate-slideUp shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)] rounded-2xl overflow-hidden">
+            <div className="relative w-full max-w-md border border-accent bg-black animate-slideUp shadow-[0_8px_40px_rgb(var(--accent-rgb)/0.35)] rounded-2xl overflow-hidden">
 
                 {/* Cabecera */}
-                <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">
+                <div className="bg-accent px-6 py-4 flex items-center gap-3">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
                     <h2 className="font-bebas text-3xl text-black tracking-widest leading-none">ORDEN CONFIRMADA</h2>
                 </div>
@@ -14,7 +14,7 @@ window.OrderConfirmModal = ({ order, onClose }) => {
                     {/* Número de orden */}
                     <div className="border border-zinc-800 bg-zinc-950 p-4 mb-6 text-center rounded-xl">
                         <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Tu número de orden</p>
-                        <p className="font-bebas text-4xl text-kuraRed tracking-widest">#{order.orderNumber}</p>
+                        <p className="font-bebas text-4xl text-accent tracking-widest">#{order.orderNumber}</p>
                     </div>
 
                     {/* Estado */}
@@ -32,7 +32,7 @@ window.OrderConfirmModal = ({ order, onClose }) => {
                     <div className="text-xs font-mono text-zinc-500 mb-6 space-y-1 border-t border-zinc-900 pt-4">
                         <div className="flex justify-between"><span>Cliente:</span><span className="text-white">{order.customer.name}</span></div>
                         <div className="flex justify-between"><span>Envío:</span><span className="text-white">{order.shippingZone}</span></div>
-                        <div className="flex justify-between text-kuraRed font-bold text-sm mt-2 pt-2 border-t border-zinc-900">
+                        <div className="flex justify-between text-accent font-bold text-sm mt-2 pt-2 border-t border-zinc-900">
                             <span>TOTAL:</span><span>NIO {order.total}</span>
                         </div>
                     </div>

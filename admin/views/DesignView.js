@@ -41,7 +41,7 @@ const BrandSection = ({ storeConfig, saveConfigPatch, uploadToImgBB, showToast }
 
     return (
         <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-            <h2 className="font-bebas text-3xl text-kuraRed mb-1">MARCA</h2>
+            <h2 className="font-bebas text-3xl text-accent mb-1">MARCA</h2>
             <p className="text-xs text-zinc-400 mb-5">Identidad de la tienda: nombre, logo, color y textos. Funciona para cualquier rubro (ropa, ferretería, etc.).</p>
             <div className="grid md:grid-cols-2 gap-4">
                 <Field label="NOMBRE DE LA TIENDA">
@@ -96,7 +96,7 @@ const PaymentSection = ({ storeConfig, saveConfigPatch, showToast }) => {
     };
     return (
         <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-            <h2 className="font-bebas text-3xl text-kuraRed mb-1">DATOS DE PAGO</h2>
+            <h2 className="font-bebas text-3xl text-accent mb-1">DATOS DE PAGO</h2>
             <p className="text-xs text-zinc-400 mb-4">Se muestran tal cual en el checkout (cuentas bancarias, billeteras, instrucciones).</p>
             <textarea
                 className="brutalist-input h-36 font-mono text-xs leading-relaxed resize-y"
@@ -131,7 +131,7 @@ const ShippingSection = ({ storeConfig, saveConfigPatch, showToast }) => {
 
     return (
         <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-            <h2 className="font-bebas text-3xl text-kuraRed mb-1">ZONAS DE ENVÍO</h2>
+            <h2 className="font-bebas text-3xl text-accent mb-1">ZONAS DE ENVÍO</h2>
             <p className="text-xs text-zinc-400 mb-4">El cliente elige una zona en el carrito y el costo se suma al total.</p>
             <div className="space-y-2 mb-4">
                 {zones.map((z, i) => (
@@ -165,14 +165,14 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
         <div className="bg-zinc-950 h-max">
             {/* Mobile sheet header */}
             <div className="form-sheet-header flex items-center justify-between px-4 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
-                <h3 className="font-bebas text-2xl text-kuraRed">AÑADIR PORTADA</h3>
+                <h3 className="font-bebas text-2xl text-accent">AÑADIR PORTADA</h3>
                 <button type="button" onClick={closeForm} className="text-zinc-400 text-xl font-bold p-1 leading-none">✕</button>
             </div>
 
             <div className="p-4 space-y-4">
                 {/* Desktop header */}
                 <div className="hidden-in-sheet">
-                    <h2 className="font-bebas text-3xl text-kuraRed mb-4">AÑADIR PORTADA (HERO SLIDER)</h2>
+                    <h2 className="font-bebas text-3xl text-accent mb-4">AÑADIR PORTADA (HERO SLIDER)</h2>
                 </div>
 
                 <input placeholder="SUBTÍTULO (Ej: NUEVA COLECCIÓN)" className="brutalist-input" value={slideForm.subtitle} onChange={e => setSlideForm({ ...slideForm, subtitle: e.target.value })} />
@@ -229,7 +229,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                                     <div className="flex-1 overflow-hidden min-w-0">
                                         <p className="font-bebas text-xl leading-none truncate">{slide.title}</p>
                                         <p className="text-[10px] text-zinc-500 mt-1 truncate">{slide.subtitle} | Botón: {slide.cta}</p>
-                                        {slide.categoryTarget && <p className="text-[10px] text-kuraRed mt-1">⮑ {slide.categoryTarget}</p>}
+                                        {slide.categoryTarget && <p className="text-[10px] text-accent mt-1">⮑ {slide.categoryTarget}</p>}
                                     </div>
                                     <button onClick={() => removeSlide(slide.id)} className="text-red-500 font-bold px-3 py-2 hover:bg-red-900 border border-transparent hover:border-red-500 transition-colors shrink-0">✕</button>
                                 </div>
@@ -245,7 +245,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                 {/* Size Guide section — always full width below */}
                 {features.sizeGuide !== false && (
                 <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
-                    <h2 className="font-bebas text-3xl text-kuraRed mb-3">GUÍA DE MEDIDAS GLOBAL</h2>
+                    <h2 className="font-bebas text-3xl text-accent mb-3">GUÍA DE MEDIDAS GLOBAL</h2>
                     <p className="text-xs text-zinc-400 mb-5 leading-relaxed">Sube una imagen con la tabla de medidas. Aparecerá cuando el cliente toque "Guía de Medidas" al ver una prenda.</p>
                     <div className="border border-zinc-800 p-4 bg-black mb-5">
                         <p className="text-xs text-zinc-500 mb-2 font-bold">SUBIR O REEMPLAZAR IMAGEN</p>
@@ -253,7 +253,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                     </div>
                     {storeConfig.sizeGuide ? (
                         <div className="border border-zinc-800 p-4 bg-black">
-                            <p className="text-xs text-kuraRed mb-3 font-bold border-b border-zinc-800 pb-2">GUÍA ACTUAL:</p>
+                            <p className="text-xs text-accent mb-3 font-bold border-b border-zinc-800 pb-2">GUÍA ACTUAL:</p>
                             <img src={storeConfig.sizeGuide} className="w-full h-auto border border-zinc-900 max-w-lg" />
                         </div>
                     ) : (
@@ -265,7 +265,7 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
 
                 {/* Collections management — name + order + cover in one place */}
                 <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
-                    <h2 className="font-bebas text-3xl text-kuraRed mb-1">COLECCIONES</h2>
+                    <h2 className="font-bebas text-3xl text-accent mb-1">COLECCIONES</h2>
                     <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
                         Crea y ordena las colecciones. La portada aparece al compartir el link en redes sociales.
                         Tocá la imagen (o el cuadro gris) para cambiarla.
@@ -304,8 +304,8 @@ window.DesignView = ({ storeConfig, slideForm, setSlideForm, uniqueCategories,
                                             {coverUrl ? (
                                                 <img src={coverUrl} className="w-16 h-11 object-cover border border-zinc-700 group-hover:opacity-70 transition-opacity" />
                                             ) : (
-                                                <div className="w-16 h-11 bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center group-hover:border-kuraRed transition-colors">
-                                                    <span className="text-zinc-600 text-[8px] font-mono text-center leading-tight group-hover:text-kuraRed">PORTADA</span>
+                                                <div className="w-16 h-11 bg-zinc-900 border border-dashed border-zinc-700 flex items-center justify-center group-hover:border-accent transition-colors">
+                                                    <span className="text-zinc-600 text-[8px] font-mono text-center leading-tight group-hover:text-accent">PORTADA</span>
                                                 </div>
                                             )}
                                             <input type="file" accept="image/*" className="hidden"

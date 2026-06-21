@@ -14,7 +14,7 @@ window.DiscountsView = ({ discountCodes, codeForm, setCodeForm, editingCodeId, s
         <form onSubmit={(e) => { handleCodeSubmit(e); closeForm(); }} className="bg-zinc-950 h-max">
             {/* Mobile sheet header */}
             <div className="form-sheet-header flex items-center justify-between px-4 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
-                <h3 className="font-bebas text-2xl text-kuraRed">{editingCodeId ? 'EDITAR CÓDIGO' : 'NUEVO CÓDIGO'}</h3>
+                <h3 className="font-bebas text-2xl text-accent">{editingCodeId ? 'EDITAR CÓDIGO' : 'NUEVO CÓDIGO'}</h3>
                 <div className="flex items-center gap-3">
                     {editingCodeId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
                     <button type="button" onClick={closeForm} className="text-zinc-400 text-xl font-bold p-1 leading-none">✕</button>
@@ -24,7 +24,7 @@ window.DiscountsView = ({ discountCodes, codeForm, setCodeForm, editingCodeId, s
             <div className="p-4 space-y-4">
                 {/* Desktop-only header (not shown in mobile sheet since sheet-header is above) */}
                 <div className="hidden-in-sheet flex justify-between items-end border-b border-zinc-800 pb-4">
-                    <h2 className="font-bebas text-3xl text-kuraRed">{editingCodeId ? 'EDITAR CÓDIGO' : 'NUEVO CÓDIGO'}</h2>
+                    <h2 className="font-bebas text-3xl text-accent">{editingCodeId ? 'EDITAR CÓDIGO' : 'NUEVO CÓDIGO'}</h2>
                     {editingCodeId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
                 </div>
 

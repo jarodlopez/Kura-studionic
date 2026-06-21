@@ -88,7 +88,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
 
             {/* MÓDULOS */}
             <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-                <h2 className="font-bebas text-3xl text-kuraRed mb-1">MÓDULOS DE LA TIENDA</h2>
+                <h2 className="font-bebas text-3xl text-accent mb-1">MÓDULOS DE LA TIENDA</h2>
                 <p className="text-xs text-zinc-400 mb-5">Activa solo lo que este cliente necesita. Lo que apagues desaparece de la tienda pública y del panel.</p>
                 <div className="grid md:grid-cols-2 gap-3">
                     {FEATURES.map(f => (
@@ -99,7 +99,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
                             </div>
                             <button
                                 onClick={() => toggleFeature(f.id)}
-                                className={`shrink-0 w-12 h-6 rounded-full transition-colors relative ${features[f.id] ? 'bg-kuraRed' : 'bg-zinc-800'}`}
+                                className={`shrink-0 w-12 h-6 rounded-full transition-colors relative ${features[f.id] ? 'bg-accent' : 'bg-zinc-800'}`}
                                 aria-label={`Alternar ${f.label}`}
                             >
                                 <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${features[f.id] ? 'left-6' : 'left-0.5'}`}></span>
@@ -111,7 +111,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
 
             {/* ROLES */}
             <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-                <h2 className="font-bebas text-3xl text-kuraRed mb-1">ROLES</h2>
+                <h2 className="font-bebas text-3xl text-accent mb-1">ROLES</h2>
                 <p className="text-xs text-zinc-400 mb-5">Define qué vistas del panel ve cada rol. Un usuario sin rol asignado ve todo (excepto esta vista).</p>
                 <div className="flex gap-2 mb-5">
                     <input
@@ -138,7 +138,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
                                         <button
                                             key={id}
                                             onClick={() => toggleRoleView(role, id)}
-                                            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-colors ${views.includes(id) ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600'}`}
+                                            className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border transition-colors ${views.includes(id) ? 'bg-accent text-black border-accent' : 'bg-transparent text-zinc-500 border-zinc-800 hover:border-zinc-600'}`}
                                         >{label}</button>
                                     ))}
                                 </div>
@@ -150,7 +150,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
 
             {/* USUARIOS */}
             <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-                <h2 className="font-bebas text-3xl text-kuraRed mb-1">USUARIOS DEL PANEL</h2>
+                <h2 className="font-bebas text-3xl text-accent mb-1">USUARIOS DEL PANEL</h2>
                 <p className="text-xs text-zinc-400 mb-5">
                     Asigna un rol a cada correo. <span className="text-zinc-300">Importante:</span> la cuenta de acceso (correo + contraseña)
                     se crea en Firebase Console → Authentication; aquí solo se define qué puede ver.
@@ -185,7 +185,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
 
             {/* SUPER ADMINS */}
             <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl">
-                <h2 className="font-bebas text-3xl text-kuraRed mb-1">SUPER ADMINS</h2>
+                <h2 className="font-bebas text-3xl text-accent mb-1">SUPER ADMINS</h2>
                 <p className="text-xs text-zinc-400 mb-5">Tienen acceso total, incluida esta vista. Normalmente: el equipo de la agencia.</p>
                 <div className="flex gap-2 mb-5">
                     <input
@@ -200,7 +200,7 @@ window.SuperAdminView = ({ platform, savePlatform, storeConfig, saveConfigPatch,
                 <div className="space-y-2">
                     {superAdmins.map(email => (
                         <div key={email} className="flex items-center gap-3 border border-zinc-800 bg-black p-3 rounded-xl">
-                            <span className="text-kuraRed text-xs">★</span>
+                            <span className="text-accent text-xs">★</span>
                             <p className="flex-1 text-sm font-mono text-zinc-200 truncate">{email}{email === currentEmail && <span className="text-zinc-600 ml-2">(vos)</span>}</p>
                             <button onClick={() => removeSuper(email)} className="text-red-500 font-bold px-2 py-1 hover:bg-red-950 rounded shrink-0">✕</button>
                         </div>

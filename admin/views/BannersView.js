@@ -14,7 +14,7 @@ window.BannersView = ({ popupBanners, bannerForm, setBannerForm, editingBannerId
         <form onSubmit={(e) => { handleBannerSubmit(e); closeForm(); }} className="bg-zinc-950 h-max">
             {/* Mobile sheet header */}
             <div className="form-sheet-header flex items-center justify-between px-4 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
-                <h3 className="font-bebas text-2xl text-kuraRed">{editingBannerId ? 'EDITAR BANNER' : 'NUEVO BANNER'}</h3>
+                <h3 className="font-bebas text-2xl text-accent">{editingBannerId ? 'EDITAR BANNER' : 'NUEVO BANNER'}</h3>
                 <div className="flex items-center gap-3">
                     {editingBannerId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
                     <button type="button" onClick={closeForm} className="text-zinc-400 text-xl font-bold p-1 leading-none">✕</button>
@@ -24,14 +24,14 @@ window.BannersView = ({ popupBanners, bannerForm, setBannerForm, editingBannerId
             <div className="p-4 space-y-4">
                 {/* Desktop-only header */}
                 <div className="hidden-in-sheet flex justify-between items-end border-b border-zinc-800 pb-4">
-                    <h2 className="font-bebas text-3xl text-kuraRed">{editingBannerId ? 'EDITAR BANNER' : 'NUEVO BANNER'}</h2>
+                    <h2 className="font-bebas text-3xl text-accent">{editingBannerId ? 'EDITAR BANNER' : 'NUEVO BANNER'}</h2>
                     {editingBannerId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
                 </div>
 
                 <div>
                     <label className="text-xs text-zinc-400 font-bold">IMAGEN DEL BANNER *</label>
                     {bannerForm.image && <img src={bannerForm.image} className="w-full h-32 object-cover border border-zinc-800 mb-2 mt-2" />}
-                    <label className={`block w-full text-center py-3 text-xs font-bold cursor-pointer border border-dashed ${isSaving ? 'border-zinc-700 text-zinc-600' : 'border-zinc-600 text-zinc-400 hover:border-kuraRed hover:text-kuraRed'} transition-colors`}>
+                    <label className={`block w-full text-center py-3 text-xs font-bold cursor-pointer border border-dashed ${isSaving ? 'border-zinc-700 text-zinc-600' : 'border-zinc-600 text-zinc-400 hover:border-accent hover:text-accent'} transition-colors`}>
                         {isSaving ? 'SUBIENDO...' : (bannerForm.image ? 'CAMBIAR IMAGEN' : '+ SUBIR IMAGEN')}
                         <input type="file" accept="image/*" className="hidden" onChange={handleBannerImageUpload} disabled={isSaving} />
                     </label>
@@ -54,7 +54,7 @@ window.BannersView = ({ popupBanners, bannerForm, setBannerForm, editingBannerId
 
                 <div className="flex items-center gap-3 border border-zinc-800 p-3">
                     <span className="text-xs text-zinc-400 font-bold flex-1">MOSTRAR EN TIENDA</span>
-                    <button type="button" onClick={() => setBannerForm(p => ({ ...p, active: !p.active }))} className={`w-12 h-6 rounded-full transition-colors relative ${bannerForm.active ? 'bg-kuraRed' : 'bg-zinc-700'}`}>
+                    <button type="button" onClick={() => setBannerForm(p => ({ ...p, active: !p.active }))} className={`w-12 h-6 rounded-full transition-colors relative ${bannerForm.active ? 'bg-accent' : 'bg-zinc-700'}`}>
                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${bannerForm.active ? 'translate-x-7' : 'translate-x-1'}`}></span>
                     </button>
                 </div>
@@ -99,7 +99,7 @@ window.BannersView = ({ popupBanners, bannerForm, setBannerForm, editingBannerId
                                             <span className={`text-[10px] font-bold px-2 py-0.5 ${b.active ? 'bg-green-900 text-green-400' : 'bg-zinc-800 text-zinc-500'}`}>{b.active ? 'ACTIVO' : 'INACTIVO'}</span>
                                         </div>
                                         {b.subtitle && <p className="text-zinc-500 text-xs mb-1">{b.subtitle}</p>}
-                                        {b.ctaText && <p className="text-kuraRed text-xs font-bold">CTA: {b.ctaText}</p>}
+                                        {b.ctaText && <p className="text-accent text-xs font-bold">CTA: {b.ctaText}</p>}
                                         <div className="flex gap-2 mt-3 flex-wrap">
                                             <button onClick={() => toggleBannerActive(b.id, b.active)} className="brutalist-btn-outline px-3 py-2 text-xs">{b.active ? 'DESACTIVAR' : 'ACTIVAR'}</button>
                                             <button onClick={() => {

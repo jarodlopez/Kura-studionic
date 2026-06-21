@@ -93,7 +93,7 @@ function AdminPanel() {
 
     // Detect orders that arrived since last admin session
     const checkNewOrdersSinceLastVisit = (fetchedOrders) => {
-        const key = 'kura_admin_last_visit';
+        const key = 'kodia_admin_last_visit';
         const lastVisit = localStorage.getItem(key);
         localStorage.setItem(key, new Date().toISOString());
         if (!lastVisit || fetchedOrders.length === 0) return;
@@ -473,7 +473,7 @@ function AdminPanel() {
         await db.collection("popupBanners").doc(id).update({ active: !current }); fetchPopupBanners();
     };
 
-    if (authLoading) return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-kuraRed animate-pulse">VERIFICANDO SISTEMA...</div>;
+    if (authLoading) return <div className="min-h-screen bg-black flex justify-center items-center font-bebas text-4xl text-accent animate-pulse">VERIFICANDO SISTEMA...</div>;
 
     if (!user) {
         return (
@@ -549,8 +549,8 @@ function AdminPanel() {
             {/* TOASTS */}
             <div className="fixed top-4 right-4 z-[500] flex flex-col gap-2 w-64 pointer-events-none">
                 {toasts.map(t => (
-                    <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 rounded-xl ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-kuraRed text-white'}`}>
-                        <span className={`text-base shrink-0 ${t.type === 'error' ? 'text-red-500' : 'text-kuraRed'}`}>{t.type === 'error' ? '✕' : '✓'}</span>
+                    <div key={t.id} className={`px-4 py-3 font-mono text-xs font-bold flex items-center gap-3 shadow-2xl animate-slideUp pointer-events-auto border-l-4 rounded-xl ${t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-300' : 'bg-zinc-950 border-accent text-white'}`}>
+                        <span className={`text-base shrink-0 ${t.type === 'error' ? 'text-red-500' : 'text-accent'}`}>{t.type === 'error' ? '✕' : '✓'}</span>
                         <span className="leading-tight">{t.msg}</span>
                     </div>
                 ))}
@@ -569,23 +569,23 @@ function AdminPanel() {
                             onClick={() => handleNavClick(id)}
                             className={`w-full flex items-center gap-3 px-3 py-2.5 text-[11px] font-medium rounded-lg transition-all text-left ${safeView === id ? 'bg-zinc-900 text-white' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'}`}
                         >
-                            <span className={`w-5 h-5 flex items-center justify-center shrink-0 ${safeView === id ? 'text-kuraRed' : 'text-zinc-500'}`}>{icon}</span>
+                            <span className={`w-5 h-5 flex items-center justify-center shrink-0 ${safeView === id ? 'text-accent' : 'text-zinc-500'}`}>{icon}</span>
                             {label}
                             {badge !== undefined && (
-                                <span className={`ml-auto text-[10px] px-1.5 py-0.5 font-mono rounded ${safeView === id ? 'bg-kuraRed text-black' : 'bg-zinc-800 text-zinc-500'}`}>{badge}</span>
+                                <span className={`ml-auto text-[10px] px-1.5 py-0.5 font-mono rounded ${safeView === id ? 'bg-accent text-black' : 'bg-zinc-800 text-zinc-500'}`}>{badge}</span>
                             )}
                         </button>
                     ))}
                 </nav>
                 <div className="p-4 border-t border-zinc-900">
                     {pwaReady && (
-                        <button onClick={handleInstall} className="w-full mb-3 flex items-center gap-2 px-3 py-2 bg-kuraRed text-black text-[11px] font-bold hover:opacity-90 transition-opacity">
+                        <button onClick={handleInstall} className="w-full mb-3 flex items-center gap-2 px-3 py-2 bg-accent text-black text-[11px] font-bold hover:opacity-90 transition-opacity">
                             <span>↓</span> INSTALAR APP
                         </button>
                     )}
                     {!notifGranted && (
-                        <button onClick={handleRequestNotif} className="w-full mb-3 flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-700 text-zinc-300 text-[11px] font-bold hover:border-kuraRed hover:text-white transition-colors">
-                            <span className="text-kuraRed">◉</span> ACTIVAR ALERTAS
+                        <button onClick={handleRequestNotif} className="w-full mb-3 flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-700 text-zinc-300 text-[11px] font-bold hover:border-accent hover:text-white transition-colors">
+                            <span className="text-accent">◉</span> ACTIVAR ALERTAS
                         </button>
                     )}
                     <p className="text-[10px] text-zinc-600 font-mono truncate mb-2">{user.email}</p>
@@ -602,7 +602,7 @@ function AdminPanel() {
                             <button onClick={() => { fetchOrders(); if (safeView === 'ANALYTICS') fetchAnalytics(); }} className="text-[11px] font-bold text-zinc-500 hover:text-white flex items-center gap-1.5 border border-zinc-800 px-3 py-1.5 hover:border-zinc-600 transition-colors">↻ ACTUALIZAR</button>
                         )}
                         {!notifGranted && (
-                            <button onClick={handleRequestNotif} title="Activar alertas de órdenes" className="text-[11px] font-bold text-kuraRed flex items-center gap-1 border border-zinc-800 px-2.5 py-1.5 hover:border-kuraRed transition-colors">
+                            <button onClick={handleRequestNotif} title="Activar alertas de órdenes" className="text-[11px] font-bold text-accent flex items-center gap-1 border border-zinc-800 px-2.5 py-1.5 hover:border-accent transition-colors">
                                 ◉ ALERTAS
                             </button>
                         )}
@@ -612,7 +612,7 @@ function AdminPanel() {
                 <main className="flex-1 overflow-y-auto p-4 admin-main-padding">
                     {isSaving && (
                         <div className="admin-saving-offset fixed left-1/2 -translate-x-1/2 z-[300] flex items-center gap-3 bg-zinc-900 border border-zinc-700 px-5 py-3 text-xs font-mono font-bold text-white shadow-2xl rounded-full">
-                            <span className="w-3 h-3 border-2 border-kuraRed border-t-transparent rounded-full animate-spin shrink-0"></span>
+                            <span className="w-3 h-3 border-2 border-accent border-t-transparent rounded-full animate-spin shrink-0"></span>
                             Guardando...
                         </div>
                     )}
@@ -688,16 +688,16 @@ function AdminPanel() {
                     <button
                         key={id}
                         onClick={() => handleNavClick(id)}
-                        className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all relative ${safeView === id ? 'text-kuraRed' : 'text-zinc-500'}`}
+                        className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all relative ${safeView === id ? 'text-accent' : 'text-zinc-500'}`}
                         style={{ touchAction: 'manipulation' }}
                     >
                         {view === id && (
-                            <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-kuraRed rounded-full" />
+                            <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-accent rounded-full" />
                         )}
                         <span className="relative flex items-center justify-center">
                             {icon}
                             {badge !== undefined && badge > 0 && (
-                                <span className="absolute -top-1.5 -right-2 bg-kuraRed text-black text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>
+                                <span className="absolute -top-1.5 -right-2 bg-accent text-black text-[8px] font-bold rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5">{badge > 9 ? '9+' : badge}</span>
                             )}
                         </span>
                         <span className="text-[10px] font-medium leading-none tracking-tight">{short || label}</span>

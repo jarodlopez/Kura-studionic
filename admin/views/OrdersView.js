@@ -94,7 +94,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                 />
                 <div className="flex items-center gap-2 shrink-0">
                     {unseenCount > 0 && (
-                        <span className="text-[11px] font-bold text-kuraRed font-mono bg-kuraRed/10 border border-kuraRed/30 px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-bold text-accent font-mono bg-accent/10 border border-accent/30 px-2 py-0.5 rounded-full">
                             {unseenCount} nueva{unseenCount > 1 ? 's' : ''}
                         </span>
                     )}
@@ -115,21 +115,21 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                             return (
                                 <div
                                     key={order.id}
-                                    className={`p-4 active:bg-zinc-800 transition-colors rounded-xl relative ${isNew ? 'bg-zinc-900 border border-kuraRed/40' : 'bg-zinc-900 border border-zinc-800'}`}
+                                    className={`p-4 active:bg-zinc-800 transition-colors rounded-xl relative ${isNew ? 'bg-zinc-900 border border-accent/40' : 'bg-zinc-900 border border-zinc-800'}`}
                                     onClick={() => openOrder(order)}
                                     style={{ cursor: 'pointer' }}
                                 >
                                     <div className="flex justify-between items-start mb-2">
                                         <span className="font-bebas text-lg text-white leading-none">{order.orderNumber}</span>
                                         <div className="flex items-center gap-2">
-                                            {isNew && <span className="bg-kuraRed text-black text-[9px] font-bold px-2 py-0.5 rounded-full tracking-widest">NUEVA</span>}
+                                            {isNew && <span className="bg-accent text-black text-[9px] font-bold px-2 py-0.5 rounded-full tracking-widest">NUEVA</span>}
                                             <StatusBadge status={order.status} small />
                                         </div>
                                     </div>
                                     <p className="text-zinc-300 text-xs font-mono mb-1">{order.customer?.name}</p>
                                     <div className="flex justify-between items-center mt-2">
                                         <span className="text-zinc-600 text-[10px] font-mono">{formatDate(order.date)}</span>
-                                        <span className="text-kuraRed font-bold text-sm font-mono">{fmtPrice(order.total)}</span>
+                                        <span className="text-accent font-bold text-sm font-mono">{fmtPrice(order.total)}</span>
                                     </div>
                                 </div>
                             );
@@ -154,10 +154,10 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                 {filteredOrders.map((order, i) => {
                                     const isNew = !order.seenByAdmin;
                                     return (
-                                        <tr key={order.id} className={`border-b border-zinc-900 transition-colors ${isNew ? 'bg-kuraRed/5 hover:bg-kuraRed/10' : (i % 2 === 0 ? 'bg-black hover:bg-zinc-900/60' : 'bg-zinc-950/40 hover:bg-zinc-900/60')}`}>
+                                        <tr key={order.id} className={`border-b border-zinc-900 transition-colors ${isNew ? 'bg-accent/5 hover:bg-accent/10' : (i % 2 === 0 ? 'bg-black hover:bg-zinc-900/60' : 'bg-zinc-950/40 hover:bg-zinc-900/60')}`}>
                                             <td className="px-4 py-3.5">
                                                 <div className="flex items-center gap-2">
-                                                    {isNew && <span className="w-1.5 h-1.5 bg-kuraRed rounded-full animate-pulse shrink-0" title="Nueva"></span>}
+                                                    {isNew && <span className="w-1.5 h-1.5 bg-accent rounded-full animate-pulse shrink-0" title="Nueva"></span>}
                                                     <StatusBadge status={order.status} small />
                                                 </div>
                                             </td>
@@ -167,10 +167,10 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                             <td className="px-4 py-3.5">
                                                 <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${order.shippingZone === 'Managua' ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-700 text-white'}`}>{order.shippingZone}</span>
                                             </td>
-                                            <td className="px-4 py-3.5 text-kuraRed font-bold">{fmtPrice(order.total)}</td>
+                                            <td className="px-4 py-3.5 text-accent font-bold">{fmtPrice(order.total)}</td>
                                             <td className="px-4 py-3.5 text-center">
                                                 <div className="flex gap-1.5 justify-center">
-                                                    <button onClick={() => openOrder(order)} className="px-3 py-1.5 text-[10px] font-bold bg-zinc-800 hover:bg-kuraRed hover:text-black text-zinc-300 transition-colors rounded">VER</button>
+                                                    <button onClick={() => openOrder(order)} className="px-3 py-1.5 text-[10px] font-bold bg-zinc-800 hover:bg-accent hover:text-black text-zinc-300 transition-colors rounded">VER</button>
                                                     <button onClick={() => deleteOrder(order.id)} className="px-2.5 py-1.5 text-[10px] border border-zinc-800 text-zinc-600 hover:bg-red-950 hover:text-red-400 hover:border-red-900 transition-colors rounded" title="Eliminar">✕</button>
                                                 </div>
                                             </td>
@@ -190,7 +190,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                         {/* Modal header */}
                         <div className="flex items-center justify-between p-4 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
                             <div>
-                                <h2 className="font-bebas text-3xl text-kuraRed leading-none">ORDEN {selectedOrder.orderNumber}</h2>
+                                <h2 className="font-bebas text-3xl text-accent leading-none">ORDEN {selectedOrder.orderNumber}</h2>
                                 <p className="text-zinc-500 text-[10px] mt-0.5">{formatDate(selectedOrder.date)}</p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -207,7 +207,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     <p className="text-sm py-0.5"><span className="text-zinc-500">Nombre: </span>{selectedOrder.customer?.name}</p>
                                     <p className="text-sm py-0.5"><span className="text-zinc-500">Teléfono: </span>{selectedOrder.customer?.phone}</p>
                                     <p className="text-sm py-0.5"><span className="text-zinc-500">Dirección: </span>{selectedOrder.customer?.address}</p>
-                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Zona: </span><span className="text-kuraRed font-bold">{selectedOrder.shippingZone}</span></p>
+                                    <p className="text-sm py-0.5"><span className="text-zinc-500">Zona: </span><span className="text-accent font-bold">{selectedOrder.shippingZone}</span></p>
                                 </div>
 
                                 <div>
@@ -219,7 +219,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bebas text-lg leading-none truncate">{item.title}</p>
                                                     <p className="text-[10px] text-zinc-400 font-bold mt-1">TALLA: {item.selectedSize}{item.sku && ` | SKU: ${item.sku}`}</p>
-                                                    <p className="text-kuraRed font-bold text-xs mt-1">{fmtPrice(getPrice(item))}</p>
+                                                    <p className="text-accent font-bold text-xs mt-1">{fmtPrice(getPrice(item))}</p>
                                                 </div>
                                             </div>
                                         ))}
@@ -233,7 +233,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                     )}
                                     <div className="flex justify-between text-zinc-400"><span>Envío:</span><span>{fmtPrice(selectedOrder.shippingCost)}</span></div>
                                     <div className="flex justify-between text-white font-bold text-lg pt-2 mt-2 border-t border-zinc-800">
-                                        <span>TOTAL PAGADO:</span><span className="text-kuraRed">{fmtPrice(selectedOrder.total)}</span>
+                                        <span>TOTAL PAGADO:</span><span className="text-accent">{fmtPrice(selectedOrder.total)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -253,7 +253,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => copyLink(getPaymentLink(selectedOrder))}
-                                                    className={`flex-1 py-2.5 text-xs font-bold transition-all rounded-xl border ${linkCopied ? 'bg-green-600 text-white border-green-600' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-kuraRed hover:text-black hover:border-kuraRed'}`}
+                                                    className={`flex-1 py-2.5 text-xs font-bold transition-all rounded-xl border ${linkCopied ? 'bg-green-600 text-white border-green-600' : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-accent hover:text-black hover:border-accent'}`}
                                                 >
                                                     {linkCopied ? '✓ COPIADO' : '⎘ COPIAR LINK'}
                                                 </button>
@@ -323,7 +323,7 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
                                         <a href={selectedOrder.receiptUrl} target="_blank" className="flex items-center justify-center p-2 hover:opacity-80 transition-opacity">
                                             <img src={selectedOrder.receiptUrl} className="max-h-64 w-full object-contain" />
                                         </a>
-                                        <a href={selectedOrder.receiptUrl} target="_blank" className="bg-zinc-800 text-center py-2.5 text-xs font-bold hover:bg-kuraRed hover:text-black transition-colors block border-t border-zinc-700">
+                                        <a href={selectedOrder.receiptUrl} target="_blank" className="bg-zinc-800 text-center py-2.5 text-xs font-bold hover:bg-accent hover:text-black transition-colors block border-t border-zinc-700">
                                             ABRIR IMAGEN COMPLETA ↗
                                         </a>
                                     </div>

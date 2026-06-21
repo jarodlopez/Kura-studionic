@@ -15,7 +15,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
         <form onSubmit={(e) => { handleProductSubmit(e); closeForm(); }} className="space-y-4 bg-zinc-950 h-max">
             {/* Mobile sheet header — sticky at top inside sheet */}
             <div className="form-sheet-header flex items-center justify-between px-4 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-950 z-10">
-                <h3 className="font-bebas text-2xl text-kuraRed">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h3>
+                <h3 className="font-bebas text-2xl text-accent">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h3>
                 <div className="flex items-center gap-3">
                     {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar</button>}
                     <button type="button" onClick={closeForm} className="text-zinc-400 text-xl font-bold p-1 leading-none">✕</button>
@@ -25,7 +25,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
             <div className="p-4 space-y-4">
                 {/* Desktop header (only visible in desk-form, not in sheet since sheet-header covers it) */}
                 <div className="hidden-in-sheet flex justify-between items-end border-b border-zinc-800 pb-4">
-                    <h2 className="font-bebas text-3xl text-kuraRed">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h2>
+                    <h2 className="font-bebas text-3xl text-accent">{editingId ? 'EDITAR PRENDA' : 'NUEVA PRENDA'}</h2>
                     {editingId && <button type="button" onClick={cancelEdit} className="text-xs text-zinc-500 underline">Cancelar Edición</button>}
                 </div>
 
@@ -45,7 +45,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                         <input required type="number" className="brutalist-input mt-0" value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} />
                     </div>
                     <div className="w-1/2">
-                        <label className="text-[10px] text-kuraRed font-bold block mb-1">PRECIO DESCUENTO</label>
+                        <label className="text-[10px] text-accent font-bold block mb-1">PRECIO DESCUENTO</label>
                         <input type="number" placeholder="Opcional" className="brutalist-input mt-0" value={formData.discountPrice} onChange={e => setFormData({ ...formData, discountPrice: e.target.value })} />
                     </div>
                 </div>
@@ -62,7 +62,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                 const newStock = { ...formData.stockBySizes };
                                 if (!newSizes.includes(s)) delete newStock[s];
                                 setFormData(p => ({ ...p, sizes: newSizes, stockBySizes: newStock }));
-                            }} className={`px-4 py-2 font-bebas text-lg transition-colors border rounded-lg ${formData.sizes.includes(s) ? 'bg-kuraRed border-kuraRed text-black' : 'border-zinc-700 text-zinc-400 hover:text-white'}`}>{s}</button>
+                            }} className={`px-4 py-2 font-bebas text-lg transition-colors border rounded-lg ${formData.sizes.includes(s) ? 'bg-accent border-accent text-black' : 'border-zinc-700 text-zinc-400 hover:text-white'}`}>{s}</button>
                         ))}
                     </div>
                     {formData.sizes.length > 0 && (
@@ -101,7 +101,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                     <input type="file" multiple accept="image/*" onChange={handleProductImage} className="text-xs w-full mb-3 text-zinc-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:bg-zinc-800 file:text-white hover:file:bg-zinc-700" />
                     <div className="flex flex-wrap gap-2">
                         {formData.images.map((img, i) => <img key={i} src={img} className="w-16 h-20 object-cover border border-zinc-600" />)}
-                        {formData.images.length > 0 && <button type="button" onClick={() => setFormData({ ...formData, images: [] })} className="text-kuraRed font-bold text-xs underline mt-2 w-full text-left">Eliminar fotos y subir otras</button>}
+                        {formData.images.length > 0 && <button type="button" onClick={() => setFormData({ ...formData, images: [] })} className="text-accent font-bold text-xs underline mt-2 w-full text-left">Eliminar fotos y subir otras</button>}
                     </div>
                 </div>
 
@@ -142,7 +142,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                 <div className="relative bg-black border-b border-zinc-800 overflow-hidden" style={{ aspectRatio: '4/5' }}>
                                     <img src={p.images?.[0]} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" />
                                     {p.discountPrice && p.discountPrice > 0 && (
-                                        <span className="absolute top-2 right-2 bg-kuraRed text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
+                                        <span className="absolute top-2 right-2 bg-accent text-black text-[10px] font-bold px-2 py-1">OFERTA</span>
                                     )}
                                     <span className="absolute top-2 left-2 bg-white text-black text-[10px] font-bold px-2 py-1">{p.category}</span>
                                 </div>
@@ -161,7 +161,7 @@ window.InventoryView = ({ products, formData, setFormData, editingId, setEditing
                                     <div className="mt-auto">
                                         {p.discountPrice && p.discountPrice > 0 ? (
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="text-kuraRed font-mono text-xs font-bold">{fmtPrice(p.discountPrice)}</span>
+                                                <span className="text-accent font-mono text-xs font-bold">{fmtPrice(p.discountPrice)}</span>
                                                 <span className="text-zinc-600 font-mono text-[10px] line-through">{fmtPrice(p.price)}</span>
                                             </div>
                                         ) : (

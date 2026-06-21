@@ -15,7 +15,7 @@ window.MiniCart = ({
     const zones = getZones(storeConfig);
 
     const handleGoToCheckout = () => {
-        localStorage.setItem('kura_checkout_meta', JSON.stringify({ shippingZone, appliedDiscount }));
+        localStorage.setItem('kodia_checkout_meta', JSON.stringify({ shippingZone, appliedDiscount }));
         window.location.href = '/checkout';
     };
 
@@ -25,10 +25,10 @@ window.MiniCart = ({
 
                 <div className="p-5 border-b border-zinc-800 flex justify-between items-center bg-black shrink-0">
                     <h2 className="font-bebas text-3xl tracking-widest flex items-center gap-3">
-                        <span className="w-2.5 h-2.5 bg-kuraRed inline-block rounded-full"></span>
+                        <span className="w-2.5 h-2.5 bg-accent inline-block rounded-full"></span>
                         {branding.cartTitle}
                     </h2>
-                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-kuraRed text-xl leading-none p-1">✕</button>
+                    <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-accent text-xl leading-none p-1">✕</button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 scroll-smooth">
@@ -50,11 +50,11 @@ window.MiniCart = ({
                                             <p className="text-xs text-zinc-500 mt-1 font-bold tracking-wider">{branding.variantLabel}: {item.selectedSize}</p>
                                             {item.discountPrice && item.discountPrice > 0 ? (
                                                 <div className="mt-1 flex items-center gap-2">
-                                                    <span className="text-kuraRed text-sm font-bold">{fmtPrice(item.discountPrice)}</span>
+                                                    <span className="text-accent text-sm font-bold">{fmtPrice(item.discountPrice)}</span>
                                                     <span className="text-zinc-600 text-[10px] line-through">{fmtPrice(item.price)}</span>
                                                 </div>
                                             ) : (
-                                                <p className="text-kuraRed text-sm mt-1 font-bold">{fmtPrice(item.price)}</p>
+                                                <p className="text-accent text-sm mt-1 font-bold">{fmtPrice(item.price)}</p>
                                             )}
                                         </div>
                                         <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-1.5 leading-none">✕</button>
@@ -67,9 +67,9 @@ window.MiniCart = ({
                             <div className="border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
                                 <p className="text-[10px] text-zinc-500 mb-3 font-bold uppercase tracking-widest">CÓDIGO DE DESCUENTO</p>
                                 {appliedDiscount ? (
-                                    <div className="flex items-center justify-between bg-kuraRed/10 border border-kuraRed p-3 rounded-lg">
+                                    <div className="flex items-center justify-between bg-accent/10 border border-accent p-3 rounded-lg">
                                         <div>
-                                            <span className="text-kuraRed font-bebas text-xl">{appliedDiscount.code}</span>
+                                            <span className="text-accent font-bebas text-xl">{appliedDiscount.code}</span>
                                             <span className="text-green-400 text-xs font-mono ml-3">
                                                 {appliedDiscount.type === 'percent' ? `${appliedDiscount.value}% OFF` : `${fmtPrice(appliedDiscount.value)} OFF`}
                                             </span>
@@ -83,9 +83,9 @@ window.MiniCart = ({
                                             placeholder="INGRESA TU CÓDIGO"
                                             value={discountInput}
                                             onChange={e => setDiscountInput(e.target.value.toUpperCase())}
-                                            className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-kuraRed transition-colors font-mono tracking-widest rounded-lg"
+                                            className="flex-1 bg-black border border-zinc-800 p-3 text-white text-sm outline-none focus:border-accent transition-colors font-mono tracking-widest rounded-lg"
                                         />
-                                        <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-kuraRed hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap rounded-lg">APLICAR</button>
+                                        <button type="button" onClick={applyDiscount} className="px-4 bg-zinc-800 hover:bg-accent hover:text-black text-white text-xs font-bold transition-colors border border-zinc-700 whitespace-nowrap rounded-lg">APLICAR</button>
                                     </div>
                                 )}
                                 {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
@@ -97,7 +97,7 @@ window.MiniCart = ({
                                 <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
                                 <div className="flex gap-2 flex-wrap">
                                     {zones.map(zone => (
-                                        <button key={zone.id} type="button" onClick={() => setShippingZone(zone.id)} className={`flex-1 min-w-[40%] py-3 text-xs font-bold transition-all rounded-xl border-2 ${shippingZone === zone.id ? 'bg-kuraRed text-black border-kuraRed' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
+                                        <button key={zone.id} type="button" onClick={() => setShippingZone(zone.id)} className={`flex-1 min-w-[40%] py-3 text-xs font-bold transition-all rounded-xl border-2 ${shippingZone === zone.id ? 'bg-accent text-black border-accent' : 'bg-transparent text-zinc-500 border-zinc-800'}`}>
                                             {zone.label}<br /><span className="font-mono font-normal">{fmtPrice(zone.cost)}</span>
                                         </button>
                                     ))}
@@ -116,7 +116,7 @@ window.MiniCart = ({
                                 <div className="flex justify-between mb-2 text-zinc-400"><span>ENVÍO</span><span>{fmtPrice(currentShippingCost)}</span></div>
                                 <div className="flex justify-between pt-3 border-t border-zinc-800 items-end mt-2">
                                     <span className="font-bebas text-lg text-white">TOTAL</span>
-                                    <span className="font-bebas text-3xl text-kuraRed leading-none">{fmtPrice(cartTotal)}</span>
+                                    <span className="font-bebas text-3xl text-accent leading-none">{fmtPrice(cartTotal)}</span>
                                 </div>
                             </div>
 

@@ -241,7 +241,7 @@ window.WhatsAppFab = ({ product, selectedSize, storeConfig }) => {
 
 window.Toast = ({ message, isVisible }) => (
     <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] transition-all duration-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
-        <div className="bg-kuraRed text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3 shadow-[4px_4px_0_white]">
+        <div className="bg-accent text-black font-bebas px-6 py-3 text-xl border-2 border-black flex items-center gap-3 shadow-[4px_4px_0_white]">
             <span className="text-2xl">✓</span> {message}
         </div>
     </div>
