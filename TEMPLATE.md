@@ -36,7 +36,11 @@ sin tocar código.
 2. **Crea un proyecto Firebase**: activa Firestore y Authentication (Email/Password). Crea el primer usuario admin en Authentication.
 3. **Crea una cuenta ImgBB** (hosting de imágenes) y copia su API key.
 4. **Reemplaza los placeholders** (busca `TU_FIREBASE_API_KEY`, `TU_PROYECTO`, `TU_IMGBB_API_KEY`):
-   - `index.html`, `product.html`, `checkout.html`, `admin/index.html`, `middleware.js`
+   - `js/firebase-init.js` — único lugar de las llaves de la **tienda** (Firebase + ImgBB); se compila dentro de `dist/app.js`, `dist/product.js` y `dist/checkout.js`, así que recompila con `npm run build` tras editarlo.
+   - `pago.html` — solo necesita `TU_IMGBB_API_KEY` (no usa Firebase; todo pasa por `/api/payment`).
+   - `admin/index.html` — init de Firebase del panel (incluye Auth).
+   - `middleware.js`
+   - En Vercel, define las env vars de los endpoints serverless: `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY` (para `/api/track`), `FIREBASE_SERVICE_ACCOUNT` (JSON de la cuenta de servicio, para `/api/payment`). Opcionales: `TRACK_SALT`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`.
 5. **Ajusta el SEO estático** (busca `MI TIENDA` y `mitienda.vercel.app`):
    - `index.html` (title, meta, JSON-LD — cambia `@type` al rubro: `ClothingStore`, `HardwareStore`, `Store`), `product.html`, `checkout.html`, `middleware.js` (`BRAND`, `SITE`), `sitemap.xml`, `robots.txt`
 6. **Compila y despliega**: `npm install && npm run build`, push a GitHub y conecta el repo en Vercel (no necesita build en Vercel: `vercel.json` ya lo desactiva, los `dist/` van commiteados).
