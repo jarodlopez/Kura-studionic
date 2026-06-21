@@ -54,7 +54,20 @@
     <link rel="dns-prefetch" href="https://i.ibb.co">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://unpkg.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://firestore.googleapis.com">
+
+    <!-- Fonts: non-blocking load to eliminate render-blocking stylesheet -->
+    <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"></noscript>
+
+    <!-- Preload CDN scripts so the browser fetches them in parallel -->
+    <link rel="preload" as="script" crossorigin href="https://unpkg.com/react@18/umd/react.production.min.js">
+    <link rel="preload" as="script" crossorigin href="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js">
+    <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js">
 
     <!-- CSS compilado (Tailwind + estilos propios). Generado con `npm run build`. -->
     <link rel="stylesheet" href="/dist/styles.css">

@@ -32,11 +32,13 @@ body {
 img { -webkit-user-drag: none; -webkit-touch-callout: none; pointer-events: none; }
 
 /* === Efectos neon === */
+/* text-shadow is static so the browser can composite the opacity-only animation on the GPU */
 @keyframes neonFlicker {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-    text-shadow: 0 0 7px #ff003c, 0 0 20px rgba(255,0,60,0.5), 0 0 42px rgba(255,0,60,0.3);
-    opacity: 1;
-  }
-  20%, 24%, 55% { text-shadow: none; opacity: 0.85; }
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.85; }
 }
-.neon-flicker { animation: neonFlicker 7s ease-in-out infinite; }
+.neon-flicker {
+  text-shadow: 0 0 7px #ff003c, 0 0 20px rgba(255,0,60,0.5), 0 0 42px rgba(255,0,60,0.3);
+  animation: neonFlicker 7s ease-in-out infinite;
+  will-change: opacity;
+}
