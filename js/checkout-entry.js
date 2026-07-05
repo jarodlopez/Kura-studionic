@@ -258,6 +258,8 @@ function CheckoutApp() {
                             <p className="text-zinc-400 text-xs leading-relaxed">Al confirmar, te contactaremos por WhatsApp y te enviaremos un <strong className="text-white">link seguro de pago</strong>. No necesitas subir nada ahora.</p>
                         </div>
 
+                        <PaymentGuide variant="inline" />
+
                         <button type="submit" disabled={isSubmitting}
                             className="brutalist-btn w-full py-4 text-xl flex justify-center items-center gap-3">
                             {isSubmitting ? (

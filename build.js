@@ -57,6 +57,7 @@ Promise.all([
 
   build([
     'js/utils.js',
+    'js/components/PaymentGuide.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),
 
@@ -64,6 +65,11 @@ Promise.all([
     'js/utils.js',
     'js/pago-entry.js',
   ], 'dist/pago.js'),
+
+  build([
+    'js/components/PaymentGuide.js',
+    'js/comocomprar-entry.js',
+  ], 'dist/comocomprar.js'),
 ]).catch((err) => {
   console.error(err);
   process.exit(1);
