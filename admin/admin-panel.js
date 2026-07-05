@@ -577,6 +577,7 @@ function AdminPanel() {
                             orderSearchQuery={orderSearchQuery} setOrderSearchQuery={setOrderSearchQuery}
                             deleteOrder={deleteOrder} formatDate={formatDate} getPrice={getPrice}
                             markOrderSeen={markOrderSeen} updateOrderStatus={updateOrderStatus}
+                            showToast={showToast}
                         />
                     )}
                     {view === 'DISCOUNTS' && (

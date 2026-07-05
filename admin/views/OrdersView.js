@@ -28,7 +28,7 @@ const StatusBadge = ({ status, small }) => {
 
 window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
     orderSearchQuery, setOrderSearchQuery, deleteOrder, formatDate, getPrice,
-    markOrderSeen, updateOrderStatus }) => {
+    markOrderSeen, updateOrderStatus, showToast }) => {
 
     const [generatingLink, setGeneratingLink] = React.useState(false);
     const [linkCopied, setLinkCopied] = React.useState(false);
@@ -55,7 +55,14 @@ window.OrdersView = ({ orders, filteredOrders, selectedOrder, setSelectedOrder,
             });
             const updated = { ...selectedOrder, paymentToken: token, status: 'payment_link_sent' };
             setSelectedOrder(updated);
-        } catch {}
+        } catch (e) {
+            console.error('Error al generar el link de pago:', e);
+            const msg = e?.code === 'permission-denied'
+                ? 'Firestore rechazó la escritura del token (revisa las reglas del campo paymentToken)'
+                : (e?.message || 'No se pudo generar el link de pago');
+            if (typeof showToast === 'function') showToast(msg, 'error');
+            else alert(msg);
+        }
         setGeneratingLink(false);
     };
 
