@@ -1,9 +1,12 @@
-// Endpoint seguro para la página de pago.
-// El cliente en /pago NO está autenticado y las reglas de Firestore (bien
+// Endpoint seguro para el módulo de pago del checkout.
+// El cliente NO está autenticado y las reglas de Firestore (bien
 // configuradas) no le permiten leer ni actualizar 'orders'. Este endpoint se
 // autentica como la CUENTA DE SERVICIO de Firebase (saltando las reglas de
 // forma segura) para: (1) entregar el resumen de la orden validando el token,
-// y (2) adjuntar el comprobante de pago.
+// y (2) adjuntar el comprobante de pago y su referencia.
+//
+// El token de pago se genera al CREAR la orden en el checkout (no requiere
+// escritura posterior desde el admin), y el cliente lo conserva en localStorage.
 //
 // No usa firebase-admin (que requeriría npm install, deshabilitado en este
 // proyecto): firma un JWT con el módulo nativo `crypto` y lo intercambia por
@@ -77,7 +80,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { action, orderNumber, token, receiptUrl } = req.body || {};
+        const { action, orderNumber, token, receiptUrl, reference } = req.body || {};
         if (!orderNumber || !token) return res.status(400).json({ error: 'missing_params' });
 
         const accessToken = await getAccessToken();
@@ -119,12 +122,13 @@ export default async function handler(req, res) {
             if (!receiptUrl) return res.status(400).json({ error: 'missing_receipt' });
             if (PAID_STATUSES.includes(order.status)) return res.status(200).json({ success: true, already: true });
 
-            const mask = ['status', 'receiptUrl', 'seenByAdmin', 'paidAt']
+            const mask = ['status', 'receiptUrl', 'paymentReference', 'seenByAdmin', 'paidAt']
                 .map(f => `updateMask.fieldPaths=${f}`).join('&');
             const body = {
                 fields: {
                     status: toValue('paid_pending_verification'),
                     receiptUrl: toValue(receiptUrl),
+                    paymentReference: toValue(reference || null),
                     seenByAdmin: toValue(false),
                     paidAt: toValue(new Date().toISOString()),
                 }
@@ -139,7 +143,8 @@ export default async function handler(req, res) {
             // Notificación instantánea al admin por Telegram (best-effort)
             const { TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID } = process.env;
             if (TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
-                const msg = `💰 *PAGO RECIBIDO* 💰\n\n📦 Orden: *#${order.orderNumber}*\n👤 ${order.customer?.name || ''}\n💵 NIO ${order.total}\n\n🧾 Comprobante: ${receiptUrl}\n\n_Verifica el pago en el panel._`;
+                const refLine = reference ? `\n🔢 Referencia: ${reference}` : '';
+                const msg = `💰 *PAGO RECIBIDO* 💰\n\n📦 Orden: *#${order.orderNumber}*\n👤 ${order.customer?.name || ''}\n💵 NIO ${order.total}${refLine}\n\n🧾 Comprobante: ${receiptUrl}\n\n_Verifica el pago en el panel._`;
                 try {
                     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                         method: 'POST',

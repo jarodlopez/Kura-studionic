@@ -19,16 +19,16 @@ window.PAYMENT_STEPS = [
         desc: 'En el checkout ingresa tu nombre, teléfono y dirección exacta. Al confirmar generamos tu número de orden (KURA-XXXXXX). Tranquilo: en este paso todavía no pagas nada.',
     },
     {
-        title: 'ESCRÍBENOS POR WHATSAPP',
-        desc: 'Con un solo toque nos envías el resumen de tu pedido por WhatsApp. Nuestro equipo lo revisa y te responde con un link de pago seguro y personalizado para tu orden.',
+        title: 'ELIGE CÓMO PAGAR',
+        desc: 'Al confirmar tu pedido puedes pagar aquí mismo por transferencia, o continuar por WhatsApp para que un agente te acompañe a finalizar la compra. Tú decides.',
     },
     {
         title: 'REALIZA TU TRANSFERENCIA',
-        desc: 'Abre el link seguro que te enviamos. Verás el resumen de tu compra y los datos bancarios (BAC o LAFISE, en córdobas, a nombre de Kathy Valeska Membreño Medina). Transfiere el total exacto desde tu banco o billetera.',
+        desc: 'Elige el banco (BAC o LAFISE, en córdobas, a nombre de Kathy Valeska Membreño Medina), copia los datos con un toque y transfiere el total exacto desde tu banco o billetera.',
     },
     {
         title: 'SUBE TU COMPROBANTE',
-        desc: 'En ese mismo link adjunta la captura o foto del comprobante de la transferencia, marca la casilla de confirmación y toca “Confirmar pago”. Listo, nosotros nos encargamos del resto.',
+        desc: 'En la misma pantalla adjunta la captura o foto del comprobante (puedes agregar el número de referencia), confirma y envíalo. Listo, nosotros nos encargamos del resto.',
     },
     {
         title: 'VERIFICACIÓN Y ENTREGA',
@@ -39,11 +39,11 @@ window.PAYMENT_STEPS = [
 window.PAYMENT_FAQ = [
     {
         q: '¿Por qué no pago con tarjeta directamente en la web?',
-        a: 'Por seguridad trabajamos con transferencia bancaria y un link de pago único por cada pedido. Así protegemos tu información y confirmamos cada orden de forma personal contigo.',
+        a: 'Por seguridad trabajamos con transferencia bancaria. Al confirmar tu pedido ves los datos de las cuentas y subes tu comprobante en la misma página, o coordinas por WhatsApp. Así protegemos tu información y confirmamos cada orden de forma personal.',
     },
     {
         q: '¿A qué cuentas puedo transferir?',
-        a: 'BAC — cuenta en córdobas 367298642 · LAFISE — cuenta en córdobas 117240166. Ambas a nombre de KATHY VALESKA MEMBREÑO MEDINA. Los datos también aparecen dentro de tu link de pago.',
+        a: 'Las cuentas activas (por ejemplo BAC y LAFISE, en córdobas) aparecen al confirmar tu pedido, con botón para copiar cada dato. Transfiere el monto exacto de tu orden.',
     },
     {
         q: '¿Cuánto cuesta el envío?',
@@ -62,8 +62,12 @@ window.PAYMENT_FAQ = [
         a: 'Entre 24 y 72 horas una vez verificado el pago, según tu zona de envío.',
     },
     {
-        q: '¿El link de pago es seguro? ¿Puede expirar?',
-        a: 'Cada link es único para tu orden y está protegido con un token privado. Si tienes cualquier problema para abrirlo, escríbenos por WhatsApp y te enviamos uno nuevo.',
+        q: '¿Qué pasa si cierro la página antes de pagar?',
+        a: 'Tu orden queda guardada en tu navegador. Al volver al checkout puedes retomar el pago justo donde lo dejaste, o cancelarla si cambiaste de opinión.',
+    },
+    {
+        q: '¿Y si prefiero que me ayuden?',
+        a: 'En la pantalla de pago tienes un botón para continuar por WhatsApp: un agente de atención te acompaña a finalizar la compra y validar tu pago.',
     },
 ];
 
@@ -136,8 +140,8 @@ window.PaymentGuide = ({ variant = 'page' }) => {
                 {open && (
                     <div className="p-4 pt-0 space-y-4 border-t border-zinc-900">
                         <p className="text-zinc-400 text-xs leading-relaxed pt-4">
-                            En KURA STUDIO el pago es por <strong className="text-white">transferencia bancaria</strong> con un
-                            <strong className="text-white"> link seguro</strong> que te enviamos por WhatsApp. Así funciona:
+                            En KURA STUDIO el pago es por <strong className="text-white">transferencia bancaria</strong>: pagas
+                            <strong className="text-white"> aquí mismo</strong> subiendo tu comprobante, o por WhatsApp. Así funciona:
                         </p>
                         <PaymentStepsList compact />
                         <a href="/como-comprar" target="_blank" rel="noopener noreferrer"
@@ -171,8 +175,8 @@ window.PaymentGuide = ({ variant = 'page' }) => {
                     </h2>
                     <p className="text-zinc-400 text-sm leading-relaxed max-w-md mx-auto">
                         Comprar en KURA STUDIO es simple y seguro. El pago se realiza por
-                        <strong className="text-white"> transferencia bancaria</strong> a través de un
-                        <strong className="text-white"> link seguro</strong> que te enviamos por WhatsApp.
+                        <strong className="text-white"> transferencia bancaria</strong>: al confirmar tu pedido pagas
+                        <strong className="text-white"> aquí mismo</strong> subiendo tu comprobante, o coordinas por WhatsApp.
                         Aquí te explicamos todo antes de empezar.
                     </p>
                 </section>
@@ -186,20 +190,12 @@ window.PaymentGuide = ({ variant = 'page' }) => {
                 {/* Datos bancarios */}
                 <section className="space-y-4">
                     <h3 className="font-bebas text-2xl text-zinc-500 tracking-widest border-b border-zinc-800 pb-3">DATOS PARA TRANSFERIR</h3>
-                    <p className="text-zinc-500 text-xs leading-relaxed">
-                        Estos son los datos con los que realizarás tu transferencia. También aparecerán dentro de tu link de pago personalizado.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono text-zinc-300">
-                        <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                            <p className="text-kuraRed font-bold mb-1.5">BAC CÓRDOBAS</p>
-                            <p><span className="text-zinc-500">Cuenta: </span>367298642</p>
-                            <p><span className="text-zinc-500">A nombre de: </span>KATHY VALESKA MEMBREÑO MEDINA</p>
-                        </div>
-                        <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-800">
-                            <p className="text-kuraRed font-bold mb-1.5">LAFISE CÓRDOBAS</p>
-                            <p><span className="text-zinc-500">Cuenta: </span>117240166</p>
-                            <p><span className="text-zinc-500">A nombre de: </span>KATHY VALESKA MEMBREÑO MEDINA</p>
-                        </div>
+                    <div className="border border-zinc-800 bg-zinc-950 p-5 rounded-xl flex items-start gap-3">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed shrink-0 mt-0.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        <p className="text-zinc-400 text-xs leading-relaxed">
+                            Las cuentas bancarias (por ejemplo <strong className="text-white">BAC</strong> y <strong className="text-white">LAFISE</strong>, en córdobas) aparecen
+                            al confirmar tu pedido, con un botón para <strong className="text-white">copiar cada dato</strong>. Transfiere el monto exacto de tu orden y sube tu comprobante en la misma pantalla.
+                        </p>
                     </div>
                 </section>
 

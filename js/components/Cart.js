@@ -14,6 +14,9 @@ window.MiniCart = ({
         window.location.href = '/checkout';
     };
 
+    let pendingOrder = null;
+    try { pendingOrder = JSON.parse(localStorage.getItem('kura_pending_order')); } catch {}
+
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex justify-end">
             <div className="bg-[#050505] w-full md:w-[420px] h-full border-l border-zinc-800 shadow-2xl flex flex-col animate-slideUp md:rounded-l-2xl overflow-hidden">
@@ -25,6 +28,18 @@ window.MiniCart = ({
                     </h2>
                     <button onClick={() => setIsCartOpen(false)} className="text-zinc-500 hover:text-kuraRed text-xl leading-none p-1">✕</button>
                 </div>
+
+                {pendingOrder && (
+                    <a href="/checkout" className="block shrink-0 bg-kuraRed/10 border-b border-kuraRed/40 px-5 py-3 hover:bg-kuraRed/20 transition-colors">
+                        <div className="flex items-center gap-3">
+                            <span className="w-2 h-2 bg-kuraRed rounded-full shrink-0 animate-pulse"></span>
+                            <div className="flex-1 overflow-hidden">
+                                <p className="text-white text-xs font-bold leading-none">TIENES UNA ORDEN PENDIENTE DE PAGO</p>
+                                <p className="text-zinc-400 text-[11px] mt-1 font-mono truncate">{pendingOrder.orderNumber} · NIO {pendingOrder.total} · Continuar pago →</p>
+                            </div>
+                        </div>
+                    </a>
+                )}
 
                 <div className="flex-1 overflow-y-auto p-5 scroll-smooth">
                     {cart.length === 0 ? (

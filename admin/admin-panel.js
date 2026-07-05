@@ -280,6 +280,45 @@ function AdminPanel() {
         setIsSaving(false);
     };
 
+    // --- Cuentas bancarias (pestaña PAGOS) ---
+    const handleAddBank = async (bank) => {
+        const name = (bank.name || '').trim();
+        const accountNumber = (bank.accountNumber || '').trim();
+        const holder = (bank.holder || '').trim();
+        if (!name || !accountNumber || !holder) { showToast('Completa banco, cuenta y titular', 'error'); return; }
+        setIsSaving(true);
+        try {
+            let logoUrl = '';
+            if (bank.logoFile) logoUrl = await uploadToImgBB(bank.logoFile);
+            const newBank = {
+                id: `${Date.now()}${Math.floor(Math.random() * 1000)}`,
+                name, accountNumber, holder,
+                currency: (bank.currency || 'C$').trim(),
+                logoUrl,
+            };
+            await saveStoreConfig({ ...storeConfig, bankAccounts: [...(storeConfig.bankAccounts || []), newBank] });
+            showToast('Banco agregado');
+        } catch { showToast('Error al agregar el banco', 'error'); }
+        setIsSaving(false);
+    };
+
+    const handleRemoveBank = async (id) => {
+        if (!window.confirm('¿Eliminar esta cuenta bancaria?')) return;
+        const banks = (storeConfig.bankAccounts || []).filter(b => b.id !== id);
+        await saveStoreConfig({ ...storeConfig, bankAccounts: banks });
+    };
+
+    const handleBankLogoUpload = async (id, file) => {
+        if (!file) return;
+        setIsSaving(true);
+        try {
+            const logoUrl = await uploadToImgBB(file);
+            const banks = (storeConfig.bankAccounts || []).map(b => b.id === id ? { ...b, logoUrl } : b);
+            await saveStoreConfig({ ...storeConfig, bankAccounts: banks });
+        } catch { showToast('Error al subir el logo', 'error'); }
+        setIsSaving(false);
+    };
+
     const handleAddCategory = async (name) => {
         const trimmed = name.trim().toUpperCase();
         if (!trimmed || uniqueCategories.includes(trimmed)) return;
@@ -465,17 +504,19 @@ function AdminPanel() {
         DISCOUNTS: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z"/></svg>,
         BANNERS:   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
         ANALYTICS: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>,
+        PAYMENTS:  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
     };
     const navItems = [
         { id: 'INVENTORY', label: 'Inventario', short: 'Stock',   icon: IC.INVENTORY },
         { id: 'DESIGN',    label: 'Diseño',     short: 'Diseño',  icon: IC.DESIGN },
         { id: 'ORDERS',    label: 'Órdenes',    short: 'Órdenes', icon: IC.ORDERS,   badge: orders.filter(o => !o.seenByAdmin).length || undefined },
+        { id: 'PAYMENTS',  label: 'Pagos',      short: 'Pagos',   icon: IC.PAYMENTS },
         { id: 'DISCOUNTS', label: 'Descuentos', short: 'Códigos', icon: IC.DISCOUNTS },
         { id: 'BANNERS',   label: 'Pop-ups',    short: 'Banners', icon: IC.BANNERS },
         { id: 'ANALYTICS', label: 'Analytics',  short: 'Stats',   icon: IC.ANALYTICS },
     ];
 
-    const viewTitles = { INVENTORY: 'INVENTARIO', DESIGN: 'DISEÑO WEB', ORDERS: 'ÓRDENES', DISCOUNTS: 'DESCUENTOS', BANNERS: 'POP-UPS', ANALYTICS: 'ANALYTICS' };
+    const viewTitles = { INVENTORY: 'INVENTARIO', DESIGN: 'DISEÑO WEB', ORDERS: 'ÓRDENES', PAYMENTS: 'PAGOS', DISCOUNTS: 'DESCUENTOS', BANNERS: 'POP-UPS', ANALYTICS: 'ANALYTICS' };
 
     return (
         <div className="h-screen flex overflow-hidden bg-zinc-950">
@@ -578,6 +619,15 @@ function AdminPanel() {
                             deleteOrder={deleteOrder} formatDate={formatDate} getPrice={getPrice}
                             markOrderSeen={markOrderSeen} updateOrderStatus={updateOrderStatus}
                             showToast={showToast}
+                        />
+                    )}
+                    {view === 'PAYMENTS' && (
+                        <window.PaymentsView
+                            storeConfig={storeConfig}
+                            handleAddBank={handleAddBank}
+                            handleRemoveBank={handleRemoveBank}
+                            handleBankLogoUpload={handleBankLogoUpload}
+                            isSaving={isSaving}
                         />
                     )}
                     {view === 'DISCOUNTS' && (

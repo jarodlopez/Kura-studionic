@@ -1,5 +1,8 @@
 // Globals disponibles desde checkout.html: React, ReactDOM, db, firebase, IMGBB_API_KEY
-// Utils: getPrice, optimizeImg, trackEvent, Toast, compressImage, SmoothImage
+// Utils: getPrice, optimizeImg, trackEvent, Toast, compressImage, uploadToImgBB, SmoothImage
+// Componente: PaymentModule (js/components/PaymentModule.js)
+
+const PENDING_KEY = 'kura_pending_order';
 
 function CheckoutApp() {
     const { useState, useEffect } = React;
@@ -17,13 +20,22 @@ function CheckoutApp() {
     const [discountInput, setDiscountInput] = useState('');
     const [discountError, setDiscountError] = useState('');
 
+    const [bankAccounts, setBankAccounts] = useState([]);
     const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [confirmedOrder, setConfirmedOrder] = useState(null);
+
+    // Orden activa (recién creada o reanudada desde caché) y estado de pago
+    const [activeOrder, setActiveOrder] = useState(() => {
+        try { return JSON.parse(localStorage.getItem(PENDING_KEY)) || null; } catch { return null; }
+    });
+    const [paid, setPaid] = useState(false);
 
     useEffect(() => {
         db.collection("discountCodes").get().then(snap => {
             setDiscountCodes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }).catch(() => {});
+        db.collection("settings").doc("store").get().then(doc => {
+            if (doc.exists) setBankAccounts(doc.data().bankAccounts || []);
         }).catch(() => {});
     }, []);
 
@@ -54,6 +66,8 @@ function CheckoutApp() {
         setIsSubmitting(true);
         try {
             const orderNum = `KURA-${Math.floor(100000 + Math.random() * 900000)}`;
+            // Token auto-generado al crear la orden (evita escrituras posteriores a Firestore).
+            const paymentToken = Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
             const shippingZoneLabel = shippingZone === 'managua' ? 'Managua' : 'Departamentos';
             const order = {
                 orderNumber: orderNum,
@@ -66,9 +80,10 @@ function CheckoutApp() {
                 shippingCost: currentShippingCost,
                 total: cartTotal,
                 date: new Date().toISOString(),
-                status: 'awaiting_payment_link',
+                status: 'awaiting_payment',
                 seenByAdmin: false,
-                paymentToken: null,
+                paymentToken,
+                paymentReference: null,
             };
             await db.collection("orders").doc(orderNum).set(order);
             trackEvent('checkout_started', { itemCount: cart.length, subtotal: cartSubtotal });
@@ -79,74 +94,79 @@ function CheckoutApp() {
                 });
             }
 
-            let m = `🛒 *NUEVO PEDIDO: #${orderNum}*\n\n`;
-            m += `👤 *${formData.name}*  |  📱 ${formData.phone}\n`;
-            m += `📍 ${formData.address} (${shippingZoneLabel})\n\n`;
-            m += `*ARTÍCULOS:*\n`;
-            cart.forEach(i => { m += `▪️ ${i.title} (${i.selectedSize}) — NIO ${getPrice(i)}\n`; });
-            m += `\n*Subtotal:* NIO ${cartSubtotal}`;
-            if (discountAmount > 0) m += `\n*Descuento (${appliedDiscount.code}):* - NIO ${discountAmount}`;
-            m += `\n*Envío:* NIO ${currentShippingCost}`;
-            m += `\n*TOTAL:* NIO ${cartTotal}`;
-            m += `\n\n_📌 Genera el link de pago desde el admin y envíaselo al cliente._`;
-
+            // La orden queda cacheada hasta que suba el comprobante o cancele.
+            localStorage.setItem(PENDING_KEY, JSON.stringify(order));
             localStorage.removeItem('kura_cart');
             localStorage.removeItem('kura_checkout_meta');
 
-            setConfirmedOrder({
-                orderNumber: orderNum,
-                total: cartTotal,
-                waUrl: `https://wa.me/50587091008?text=${encodeURIComponent(m)}`
-            });
+            setActiveOrder(order);
         } catch {
             alert("Ocurrió un error. Verifica tu conexión e intenta de nuevo.");
         }
         setIsSubmitting(false);
     };
 
+    const handlePaid = () => { localStorage.removeItem(PENDING_KEY); setPaid(true); };
+    const handleCancelOrder = () => {
+        if (!window.confirm('¿Seguro que quieres cancelar esta orden? Perderás el progreso del pago.')) return;
+        localStorage.removeItem(PENDING_KEY);
+        setActiveOrder(null);
+        window.location.href = '/';
+    };
+
+    // --- Pago completado ---
+    if (paid) {
+        return (
+            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
+                <div className="w-full max-w-md border border-green-700 bg-black rounded-2xl overflow-hidden">
+                    <div className="bg-green-600 px-6 py-4 flex items-center gap-3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
+                        <h2 className="font-bebas text-3xl text-black tracking-widest">COMPROBANTE ENVIADO</h2>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        <p className="font-bebas text-2xl text-kuraRed">{activeOrder?.orderNumber}</p>
+                        <div className="flex items-start gap-3 border border-zinc-800 p-4 bg-zinc-950 rounded-xl">
+                            <span className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 shrink-0 animate-pulse"></span>
+                            <p className="text-zinc-400 text-xs leading-relaxed">Recibimos tu comprobante. Verificaremos el pago en las próximas 24 horas y te contactaremos por WhatsApp para coordinar la entrega. 🖤</p>
+                        </div>
+                        <a href="/" className="block w-full py-3 text-xs font-bold tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 hover:border-zinc-600 rounded-xl text-center">
+                            VOLVER A LA TIENDA
+                        </a>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- Orden activa: módulo de pago (recién creada o reanudada) ---
+    if (activeOrder) {
+        return (
+            <div className="min-h-screen bg-black text-white">
+                <header className="px-4 py-4 flex items-center justify-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
+                    <span className="text-zinc-600 text-xs font-mono mr-2">🔒</span>
+                    <h1 className="font-bebas text-2xl tracking-widest">PAGO SEGURO — KURA STUDIO</h1>
+                </header>
+                <div className="p-4 pb-12">
+                    <PaymentModule
+                        order={activeOrder}
+                        bankAccounts={bankAccounts}
+                        waNumber="50587091008"
+                        onPaid={handlePaid}
+                        onCancel={handleCancelOrder}
+                    />
+                </div>
+            </div>
+        );
+    }
+
     // --- Carrito vacío ---
-    if (cart.length === 0 && !confirmedOrder) {
+    if (cart.length === 0) {
         return (
             <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6 p-8">
                 <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-700"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
                 <h1 className="font-bebas text-4xl text-zinc-600">CARRITO VACÍO</h1>
                 <p className="text-zinc-500 text-sm">No hay artículos para pagar.</p>
                 <a href="/" className="brutalist-btn px-10 py-4 text-xl">← VOLVER A LA TIENDA</a>
-            </div>
-        );
-    }
-
-    // --- Pedido confirmado ---
-    if (confirmedOrder) {
-        return (
-            <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
-                <div className="w-full max-w-md border border-kuraRed bg-black rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(255,0,60,0.35)]">
-                    <div className="bg-kuraRed px-6 py-4 flex items-center gap-3">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-black shrink-0"><polyline points="20 6 9 17 4 12"/></svg>
-                        <h2 className="font-bebas text-3xl text-black tracking-widest">PEDIDO REGISTRADO</h2>
-                    </div>
-                    <div className="p-6 space-y-4">
-                        <div className="border border-zinc-800 bg-zinc-950 p-4 text-center rounded-xl">
-                            <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Tu número de orden</p>
-                            <p className="font-bebas text-4xl text-kuraRed tracking-widest">{confirmedOrder.orderNumber}</p>
-                        </div>
-                        <div className="flex items-start gap-3 border border-yellow-800/40 p-4 bg-yellow-950/20 rounded-xl">
-                            <span className="w-2 h-2 bg-yellow-400 rounded-full mt-1.5 shrink-0 animate-pulse"></span>
-                            <div>
-                                <p className="text-white font-bold text-sm mb-1">SIGUIENTE PASO</p>
-                                <p className="text-zinc-400 text-xs leading-relaxed">Envianos el resumen por WhatsApp. Te responderemos con un <strong className="text-white">link seguro</strong> para realizar tu pago sin complicaciones.</p>
-                            </div>
-                        </div>
-                        <a href={confirmedOrder.waUrl} target="_blank" rel="noopener noreferrer"
-                            className="brutalist-btn w-full py-4 text-xl flex justify-center items-center gap-3">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                            ENVIAR A KURA STUDIO
-                        </a>
-                        <a href="/" className="block w-full py-3 text-xs font-bold tracking-widest text-zinc-500 hover:text-white transition-colors border border-zinc-800 hover:border-zinc-600 rounded-xl text-center">
-                            VOLVER A LA TIENDA
-                        </a>
-                    </div>
-                </div>
             </div>
         );
     }
@@ -255,7 +275,7 @@ function CheckoutApp() {
 
                         <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex items-start gap-3">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <p className="text-zinc-400 text-xs leading-relaxed">Al confirmar, te contactaremos por WhatsApp y te enviaremos un <strong className="text-white">link seguro de pago</strong>. No necesitas subir nada ahora.</p>
+                            <p className="text-zinc-400 text-xs leading-relaxed">Al confirmar, podrás pagar por <strong className="text-white">transferencia aquí mismo</strong> (subiendo tu comprobante) o <strong className="text-white">coordinar por WhatsApp</strong>. Tu orden queda guardada hasta que completes el pago.</p>
                         </div>
 
                         <PaymentGuide variant="inline" />
@@ -265,10 +285,7 @@ function CheckoutApp() {
                             {isSubmitting ? (
                                 <span className="animate-pulse">REGISTRANDO PEDIDO...</span>
                             ) : (
-                                <>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-                                    CONFIRMAR PEDIDO →
-                                </>
+                                <>CONFIRMAR PEDIDO →</>
                             )}
                         </button>
                     </form>

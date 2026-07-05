@@ -32,6 +32,7 @@ Promise.all([
     'admin/views/InventoryView.js',
     'admin/views/OrdersView.js',
     'admin/views/DesignView.js',
+    'admin/views/PaymentsView.js',
     'admin/views/DiscountsView.js',
     'admin/views/BannersView.js',
     'admin/views/AnalyticsView.js',
@@ -60,13 +61,9 @@ Promise.all([
   build([
     'js/utils.js',
     'js/components/PaymentGuide.js',
+    'js/components/PaymentModule.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),
-
-  build([
-    'js/utils.js',
-    'js/pago-entry.js',
-  ], 'dist/pago.js'),
 
   build([
     'js/components/PaymentGuide.js',
