@@ -60,7 +60,6 @@ Promise.all([
 
   build([
     'js/utils.js',
-    'js/components/PaymentGuide.js',
     'js/components/PaymentModule.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),

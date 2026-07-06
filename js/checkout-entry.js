@@ -115,8 +115,18 @@ function CheckoutApp() {
     };
 
     const handlePaid = () => { localStorage.removeItem(PENDING_KEY); setPaid(true); };
-    const handleCancelOrder = () => {
+    const handleCancelOrder = async () => {
         if (!window.confirm('¿Seguro que quieres cancelar esta orden? Perderás el progreso del pago.')) return;
+        // Marca la orden como cancelada en Firestore (best-effort) para que no quede "viva" en el admin.
+        if (activeOrder?.orderNumber && activeOrder?.paymentToken) {
+            try {
+                await fetch('/api/payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'cancel', orderNumber: activeOrder.orderNumber, token: activeOrder.paymentToken }),
+                });
+            } catch {}
+        }
         localStorage.removeItem(PENDING_KEY);
         setActiveOrder(null);
         window.location.href = '/';
@@ -281,12 +291,9 @@ function CheckoutApp() {
                             value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value.toUpperCase() })}
                             className="w-full bg-black border border-zinc-800 p-3 text-white outline-none focus:border-kuraRed h-24 resize-none transition-colors rounded-xl"></textarea>
 
-                        <div className="border border-zinc-800 bg-zinc-950 p-4 rounded-xl flex items-start gap-3">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            <p className="text-zinc-400 text-xs leading-relaxed">Al confirmar, podrás pagar por <strong className="text-white">transferencia aquí mismo</strong> (subiendo tu comprobante) o <strong className="text-white">coordinar por WhatsApp</strong>. Tu orden queda guardada hasta que completes el pago.</p>
-                        </div>
-
-                        <PaymentGuide variant="inline" />
+                        <p className="text-zinc-500 text-xs leading-relaxed text-center">
+                            En el siguiente paso pagas por transferencia (subiendo tu comprobante) o coordinas por WhatsApp.
+                        </p>
 
                         <button type="submit" disabled={isSubmitting}
                             className="brutalist-btn w-full py-4 text-xl flex justify-center items-center gap-3">

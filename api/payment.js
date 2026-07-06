@@ -157,6 +157,20 @@ export default async function handler(req, res) {
             return res.status(200).json({ success: true });
         }
 
+        if (action === 'cancel') {
+            // Si ya pagó, no se cancela (que lo gestione el admin manualmente).
+            if (PAID_STATUSES.includes(order.status)) return res.status(200).json({ success: true, already: true });
+
+            const mask = `updateMask.fieldPaths=status`;
+            const u = await fetch(`${FIRESTORE}/orders/${encodeURIComponent(orderNumber)}?${mask}`, {
+                method: 'PATCH',
+                headers: { ...authHeaders, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fields: { status: toValue('cancelled') } }),
+            });
+            if (!u.ok) return res.status(500).json({ error: 'update_failed' });
+            return res.status(200).json({ success: true });
+        }
+
         return res.status(400).json({ error: 'invalid_action' });
     } catch (e) {
         return res.status(500).json({ error: 'server_error' });
