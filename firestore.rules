@@ -1,0 +1,87 @@
+rules_version = '2';
+
+// Reglas de seguridad de Firestore para KURA STUDIO.
+//
+// Contexto de acceso:
+//   - Tienda/checkout: cliente SIN autenticar (firebase sin login).
+//   - Admin (/admin): usuario autenticado con email/contraseña.
+//   - /api/payment: usa la CUENTA DE SERVICIO (ignora estas reglas).
+//   - /api/track y middleware.js: usan la API key web por REST → cuentan
+//     como acceso SIN autenticar (sujetos a estas reglas).
+//
+// Principio: lectura pública de lo que la tienda necesita mostrar; escritura
+// reservada al admin, salvo las acciones puntuales que el cliente sí realiza
+// (crear su orden, adjuntar su comprobante, y sumar el uso de un descuento).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Sólo cambian estos campos respecto al documento actual.
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // --- Catálogo: lectura pública, escritura solo admin ---
+    match /products/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Configuración de la tienda (incluye bankAccounts): lectura pública ---
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Pop-ups: lectura pública, escritura solo admin ---
+    match /popupBanners/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- Códigos de descuento ---
+    // Lectura pública (el checkout valida el código en el cliente).
+    // El cliente sólo puede incrementar usageCount al usar el código.
+    match /discountCodes/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || onlyChanges(['usageCount']);
+    }
+
+    // --- Órdenes ---
+    // El cliente crea su orden en el checkout. NO puede leer órdenes
+    // (eso lo hace el admin, o /api/payment con cuenta de servicio).
+    // El cliente sólo puede, sobre SU orden en estado 'awaiting_payment':
+    //   (a) adjuntar el comprobante  → 'paid_pending_verification'
+    //   (b) cancelarla               → 'cancelled'
+    // cambiando únicamente los campos permitidos.
+    match /orders/{id} {
+      allow create: if true;
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (
+          resource.data.status == 'awaiting_payment'
+          && (
+            (request.resource.data.status == 'paid_pending_verification'
+              && onlyChanges(['status', 'receiptUrl', 'paymentReference', 'seenByAdmin', 'paidAt']))
+            ||
+            (request.resource.data.status == 'cancelled'
+              && onlyChanges(['status']))
+          )
+        );
+    }
+
+    // --- Analytics: /api/track crea eventos (sin auth); sólo el admin lee ---
+    match /analytics/{id} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // Todo lo no declarado queda denegado por defecto.
+  }
+}

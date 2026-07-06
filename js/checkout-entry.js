@@ -117,15 +117,22 @@ function CheckoutApp() {
     const handlePaid = () => { localStorage.removeItem(PENDING_KEY); setPaid(true); };
     const handleCancelOrder = async () => {
         if (!window.confirm('¿Seguro que quieres cancelar esta orden? Perderás el progreso del pago.')) return;
-        // Marca la orden como cancelada en Firestore (best-effort) para que no quede "viva" en el admin.
-        if (activeOrder?.orderNumber && activeOrder?.paymentToken) {
+        // Marca la orden como cancelada en Firestore para que no quede "viva" en el admin.
+        // Intenta el endpoint seguro y, si falla, escribe directo a Firestore (las reglas
+        // permiten pasar de 'awaiting_payment' a 'cancelled').
+        if (activeOrder?.orderNumber) {
+            let done = false;
             try {
-                await fetch('/api/payment', {
+                const res = await fetch('/api/payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'cancel', orderNumber: activeOrder.orderNumber, token: activeOrder.paymentToken }),
                 });
+                done = res.ok;
             } catch {}
+            if (!done) {
+                try { await db.collection('orders').doc(activeOrder.orderNumber).update({ status: 'cancelled' }); } catch {}
+            }
         }
         localStorage.removeItem(PENDING_KEY);
         setActiveOrder(null);
