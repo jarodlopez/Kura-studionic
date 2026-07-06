@@ -16,6 +16,9 @@ window.PaymentModule = ({ order, bankAccounts = [], waNumber = '50587091008', on
     const [reference, setReference] = useState('');
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    // Si el registro automático falla, guardamos el comprobante ya subido para
+    // que el cliente lo envíe por WhatsApp con un toque (no se pierde la venta).
+    const [fallbackReceipt, setFallbackReceipt] = useState(null);
 
     const selectedBank = banks.find((b, i) => (b.id ?? i) === selectedId) || banks[0] || null;
 
@@ -40,39 +43,69 @@ window.PaymentModule = ({ order, bankAccounts = [], waNumber = '50587091008', on
     const handleSubmit = async () => {
         if (!receiptFile || !acceptTerms || isUploading) return;
         setIsUploading(true);
+        setFallbackReceipt(null);
+        const ref = reference.trim() || null;
+
+        // Paso 1: subir la imagen del comprobante.
+        let receiptUrl;
         try {
-            const receiptUrl = await uploadToImgBB(receiptFile);
+            receiptUrl = await uploadToImgBB(receiptFile);
+        } catch (e) {
+            console.error('Error subiendo el comprobante a ImgBB:', e);
+            setIsUploading(false);
+            alert('No pudimos subir la imagen del comprobante. Asegúrate de que sea una imagen (JPG o PNG) y no muy pesada, luego intenta de nuevo.');
+            return;
+        }
+
+        // Paso 2: registrar el pago. Intenta el endpoint seguro y, si falla,
+        // escribe directo a Firestore desde el cliente.
+        let ok = false;
+        try {
             const res = await fetch('/api/payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'pay',
-                    orderNumber: order.orderNumber,
-                    token: order.paymentToken,
-                    receiptUrl,
-                    reference: reference.trim() || null,
-                }),
+                body: JSON.stringify({ action: 'pay', orderNumber: order.orderNumber, token: order.paymentToken, receiptUrl, reference: ref }),
             });
-            if (!res.ok) throw new Error('pay_failed');
-            onPaid && onPaid();
-        } catch {
-            alert('No pudimos enviar tu comprobante. Verifica tu conexión e intenta de nuevo.');
+            ok = res.ok;
+            if (!ok) console.error('api/payment respondió', res.status, await res.text().catch(() => ''));
+        } catch (e) { console.error('api/payment no disponible:', e); }
+
+        if (!ok && typeof db !== 'undefined' && db) {
+            try {
+                await db.collection('orders').doc(order.orderNumber).update({
+                    status: 'paid_pending_verification',
+                    receiptUrl,
+                    paymentReference: ref,
+                    seenByAdmin: false,
+                    paidAt: new Date().toISOString(),
+                });
+                ok = true;
+            } catch (e) { console.error('Escritura directa a Firestore falló:', e); }
         }
+
         setIsUploading(false);
+        if (ok) {
+            onPaid && onPaid();
+        } else {
+            // No perder la venta: el comprobante ya está subido; que lo envíe por WhatsApp.
+            setFallbackReceipt(receiptUrl);
+        }
     };
 
-    // Resumen para el mensaje de WhatsApp
-    const waText = (() => {
+    // Resumen para el mensaje de WhatsApp (opcionalmente con el comprobante ya subido).
+    const buildWaUrl = (receiptUrl) => {
         let m = `🛍️ Hola KURA STUDIO, quiero coordinar el pago de mi orden *${order.orderNumber}*.\n`;
         m += `Total: NIO ${order.total}\n`;
         if (Array.isArray(order.items) && order.items.length) {
             m += `\nArtículos:\n`;
             order.items.forEach(i => { m += `▪️ ${i.title}${i.selectedSize ? ` (${i.selectedSize})` : ''}\n`; });
         }
-        m += `\n¿Me ayudan a finalizar la compra?`;
-        return m;
-    })();
-    const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(waText)}`;
+        if (reference.trim()) m += `\nReferencia: ${reference.trim()}`;
+        if (receiptUrl) m += `\nComprobante: ${receiptUrl}`;
+        m += `\n\n¿Me ayudan a finalizar la compra?`;
+        return `https://wa.me/${waNumber}?text=${encodeURIComponent(m)}`;
+    };
+    const waUrl = buildWaUrl(null);
 
     const CopyBtn = ({ k, value }) => (
         <button type="button" onClick={() => copyValue(k, value)}
@@ -209,8 +242,21 @@ window.PaymentModule = ({ order, bankAccounts = [], waNumber = '50587091008', on
                     className="brutalist-btn w-full py-4 text-xl flex justify-center items-center gap-2">
                     {isUploading ? <span className="animate-pulse">ENVIANDO COMPROBANTE...</span> : 'ENVIAR COMPROBANTE →'}
                 </button>
-                {(!receiptFile || !acceptTerms) && !isUploading && (
+                {(!receiptFile || !acceptTerms) && !isUploading && !fallbackReceipt && (
                     <p className="text-zinc-500 text-[11px] text-center">Adjunta tu comprobante y marca la casilla para enviar.</p>
+                )}
+
+                {fallbackReceipt && (
+                    <div className="border border-yellow-700/50 bg-yellow-950/20 rounded-xl p-4 space-y-3">
+                        <p className="text-yellow-300 text-xs leading-relaxed">
+                            Tu comprobante se subió, pero no pudimos registrarlo automáticamente. Envíanoslo por WhatsApp con un toque para completar tu compra:
+                        </p>
+                        <a href={buildWaUrl(fallbackReceipt)} target="_blank" rel="noopener noreferrer"
+                            className="flex justify-center items-center gap-2 w-full py-3 text-sm font-bold tracking-widest text-black bg-[#25D366] hover:opacity-90 transition-opacity rounded-xl">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.489-1.761-1.663-2.06-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+                            ENVIAR COMPROBANTE POR WHATSAPP
+                        </a>
+                    </div>
                 )}
             </div>
 
