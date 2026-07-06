@@ -4,6 +4,13 @@
 
 const PENDING_KEY = 'kura_pending_order';
 
+// Cuentas por defecto (las que se usaban antes). Se muestran mientras el admin
+// no configure cuentas propias en la pestaña PAGOS.
+const DEFAULT_BANKS = [
+    { id: 'bac', name: 'BAC', accountNumber: '367298642', holder: 'KATHY VALESKA MEMBREÑO MEDINA', currency: 'C$', logoUrl: '' },
+    { id: 'lafise', name: 'LAFISE', accountNumber: '117240166', holder: 'KATHY VALESKA MEMBREÑO MEDINA', currency: 'C$', logoUrl: '' },
+];
+
 function CheckoutApp() {
     const { useState, useEffect } = React;
 
@@ -20,7 +27,7 @@ function CheckoutApp() {
     const [discountInput, setDiscountInput] = useState('');
     const [discountError, setDiscountError] = useState('');
 
-    const [bankAccounts, setBankAccounts] = useState([]);
+    const [bankAccounts, setBankAccounts] = useState(DEFAULT_BANKS);
     const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -35,7 +42,8 @@ function CheckoutApp() {
             setDiscountCodes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         }).catch(() => {});
         db.collection("settings").doc("store").get().then(doc => {
-            if (doc.exists) setBankAccounts(doc.data().bankAccounts || []);
+            const configured = doc.exists ? doc.data().bankAccounts : null;
+            if (configured && configured.length) setBankAccounts(configured);
         }).catch(() => {});
     }, []);
 

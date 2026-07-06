@@ -302,6 +302,19 @@ function AdminPanel() {
         setIsSaving(false);
     };
 
+    const handleSeedDefaultBanks = async () => {
+        const defaults = [
+            { id: `${Date.now()}1`, name: 'BAC', accountNumber: '367298642', holder: 'KATHY VALESKA MEMBREÑO MEDINA', currency: 'C$', logoUrl: '' },
+            { id: `${Date.now()}2`, name: 'LAFISE', accountNumber: '117240166', holder: 'KATHY VALESKA MEMBREÑO MEDINA', currency: 'C$', logoUrl: '' },
+        ];
+        setIsSaving(true);
+        try {
+            await saveStoreConfig({ ...storeConfig, bankAccounts: [...(storeConfig.bankAccounts || []), ...defaults] });
+            showToast('Cuentas anteriores cargadas');
+        } catch { showToast('Error al cargar las cuentas', 'error'); }
+        setIsSaving(false);
+    };
+
     const handleRemoveBank = async (id) => {
         if (!window.confirm('¿Eliminar esta cuenta bancaria?')) return;
         const banks = (storeConfig.bankAccounts || []).filter(b => b.id !== id);
@@ -627,6 +640,7 @@ function AdminPanel() {
                             handleAddBank={handleAddBank}
                             handleRemoveBank={handleRemoveBank}
                             handleBankLogoUpload={handleBankLogoUpload}
+                            handleSeedDefaultBanks={handleSeedDefaultBanks}
                             isSaving={isSaving}
                         />
                     )}

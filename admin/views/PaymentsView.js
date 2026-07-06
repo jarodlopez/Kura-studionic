@@ -2,7 +2,7 @@
 // Cada banco: { id, name, accountNumber, holder, currency, logoUrl }
 // Handlers desde admin-panel: handleAddBank, handleRemoveBank, handleBankLogoUpload
 
-window.PaymentsView = ({ storeConfig, handleAddBank, handleRemoveBank, handleBankLogoUpload, isSaving }) => {
+window.PaymentsView = ({ storeConfig, handleAddBank, handleRemoveBank, handleBankLogoUpload, handleSeedDefaultBanks, isSaving }) => {
     const empty = { name: '', accountNumber: '', holder: '', currency: 'C$', logoFile: null };
     const [form, setForm] = React.useState(empty);
     const [logoName, setLogoName] = React.useState('');
@@ -54,7 +54,15 @@ window.PaymentsView = ({ storeConfig, handleAddBank, handleRemoveBank, handleBan
             <div className="border border-zinc-800 p-5 bg-zinc-950 rounded-2xl overflow-hidden">
                 <h3 className="font-bebas text-2xl border-b border-zinc-800 pb-2 mb-4">CUENTAS ACTIVAS ({banks.length})</h3>
                 {banks.length === 0 ? (
-                    <p className="text-zinc-600 text-sm font-mono italic py-6 text-center">No hay cuentas bancarias. Añade una arriba.</p>
+                    <div className="py-6 text-center space-y-4">
+                        <p className="text-zinc-600 text-sm font-mono italic">No hay cuentas bancarias. Añade una arriba.</p>
+                        {handleSeedDefaultBanks && (
+                            <button onClick={handleSeedDefaultBanks} disabled={isSaving}
+                                className="brutalist-btn-outline px-5 py-2.5 text-xs font-bold tracking-widest">
+                                ⇩ CARGAR CUENTAS ANTERIORES (BAC · LAFISE)
+                            </button>
+                        )}
+                    </div>
                 ) : (
                     <div className="space-y-3">
                         {banks.map(b => (
