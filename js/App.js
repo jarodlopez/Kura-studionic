@@ -297,6 +297,8 @@ function KuraStudio() {
 
             <WhatsAppFab />
 
+            <CookieBanner />
+
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"

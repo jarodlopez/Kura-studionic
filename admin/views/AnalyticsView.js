@@ -61,10 +61,11 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
     const deptos = filteredOrders.filter(o => o.shippingZone !== 'Managua').length;
     const zoneTotal = managua + deptos || 1;
 
-    // Identidad del visitante: la IP (hash) es lo más confiable porque la captura
-    // el servidor y no se puede falsificar. Caemos a userId/sessionId para eventos
-    // antiguos que aún no tengan ipHash.
-    const idOf = (e) => e.ipHash || e.userId || e.sessionId;
+    // Identidad del visitante: preferimos el userId (identificador de dispositivo
+    // en localStorage) porque distingue personas detrás de una misma IP (WiFi,
+    // CGNAT móvil). Caemos al ipHash (capturado por el servidor) y luego al
+    // sessionId para eventos antiguos. Es una estimación, no un conteo exacto.
+    const idOf = (e) => e.userId || e.ipHash || e.sessionId;
 
     // Usuarios únicos: identidades distintas en el período (1 por IP real)
     const uniqueUsers = new Set(evts.map(idOf).filter(Boolean)).size;
@@ -89,7 +90,7 @@ window.AnalyticsView = ({ analyticsEvents, analyticsRange, setAnalyticsRange,
         { label: 'INGRESOS TOTALES', value: `NIO ${totalRevenue.toLocaleString()}`, sub: `${ordersCompleted} órdenes`, color: 'text-kuraRed' },
         { label: 'TICKET PROMEDIO', value: `NIO ${avgTicket.toLocaleString()}`, sub: 'por orden', color: 'text-white' },
         { label: 'VISITAS', value: pageViews.toLocaleString(), sub: `en ${days} día${days > 1 ? 's' : ''}`, color: 'text-white' },
-        { label: 'USUARIOS ÚNICOS', value: uniqueUsers.toLocaleString(), sub: 'identificados', color: 'text-white' },
+        { label: 'USUARIOS ÚNICOS', value: uniqueUsers.toLocaleString(), sub: 'aprox. por dispositivo', color: 'text-white' },
         { label: 'CARRITOS ABANDONADOS', value: abandonedCarts.toLocaleString(), sub: `${cartAbandonRate}% tasa abandono`, color: abandonedCarts > 0 ? 'text-yellow-400' : 'text-white' },
         { label: 'TASA DE COMPRA', value: pageViews > 0 ? `${((ordersCompleted / pageViews) * 100).toFixed(1)}%` : '—', sub: 'visita → orden', color: 'text-white' },
     ];

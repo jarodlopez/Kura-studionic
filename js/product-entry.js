@@ -197,6 +197,8 @@ function KuraProduct() {
 
             <WhatsAppFab product={product} selectedSize={selectedSize} />
 
+            <CookieBanner />
+
             <button
                 onClick={() => setIsCartOpen(true)}
                 aria-label="Ver carrito"
