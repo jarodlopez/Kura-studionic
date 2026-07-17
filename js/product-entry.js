@@ -195,11 +195,7 @@ function KuraProduct() {
                 setShippingZone={setShippingZone}
             />
 
-            <WhatsAppFab product={product} selectedSize={selectedSize} />
-
             <ChatBot />
-
-            <CookieBanner />
 
             <button
                 onClick={() => setIsCartOpen(true)}

@@ -65,14 +65,14 @@ window.ChatBot = () => {
             {/* Botón flotante */}
             {!open && (
                 <button onClick={() => setOpen(true)} aria-label="Abrir chat"
-                    className="fixed bottom-24 left-4 z-[100] w-[52px] h-[52px] rounded-full bg-kuraRed text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,0,60,0.5)] hover:scale-110 transition-transform">
+                    className="fixed bottom-6 left-4 z-[100] w-[52px] h-[52px] rounded-full bg-kuraRed text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,0,60,0.5)] hover:scale-110 transition-transform">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                 </button>
             )}
 
             {/* Panel */}
             {open && (
-                <div className="fixed z-[130] bottom-4 left-4 right-4 sm:right-auto sm:w-[380px] flex flex-col bg-[#050505] border border-zinc-800 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden" style={{ height: '70vh', maxHeight: '560px' }}>
+                <div className="fixed z-[130] inset-0 h-[100dvh] sm:inset-auto sm:bottom-4 sm:left-4 sm:right-auto sm:w-[380px] sm:h-[70vh] sm:max-h-[560px] flex flex-col bg-[#050505] sm:border sm:border-zinc-800 sm:rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-black shrink-0">
                         <div className="flex items-center gap-2">

@@ -295,11 +295,7 @@ function KuraStudio() {
                 setShippingZone={setShippingZone}
             />
 
-            <WhatsAppFab />
-
             <ChatBot />
-
-            <CookieBanner />
 
             <button
                 onClick={() => setIsCartOpen(true)}
