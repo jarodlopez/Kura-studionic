@@ -3,6 +3,22 @@
 // para pedidos/reclamos deriva a WhatsApp. La API key vive solo en el servidor.
 
 const CHAT_WA = 'https://wa.me/50587091008';
+const CHAT_STORE_KEY = 'kura_chat';
+const CHAT_TTL = 6 * 60 * 60 * 1000; // 6 horas: después se descarta el historial
+
+const DEFAULT_GREETING = { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' };
+
+// Restaura la conversación guardada (si no venció).
+function loadStoredChat() {
+    try {
+        const raw = localStorage.getItem(CHAT_STORE_KEY);
+        if (!raw) return null;
+        const d = JSON.parse(raw);
+        if (!d || !Array.isArray(d.messages) || !d.messages.length) return null;
+        if (Date.now() - (d.ts || 0) > CHAT_TTL) { localStorage.removeItem(CHAT_STORE_KEY); return null; }
+        return d;
+    } catch { return null; }
+}
 
 // Opciones rápidas generales (siempre presentes).
 const GENERAL_PROMPTS = [
@@ -48,25 +64,28 @@ function renderRich(text) {
 
 window.ChatBot = () => {
     const { useState, useRef, useEffect } = React;
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(() => !!loadStoredChat()?.open);
     const [teaser, setTeaser] = useState(false);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [vp, setVp] = useState(null); // viewport visible (para el teclado en móvil)
     const [quickPrompts, setQuickPrompts] = useState(GENERAL_PROMPTS);
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' },
-    ]);
+    const [messages, setMessages] = useState(() => loadStoredChat()?.messages || [DEFAULT_GREETING]);
     const scrollRef = useRef(null);
 
     // Arma los chips (colecciones reales + generales) al montar.
     useEffect(() => { setQuickPrompts(buildQuickPrompts()); }, []);
 
-    // Burbuja de saludo antes de abrir (una vez por sesión).
+    // Persiste la conversación (sobrevive recargas y navegación).
+    useEffect(() => {
+        try { localStorage.setItem(CHAT_STORE_KEY, JSON.stringify({ ts: Date.now(), open, messages: messages.slice(-50) })); } catch {}
+    }, [messages, open]);
+
+    // Burbuja de saludo antes de abrir (una vez por sesión; no si ya hay charla).
     useEffect(() => {
         let shown = false;
         try { shown = !!sessionStorage.getItem('kura_chat_teaser'); } catch {}
-        if (shown) return;
+        if (shown || open || messages.length > 1) return;
         const t = setTimeout(() => setTeaser(true), 2500);
         return () => clearTimeout(t);
     }, []);
@@ -132,6 +151,13 @@ window.ChatBot = () => {
 
     const onKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(input); } };
 
+    const resetChat = () => {
+        if (loading) return;
+        setMessages([DEFAULT_GREETING]);
+        setInput('');
+        try { localStorage.removeItem(CHAT_STORE_KEY); } catch {}
+    };
+
     const showQuick = messages.length === 1 && !loading;
     // En móvil, cuando el teclado abre, fijamos el panel al viewport visible.
     // OJO: hay que forzar bottom:auto porque la clase inset-0 pone bottom:0 y,
@@ -167,7 +193,14 @@ window.ChatBot = () => {
                             <span className="w-2.5 h-2.5 bg-kuraRed rounded-full animate-pulse"></span>
                             <h2 className="font-bebas text-xl tracking-widest">ASISTENTE KURA</h2>
                         </div>
-                        <button onClick={() => setOpen(false)} aria-label="Cerrar" className="text-zinc-500 hover:text-white text-xl leading-none p-1">✕</button>
+                        <div className="flex items-center gap-1">
+                            {messages.length > 1 && (
+                                <button onClick={resetChat} aria-label="Nueva conversación" title="Nueva conversación" className="text-zinc-500 hover:text-white p-1">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 019-9 9 9 0 016.7 3H21"/><path d="M21 3v6h-6"/><path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.7-3H3"/><path d="M3 21v-6h6"/></svg>
+                                </button>
+                            )}
+                            <button onClick={() => setOpen(false)} aria-label="Cerrar" className="text-zinc-500 hover:text-white text-xl leading-none p-1">✕</button>
+                        </div>
                     </div>
 
                     {/* Mensajes */}
