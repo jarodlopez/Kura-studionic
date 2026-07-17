@@ -297,6 +297,8 @@ function KuraStudio() {
 
             <WhatsAppFab />
 
+            <ChatBot />
+
             <CookieBanner />
 
             <button

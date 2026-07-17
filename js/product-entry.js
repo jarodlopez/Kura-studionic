@@ -197,6 +197,8 @@ function KuraProduct() {
 
             <WhatsAppFab product={product} selectedSize={selectedSize} />
 
+            <ChatBot />
+
             <CookieBanner />
 
             <button
