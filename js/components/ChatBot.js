@@ -133,7 +133,10 @@ window.ChatBot = () => {
     const onKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(input); } };
 
     const showQuick = messages.length === 1 && !loading;
-    const panelStyle = vp ? { position: 'fixed', top: `${vp.top}px`, left: 0, right: 0, height: `${vp.height}px` } : undefined;
+    // En móvil, cuando el teclado abre, fijamos el panel al viewport visible.
+    // OJO: hay que forzar bottom:auto porque la clase inset-0 pone bottom:0 y,
+    // si top+bottom+height coexisten, la altura se ignora y el panel queda tapado.
+    const panelStyle = vp ? { top: `${vp.top}px`, bottom: 'auto', height: `${vp.height}px` } : undefined;
 
     return (
         <>
