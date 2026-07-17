@@ -4,13 +4,29 @@
 
 const CHAT_WA = 'https://wa.me/50587091008';
 
-// Opciones rápidas: chips que envían una pregunta al bot con un toque.
-const QUICK_PROMPTS = [
+// Opciones rápidas generales (siempre presentes).
+const GENERAL_PROMPTS = [
     { label: '🛍️ ¿Cómo compro?', text: '¿Cómo es el proceso de compra?' },
     { label: '💳 Métodos de pago', text: '¿Cómo puedo pagar mi pedido?' },
     { label: '🚚 Envíos y tiempos', text: '¿Cuánto cuesta el envío y cuánto tarda en llegar?' },
-    { label: '👕 Ver colecciones', text: '¿Qué colecciones tienen disponibles?' },
 ];
+
+// Lee las categorías reales del catálogo desde la caché de la tienda para
+// armar chips de colecciones dinámicos.
+function buildQuickPrompts() {
+    try {
+        const raw = localStorage.getItem('kura_store_cache');
+        if (raw) {
+            const { products = [], config = {} } = JSON.parse(raw);
+            let cats = (config.categories && config.categories.length)
+                ? config.categories
+                : [...new Set(products.map(p => p.category).filter(Boolean))];
+            const collChips = cats.slice(0, 3).map(c => ({ label: `👕 ${c}`, text: `¿Qué tienen en la colección ${c}?` }));
+            if (collChips.length) return [...collChips, ...GENERAL_PROMPTS];
+        }
+    } catch {}
+    return [{ label: '👕 Ver colecciones', text: '¿Qué colecciones tienen disponibles?' }, ...GENERAL_PROMPTS];
+}
 
 // Convierte URLs y saltos de línea en nodos React (links clicables).
 function renderRich(text) {
@@ -37,10 +53,14 @@ window.ChatBot = () => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [vp, setVp] = useState(null); // viewport visible (para el teclado en móvil)
+    const [quickPrompts, setQuickPrompts] = useState(GENERAL_PROMPTS);
     const [messages, setMessages] = useState([
         { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' },
     ]);
     const scrollRef = useRef(null);
+
+    // Arma los chips (colecciones reales + generales) al montar.
+    useEffect(() => { setQuickPrompts(buildQuickPrompts()); }, []);
 
     // Burbuja de saludo antes de abrir (una vez por sesión).
     useEffect(() => {
@@ -160,7 +180,7 @@ window.ChatBot = () => {
                         {/* Opciones rápidas (al inicio) */}
                         {showQuick && (
                             <div className="flex flex-wrap gap-2 pt-1">
-                                {QUICK_PROMPTS.map((q, i) => (
+                                {quickPrompts.map((q, i) => (
                                     <button key={i} onClick={() => sendText(q.text)}
                                         className="px-3 py-2 text-xs font-bold text-kuraRed border border-kuraRed/40 hover:bg-kuraRed hover:text-black transition-colors rounded-full">
                                         {q.label}
