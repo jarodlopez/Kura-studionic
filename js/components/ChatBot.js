@@ -1,8 +1,16 @@
-// Widget de chat de KURA STUDIO. Habla con /api/chat (que a su vez consulta a
+// Widget de chat de KURA STUDIO. Habla con /api/chat (que consulta a
 // gpt-4o-mini con el catálogo). Responde dudas de productos e info de compra;
 // para pedidos/reclamos deriva a WhatsApp. La API key vive solo en el servidor.
 
 const CHAT_WA = 'https://wa.me/50587091008';
+
+// Opciones rápidas: chips que envían una pregunta al bot con un toque.
+const QUICK_PROMPTS = [
+    { label: '🛍️ ¿Cómo compro?', text: '¿Cómo es el proceso de compra?' },
+    { label: '💳 Métodos de pago', text: '¿Cómo puedo pagar mi pedido?' },
+    { label: '🚚 Envíos y tiempos', text: '¿Cuánto cuesta el envío y cuánto tarda en llegar?' },
+    { label: '👕 Ver colecciones', text: '¿Qué colecciones tienen disponibles?' },
+];
 
 // Convierte URLs y saltos de línea en nodos React (links clicables).
 function renderRich(text) {
@@ -25,21 +33,65 @@ function renderRich(text) {
 window.ChatBot = () => {
     const { useState, useRef, useEffect } = React;
     const [open, setOpen] = useState(false);
+    const [teaser, setTeaser] = useState(false);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
+    const [vp, setVp] = useState(null); // viewport visible (para el teclado en móvil)
     const [messages, setMessages] = useState([
         { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' },
     ]);
     const scrollRef = useRef(null);
 
+    // Burbuja de saludo antes de abrir (una vez por sesión).
+    useEffect(() => {
+        let shown = false;
+        try { shown = !!sessionStorage.getItem('kura_chat_teaser'); } catch {}
+        if (shown) return;
+        const t = setTimeout(() => setTeaser(true), 2500);
+        return () => clearTimeout(t);
+    }, []);
+
+    // Autoscroll al último mensaje.
     useEffect(() => {
         if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, [messages, loading, open]);
 
-    const send = async () => {
-        const text = input.trim();
-        if (!text || loading) return;
-        const next = [...messages, { role: 'user', content: text }];
+    // Bloquea el scroll de la página detrás mientras el chat está abierto.
+    useEffect(() => {
+        if (!open) return;
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = prev; };
+    }, [open]);
+
+    // En móvil, ajusta el panel al viewport visible cuando aparece el teclado.
+    useEffect(() => {
+        if (!open) { setVp(null); return; }
+        const vv = window.visualViewport;
+        const isMobile = window.matchMedia('(max-width: 639px)').matches;
+        if (!vv || !isMobile) return;
+        const update = () => setVp({ height: vv.height, top: vv.offsetTop });
+        update();
+        vv.addEventListener('resize', update);
+        vv.addEventListener('scroll', update);
+        return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+    }, [open]);
+
+    const openChat = () => {
+        setOpen(true);
+        setTeaser(false);
+        try { sessionStorage.setItem('kura_chat_teaser', '1'); } catch {}
+    };
+    const dismissTeaser = (e) => {
+        if (e) e.stopPropagation();
+        setTeaser(false);
+        try { sessionStorage.setItem('kura_chat_teaser', '1'); } catch {}
+    };
+
+    const sendText = async (text) => {
+        const clean = (text || '').trim();
+        if (!clean || loading) return;
+        const next = [...messages, { role: 'user', content: clean }];
         setMessages(next);
         setInput('');
         setLoading(true);
@@ -58,13 +110,25 @@ window.ChatBot = () => {
         setLoading(false);
     };
 
-    const onKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+    const onKey = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(input); } };
+
+    const showQuick = messages.length === 1 && !loading;
+    const panelStyle = vp ? { position: 'fixed', top: `${vp.top}px`, left: 0, right: 0, height: `${vp.height}px` } : undefined;
 
     return (
         <>
-            {/* Botón flotante */}
+            {/* Burbuja de saludo */}
+            {!open && teaser && (
+                <div onClick={openChat}
+                    className="fixed bottom-[5.25rem] left-4 z-[100] max-w-[240px] bg-[#050505] border border-zinc-800 rounded-2xl rounded-bl-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] p-3 pr-8 cursor-pointer animate-slideUp">
+                    <button onClick={dismissTeaser} aria-label="Cerrar" className="absolute top-1.5 right-2 text-zinc-600 hover:text-white text-sm leading-none">✕</button>
+                    <p className="text-zinc-200 text-xs leading-relaxed">👋 ¡Hola! Soy el asistente de KURA STUDIO. ¿Necesitás ayuda?</p>
+                </div>
+            )}
+
+            {/* Botón flotante (único) */}
             {!open && (
-                <button onClick={() => setOpen(true)} aria-label="Abrir chat"
+                <button onClick={openChat} aria-label="Abrir chat"
                     className="fixed bottom-6 left-4 z-[100] w-[52px] h-[52px] rounded-full bg-kuraRed text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,0,60,0.5)] hover:scale-110 transition-transform">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                 </button>
@@ -72,7 +136,8 @@ window.ChatBot = () => {
 
             {/* Panel */}
             {open && (
-                <div className="fixed z-[130] inset-0 h-[100dvh] sm:inset-auto sm:bottom-4 sm:left-4 sm:right-auto sm:w-[380px] sm:h-[70vh] sm:max-h-[560px] flex flex-col bg-[#050505] sm:border sm:border-zinc-800 sm:rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
+                <div style={panelStyle}
+                    className="fixed z-[130] inset-0 h-[100dvh] sm:inset-auto sm:bottom-4 sm:left-4 sm:right-auto sm:w-[380px] sm:h-[70vh] sm:max-h-[560px] flex flex-col bg-[#050505] sm:border sm:border-zinc-800 sm:rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.7)] overflow-hidden">
                     {/* Header */}
                     <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-black shrink-0">
                         <div className="flex items-center gap-2">
@@ -83,7 +148,7 @@ window.ChatBot = () => {
                     </div>
 
                     {/* Mensajes */}
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-3">
                         {messages.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${m.role === 'user' ? 'bg-kuraRed text-black rounded-br-sm' : 'bg-zinc-900 text-zinc-200 border border-zinc-800 rounded-bl-sm'}`}>
@@ -91,6 +156,19 @@ window.ChatBot = () => {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Opciones rápidas (al inicio) */}
+                        {showQuick && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                                {QUICK_PROMPTS.map((q, i) => (
+                                    <button key={i} onClick={() => sendText(q.text)}
+                                        className="px-3 py-2 text-xs font-bold text-kuraRed border border-kuraRed/40 hover:bg-kuraRed hover:text-black transition-colors rounded-full">
+                                        {q.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
                         {loading && (
                             <div className="flex justify-start">
                                 <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 px-3 py-2 rounded-2xl rounded-bl-sm text-sm">
@@ -113,7 +191,7 @@ window.ChatBot = () => {
                             value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
                             rows={1} placeholder="Escribe tu pregunta…" maxLength={500}
                             className="flex-1 resize-none bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-kuraRed transition-colors max-h-24" />
-                        <button onClick={send} disabled={!input.trim() || loading} aria-label="Enviar"
+                        <button onClick={() => sendText(input)} disabled={!input.trim() || loading} aria-label="Enviar"
                             className="brutalist-btn w-10 h-10 rounded-xl flex items-center justify-center shrink-0 p-0">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                         </button>
