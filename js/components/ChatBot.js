@@ -28,7 +28,7 @@ window.ChatBot = () => {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Pregúntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales te paso con nuestro equipo por WhatsApp.' },
+        { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' },
     ]);
     const scrollRef = useRef(null);
 
@@ -53,7 +53,7 @@ window.ChatBot = () => {
             const data = await res.json();
             setMessages(m => [...m, { role: 'assistant', content: data.reply }]);
         } catch {
-            setMessages(m => [...m, { role: 'assistant', content: 'Uy, no pude responder en este momento. Escríbenos por WhatsApp y te ayudamos enseguida: ' + CHAT_WA }]);
+            setMessages(m => [...m, { role: 'assistant', content: 'Uy, no pude responder en este momento. Escribinos por WhatsApp y te ayudamos enseguida: ' + CHAT_WA }]);
         }
         setLoading(false);
     };
