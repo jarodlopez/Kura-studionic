@@ -70,6 +70,11 @@ Promise.all([
     'js/components/PaymentGuide.js',
     'js/comocomprar-entry.js',
   ], 'dist/comocomprar.js'),
+
+  build([
+    'js/components/PrivacyPolicy.js',
+    'js/privacidad-entry.js',
+  ], 'dist/privacidad.js'),
 ]).catch((err) => {
   console.error(err);
   process.exit(1);
