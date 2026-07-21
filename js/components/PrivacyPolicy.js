@@ -47,7 +47,7 @@ window.PrivacyPolicy = () => (
             </PrivSection>
 
             <PrivSection n="2" title="COOKIES Y ALMACENAMIENTO LOCAL">
-                <p>Usamos el almacenamiento de tu navegador (cookies y <em>localStorage</em>) para que la tienda funcione bien: recordar tu <strong className="text-white">carrito</strong>, tu <strong className="text-white">orden pendiente</strong>, el <strong className="text-white">historial del chat</strong> y un identificador anónimo para medir el tráfico.</p>
+                <p>Usamos el almacenamiento de tu navegador (cookies y <em>localStorage</em>) para que la tienda funcione bien: recordar tu <strong className="text-white">carrito</strong>, tu <strong className="text-white">orden pendiente</strong> y el <strong className="text-white">historial del chat</strong>.</p>
                 <p>Podés borrarlos cuando quieras desde la configuración de tu navegador; la tienda seguirá funcionando.</p>
             </PrivSection>
 
