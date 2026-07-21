@@ -6,7 +6,7 @@ const CHAT_WA = 'https://wa.me/50587091008';
 const CHAT_STORE_KEY = 'kura_chat';
 const CHAT_TTL = 6 * 60 * 60 * 1000; // 6 horas: después se descarta el historial
 
-const DEFAULT_GREETING = { role: 'assistant', content: '¡Hola! 👋 Soy el asistente de KURA STUDIO. Preguntame por productos, tallas, precios o cómo comprar. Para finalizar tu compra o casos especiales, te paso con nuestro equipo por WhatsApp.' };
+const DEFAULT_GREETING = { role: 'assistant', content: '¡Hola! 👋 Bienvenido a KURA STUDIO. Contame qué andás buscando y te ayudo a encontrar tu próximo drop 🔥 ¿Buscás algo en particular o querés ver lo último?' };
 
 // Restaura la conversación guardada (si no venció).
 function loadStoredChat() {
@@ -72,6 +72,7 @@ window.ChatBot = () => {
     const [quickPrompts, setQuickPrompts] = useState(GENERAL_PROMPTS);
     const [messages, setMessages] = useState(() => loadStoredChat()?.messages || [DEFAULT_GREETING]);
     const scrollRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Arma los chips (colecciones reales + generales) al montar.
     useEffect(() => { setQuickPrompts(buildQuickPrompts()); }, []);
@@ -104,17 +105,35 @@ window.ChatBot = () => {
     }, [open]);
 
     // En móvil, ajusta el panel al viewport visible cuando aparece el teclado.
+    // Se escuchan varias señales porque en navegadores embebidos (Instagram/
+    // Facebook) el evento de visualViewport a veces no dispara.
     useEffect(() => {
         if (!open) { setVp(null); return; }
-        const vv = window.visualViewport;
         const isMobile = window.matchMedia('(max-width: 639px)').matches;
-        if (!vv || !isMobile) return;
-        const update = () => setVp({ height: vv.height, top: vv.offsetTop });
+        if (!isMobile) return;
+        const vv = window.visualViewport;
+        const update = () => {
+            if (vv) setVp({ height: vv.height, top: vv.offsetTop });
+            else setVp({ height: window.innerHeight, top: 0 });
+        };
         update();
-        vv.addEventListener('resize', update);
-        vv.addEventListener('scroll', update);
-        return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+        if (vv) { vv.addEventListener('resize', update); vv.addEventListener('scroll', update); }
+        window.addEventListener('resize', update);
+        return () => {
+            if (vv) { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); }
+            window.removeEventListener('resize', update);
+        };
     }, [open]);
+
+    // Al enfocar el input, forzamos una relectura del viewport y llevamos el
+    // campo a la vista (respaldo para WebViews que no emiten el evento).
+    const onFocusInput = () => {
+        setTimeout(() => {
+            const vv = window.visualViewport;
+            if (vv) setVp({ height: vv.height, top: vv.offsetTop });
+            if (inputRef.current) inputRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }, 300);
+    };
 
     const openChat = () => {
         setOpen(true);
@@ -244,7 +263,8 @@ window.ChatBot = () => {
                     {/* Input */}
                     <div className="p-3 border-t border-zinc-800 flex items-end gap-2 bg-black shrink-0">
                         <textarea
-                            value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey}
+                            ref={inputRef}
+                            value={input} onChange={e => setInput(e.target.value)} onKeyDown={onKey} onFocus={onFocusInput}
                             rows={1} placeholder="Escribe tu pregunta…" maxLength={500}
                             className="flex-1 resize-none bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-kuraRed transition-colors max-h-24" />
                         <button onClick={() => sendText(input)} disabled={!input.trim() || loading} aria-label="Enviar"
