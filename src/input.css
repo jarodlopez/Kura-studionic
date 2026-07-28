@@ -31,8 +31,10 @@ body {
 .img-loaded { opacity: 1; }
 img { -webkit-user-drag: none; -webkit-touch-callout: none; pointer-events: none; }
 
-/* === Flama del botón de chat === */
-.chat-fire-btn { position: relative; }
+/* === Flama del botón de chat ===
+   El botón ya trae `position: fixed`, que sirve como contexto de posicionamiento
+   para las pseudo-capas. NO redefinir position aquí (rompería el fixed y el
+   botón desaparecería al fondo del DOM). */
 .chat-fire-btn::before,
 .chat-fire-btn::after {
   content: "";
