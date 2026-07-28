@@ -6,7 +6,7 @@ const CHAT_WA = 'https://wa.me/50587091008';
 const CHAT_STORE_KEY = 'kura_chat';
 const CHAT_TTL = 6 * 60 * 60 * 1000; // 6 horas: después se descarta el historial
 
-const DEFAULT_GREETING = { role: 'assistant', content: '¡Hola! 👋 Bienvenido a KURA STUDIO. Contame qué andás buscando y te ayudo a encontrar tu próximo drop 🔥 ¿Buscás algo en particular o querés ver lo último?' };
+const DEFAULT_GREETING = { role: 'assistant', content: '¡Hey! 🔥 Soy tu asistente KURA. ¿Querés ver el nuevo drop, lo que se está agotando esta semana, o buscás algo específico? Contame y te lo muestro al toque 👀' };
 
 // Restaura la conversación guardada (si no venció).
 function loadStoredChat() {
@@ -190,14 +190,14 @@ window.ChatBot = () => {
                 <div onClick={openChat}
                     className="fixed bottom-[5.25rem] left-4 z-[100] max-w-[240px] bg-[#050505] border border-zinc-800 rounded-2xl rounded-bl-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] p-3 pr-8 cursor-pointer animate-slideUp">
                     <button onClick={dismissTeaser} aria-label="Cerrar" className="absolute top-1.5 right-2 text-zinc-600 hover:text-white text-sm leading-none">✕</button>
-                    <p className="text-zinc-200 text-xs leading-relaxed">👋 ¡Hola! Soy el asistente de KURA STUDIO. ¿Necesitás ayuda?</p>
+                    <p className="text-zinc-200 text-xs leading-relaxed">🔥 ¿Buscás tu próximo drop? Te muestro lo más pedido de hoy 👀</p>
                 </div>
             )}
 
             {/* Botón flotante (único) */}
             {!open && (
                 <button onClick={openChat} aria-label="Abrir chat"
-                    className="fixed bottom-6 left-4 z-[100] w-[52px] h-[52px] rounded-full bg-kuraRed text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,0,60,0.5)] hover:scale-110 transition-transform">
+                    className="chat-fire-btn fixed bottom-6 left-4 z-[100] w-[52px] h-[52px] rounded-full bg-kuraRed text-black flex items-center justify-center shadow-[0_4px_20px_rgba(255,0,60,0.5)] hover:scale-110 transition-transform">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                 </button>
             )}
