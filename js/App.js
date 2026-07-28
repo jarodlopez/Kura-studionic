@@ -220,7 +220,7 @@ function KuraStudio() {
             <PopupBanner isPopupVisible={isPopupVisible} setIsPopupVisible={setIsPopupVisible} popupBanners={popupBanners} />
 
             <div className="marquee-container font-bebas text-lg tracking-[0.2em] z-50">
-                <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS //</div>
+                <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENVÍOS A TODA NICARAGUA // STREETWEAR AUTÉNTICO // NEW DROP AVAILABLE // REAL DROP FOR REAL FANS // ENVÍOS A TODA NICARAGUA // STREETWEAR AUTÉNTICO // NEW DROP AVAILABLE // REAL DROP FOR REAL FANS // ENVÍOS A TODA NICARAGUA // STREETWEAR AUTÉNTICO // NEW DROP AVAILABLE //</div>
             </div>
 
             <header className="px-4 md:px-8 py-4 grid grid-cols-3 items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
