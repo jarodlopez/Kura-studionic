@@ -64,6 +64,7 @@ Promise.all([
   build([
     'js/utils.js',
     'js/components/PaymentModule.js',
+    'js/components/ChatBot.js',
     'js/checkout-entry.js',
   ], 'dist/checkout.js'),
 

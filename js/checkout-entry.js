@@ -318,4 +318,4 @@ function CheckoutApp() {
 }
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<CheckoutApp />);
+root.render(<><CheckoutApp /><ChatBot /></>);

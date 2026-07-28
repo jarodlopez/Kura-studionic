@@ -6,6 +6,11 @@ const CHAT_WA = 'https://wa.me/50587091008';
 const CHAT_STORE_KEY = 'kura_chat';
 const CHAT_TTL = 6 * 60 * 60 * 1000; // 6 horas: después se descarta el historial
 
+// Teasers contextuales: se disparan una vez por sesión según dónde esté el usuario.
+const TEASER_HOME     = { key: 'kura_chat_teaser',           delay: 2500, msg: '🔥 ¿Buscás tu próximo drop? Te muestro lo más pedido de hoy 👀' };
+const TEASER_CART     = { key: 'kura_chat_teaser_cart',      delay: 1200, msg: '🔥 ¿Dudas con tu carrito o el envío? Te ayudo a cerrar tu compra 👉' };
+const TEASER_CHECKOUT = { key: 'kura_chat_teaser_checkout',  delay: 1500, msg: '🔥 ¿Dudas con el pago o la transferencia? Te ayudo a finalizar 👉' };
+
 const DEFAULT_GREETING = { role: 'assistant', content: '¡Hey! 🔥 Soy tu asistente KURA. ¿Querés ver el nuevo drop, lo que se está agotando esta semana, o buscás algo específico? Contame y te lo muestro al toque 👀' };
 
 // Restaura la conversación guardada (si no venció).
@@ -62,10 +67,12 @@ function renderRich(text) {
     return nodes;
 }
 
-window.ChatBot = () => {
+window.ChatBot = ({ cartOpen = false } = {}) => {
     const { useState, useRef, useEffect } = React;
     const [open, setOpen] = useState(() => !!loadStoredChat()?.open);
     const [teaser, setTeaser] = useState(false);
+    const [teaserMsg, setTeaserMsg] = useState(TEASER_HOME.msg);
+    const [teaserCtx, setTeaserCtx] = useState(null);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [vp, setVp] = useState(null); // viewport visible (para el teclado en móvil)
@@ -73,6 +80,8 @@ window.ChatBot = () => {
     const [messages, setMessages] = useState(() => loadStoredChat()?.messages || [DEFAULT_GREETING]);
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
+
+    const isCheckoutPage = typeof window !== 'undefined' && /^\/checkout(\/|$)/.test(window.location.pathname);
 
     // Arma los chips (colecciones reales + generales) al montar.
     useEffect(() => { setQuickPrompts(buildQuickPrompts()); }, []);
@@ -82,14 +91,29 @@ window.ChatBot = () => {
         try { localStorage.setItem(CHAT_STORE_KEY, JSON.stringify({ ts: Date.now(), open, messages: messages.slice(-50) })); } catch {}
     }, [messages, open]);
 
-    // Burbuja de saludo antes de abrir (una vez por sesión; no si ya hay charla).
+    // Intenta mostrar un teaser contextual (una vez por sesión, no si ya hay charla).
+    const scheduleTeaser = (ctx) => {
+        if (open || messages.length > 1) return null;
+        try { if (sessionStorage.getItem(ctx.key)) return null; } catch {}
+        return setTimeout(() => {
+            setTeaserMsg(ctx.msg);
+            setTeaserCtx(ctx);
+            setTeaser(true);
+        }, ctx.delay);
+    };
+
+    // Teaser inicial al cargar (home o checkout).
     useEffect(() => {
-        let shown = false;
-        try { shown = !!sessionStorage.getItem('kura_chat_teaser'); } catch {}
-        if (shown || open || messages.length > 1) return;
-        const t = setTimeout(() => setTeaser(true), 2500);
-        return () => clearTimeout(t);
+        const t = scheduleTeaser(isCheckoutPage ? TEASER_CHECKOUT : TEASER_HOME);
+        return () => { if (t) clearTimeout(t); };
     }, []);
+
+    // Teaser cuando el usuario abre el carrito (excepto ya estando en checkout).
+    useEffect(() => {
+        if (!cartOpen || isCheckoutPage) return;
+        const t = scheduleTeaser(TEASER_CART);
+        return () => { if (t) clearTimeout(t); };
+    }, [cartOpen]);
 
     // Autoscroll al último mensaje.
     useEffect(() => {
@@ -135,15 +159,20 @@ window.ChatBot = () => {
         }, 300);
     };
 
+    const markTeaserSeen = () => {
+        if (!teaserCtx) return;
+        try { sessionStorage.setItem(teaserCtx.key, '1'); } catch {}
+        setTeaserCtx(null);
+    };
     const openChat = () => {
         setOpen(true);
         setTeaser(false);
-        try { sessionStorage.setItem('kura_chat_teaser', '1'); } catch {}
+        markTeaserSeen();
     };
     const dismissTeaser = (e) => {
         if (e) e.stopPropagation();
         setTeaser(false);
-        try { sessionStorage.setItem('kura_chat_teaser', '1'); } catch {}
+        markTeaserSeen();
     };
 
     const sendText = async (text) => {
@@ -190,7 +219,7 @@ window.ChatBot = () => {
                 <div onClick={openChat}
                     className="fixed bottom-[5.25rem] left-4 z-[100] max-w-[240px] bg-[#050505] border border-zinc-800 rounded-2xl rounded-bl-sm shadow-[0_8px_30px_rgba(0,0,0,0.6)] p-3 pr-8 cursor-pointer animate-slideUp">
                     <button onClick={dismissTeaser} aria-label="Cerrar" className="absolute top-1.5 right-2 text-zinc-600 hover:text-white text-sm leading-none">✕</button>
-                    <p className="text-zinc-200 text-xs leading-relaxed">🔥 ¿Buscás tu próximo drop? Te muestro lo más pedido de hoy 👀</p>
+                    <p className="text-zinc-200 text-xs leading-relaxed">{teaserMsg}</p>
                 </div>
             )}
 

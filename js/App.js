@@ -317,7 +317,7 @@ function KuraStudio() {
                 setShippingZone={setShippingZone}
             />
 
-            <ChatBot />
+            <ChatBot cartOpen={isCartOpen} />
 
             <button
                 onClick={() => setIsCartOpen(true)}
