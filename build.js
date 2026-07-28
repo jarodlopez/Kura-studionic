@@ -44,6 +44,7 @@ Promise.all([
     'js/firebase-init.js',
     'js/utils.js',
     'js/components/PopupBanner.js',
+    'js/components/SideMenu.js',
     'js/components/Home.js',
     'js/components/PaymentGuide.js',
     'js/components/ChatBot.js',

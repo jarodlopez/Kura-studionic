@@ -60,6 +60,7 @@ function KuraStudio() {
     const [searchQuery, setSearchQuery] = useState('');
 
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const [shippingZone, setShippingZone] = useState('managua');
     const [discountCodes, setDiscountCodes] = useState([]);
@@ -222,11 +223,18 @@ function KuraStudio() {
                 <div className="marquee-content animate-marquee">REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS // ENTREGAS DE 24 a 72 HORAS // REAL DROP FOR REAL FANS //</div>
             </div>
 
-            <header className="px-4 md:px-8 py-4 flex justify-between items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
-                <div className="cursor-pointer" onClick={() => { setActiveCategory('ALL'); window.history.pushState(null, '', '/'); updateMetaTags(null); }}>
-                    <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0">KURA<span className="text-outline">STUDIO</span></h1>
+            <header className="px-4 md:px-8 py-4 grid grid-cols-3 items-center border-b border-zinc-900 bg-black/95 backdrop-blur-md sticky top-0 z-40">
+                <button onClick={() => setIsMenuOpen(true)} className="justify-self-start p-2 hover:text-kuraRed transition-colors" aria-label="Abrir menú">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <div className="justify-self-center cursor-pointer" onClick={() => { setActiveCategory('ALL'); window.history.pushState(null, '', '/'); updateMetaTags(null); }}>
+                    <h1 className="neon-flicker text-3xl md:text-5xl font-bebas tracking-wider leading-none m-0 text-center">KURA<span className="text-outline">STUDIO</span></h1>
                 </div>
-                <button onClick={() => setIsCartOpen(true)} className="relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
+                <button onClick={() => setIsCartOpen(true)} className="justify-self-end relative p-2 hover:text-kuraRed transition-colors" aria-label="Abrir carrito">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
                         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -245,6 +253,14 @@ function KuraStudio() {
                     )}
                 </button>
             </header>
+
+            <SideMenu
+                isMenuOpen={isMenuOpen}
+                setIsMenuOpen={setIsMenuOpen}
+                categories={categories}
+                activeCategory={activeCategory}
+                setActiveCategory={openCategory}
+            />
 
             <div className="flex-1 w-full max-w-[1440px] mx-auto">
                 {isLoading ? (
