@@ -31,46 +31,42 @@ body {
 .img-loaded { opacity: 1; }
 img { -webkit-user-drag: none; -webkit-touch-callout: none; pointer-events: none; }
 
-/* === Flama del botón de chat ===
-   El botón ya trae `position: fixed`, que sirve como contexto de posicionamiento
-   para las pseudo-capas. NO redefinir position aquí (rompería el fixed y el
-   botón desaparecería al fondo del DOM). */
-.chat-fire-btn::before,
-.chat-fire-btn::after {
+/* === Halo neón del botón de chat ===
+   El botón conserva su `position: fixed`; solo animamos la sombra para
+   crear un neón rojo que respira. El pseudo ::after añade un anillo sutil
+   con micro-flicker para que se sienta "vivo". */
+.chat-neon-btn {
+  animation: chatNeonPulse 2.2s ease-in-out infinite;
+  will-change: box-shadow;
+}
+.chat-neon-btn::after {
   content: "";
   position: absolute;
-  left: 50%;
-  border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
-  filter: blur(4px);
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 0, 60, 0.65);
+  animation: chatNeonRing 3.4s ease-in-out infinite;
   pointer-events: none;
-  will-change: transform, opacity;
 }
-.chat-fire-btn::before {
-  bottom: calc(100% - 14px);
-  width: 46px;
-  height: 54px;
-  background: radial-gradient(ellipse at 50% 100%,
-    rgba(255, 202, 40, 0.95) 0%,
-    rgba(255, 106, 0, 0.9) 40%,
-    rgba(255, 0, 60, 0.55) 70%,
-    rgba(255, 0, 60, 0) 100%);
-  animation: chatFlame 1.2s ease-in-out infinite;
+@keyframes chatNeonPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px #ff003c,
+      0 0 18px rgba(255, 0, 60, 0.8),
+      0 0 36px rgba(255, 0, 60, 0.5),
+      0 0 70px rgba(255, 0, 60, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 12px #ff003c,
+      0 0 28px #ff003c,
+      0 0 55px rgba(255, 0, 60, 0.7),
+      0 0 100px rgba(255, 0, 60, 0.4);
+  }
 }
-.chat-fire-btn::after {
-  bottom: calc(100% - 8px);
-  width: 22px;
-  height: 30px;
-  background: radial-gradient(ellipse at 50% 100%,
-    rgba(255, 255, 224, 0.95) 0%,
-    rgba(255, 202, 40, 0.75) 50%,
-    rgba(255, 202, 40, 0) 100%);
-  animation: chatFlame 0.8s ease-in-out infinite reverse;
-}
-@keyframes chatFlame {
-  0%, 100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.7; }
-  25%      { transform: translateX(-52%) translateY(-3px) scaleY(1.15) scaleX(0.95); opacity: 0.95; }
-  50%      { transform: translateX(-48%) translateY(-6px) scaleY(1.25) scaleX(0.9); opacity: 1; }
-  75%      { transform: translateX(-51%) translateY(-3px) scaleY(1.1) scaleX(0.95); opacity: 0.85; }
+@keyframes chatNeonRing {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.08); }
 }
 
 /* === Efectos neon === */
