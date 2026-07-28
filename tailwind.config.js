@@ -10,7 +10,7 @@ module.exports = {
       },
       animation: {
         slideUp: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-        marquee: 'marquee 15s linear infinite',
+        marquee: 'marquee 45s linear infinite',
       },
       keyframes: {
         slideUp: {
@@ -18,8 +18,8 @@ module.exports = {
           '100%': { transform: 'translateY(0)', opacity: 1 },
         },
         marquee: {
-          '0%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(-100%)' },
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
     },
