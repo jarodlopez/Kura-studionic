@@ -278,7 +278,7 @@ function KuraStudio() {
                     </a>
                 </div>
                 <p style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 300, letterSpacing: '0.08em' }} className="text-[10px] text-zinc-700">
-                    powered by <span className="text-zinc-500">Kodialabs</span>
+                    powered by <a href="https://www.instagram.com/kodialabs?igsh=MW02OGxieWp2Z2NrdQ==" target="_blank" rel="noopener noreferrer" className="text-zinc-500 hover:text-kuraRed transition-colors">Kodialabs</a>
                 </p>
             </footer>
 
