@@ -100,6 +100,20 @@ window.MiniCart = ({
                                 {discountError && <p className="text-red-500 text-xs mt-2 font-mono">{discountError}</p>}
                             </div>
 
+                            {/* Aviso de tiempo de entrega */}
+                            <div className="flex items-center gap-3 border border-kuraRed/40 bg-kuraRed/5 rounded-xl p-3">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-kuraRed shrink-0">
+                                    <rect x="1" y="3" width="15" height="13"/>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bebas text-base tracking-widest text-white leading-none">ENTREGAS EN 24–72 HORAS</p>
+                                    <p className="text-[10px] text-zinc-400 mt-1 font-mono uppercase tracking-widest">A TODA NICARAGUA · TRAS VERIFICAR PAGO</p>
+                                </div>
+                            </div>
+
                             {/* Shipping zone */}
                             <div>
                                 <p className="text-[10px] text-zinc-500 mb-2 font-bold uppercase tracking-widest">ZONA DE ENVÍO</p>
