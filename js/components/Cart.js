@@ -7,6 +7,10 @@ window.MiniCart = ({
     discountAmount, cartSubtotal, cartTotal, currentShippingCost,
     shippingZone, setShippingZone,
 }) => {
+    React.useEffect(() => {
+        if (isCartOpen && cart.length > 0) gaEvent('view_cart', { currency: GA_CURRENCY, value: gaValue(cart), items: gaItems(cart) });
+    }, [isCartOpen]);
+
     if (!isCartOpen) return null;
 
     const handleGoToCheckout = () => {
@@ -67,7 +71,7 @@ window.MiniCart = ({
                                                 <p className="text-kuraRed text-sm mt-1 font-bold">NIO {item.price}</p>
                                             )}
                                         </div>
-                                        <button onClick={() => setCart(cart.filter(i => i.cartId !== item.cartId))} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-1.5 leading-none">✕</button>
+                                        <button onClick={() => { gaEvent('remove_from_cart', { currency: GA_CURRENCY, value: getPrice(item), items: gaItems([item]) }); setCart(cart.filter(i => i.cartId !== item.cartId)); }} className="absolute top-2 right-2 text-zinc-600 hover:text-red-500 p-1.5 leading-none">✕</button>
                                     </div>
                                 ))}
                             </div>
