@@ -95,6 +95,7 @@ function KuraProduct() {
                 setDiscountCodes(codes);
                 setAllProducts(prods);
                 trackEvent('product_view', { productId: prod.id, productTitle: prod.title, category: prod.category || '' });
+                gaEvent('view_item', { currency: GA_CURRENCY, value: getPrice(prod), items: gaItems([prod]) });
             } catch (e) { console.error(e); setNotFound(true); }
             setIsLoading(false);
         };
@@ -121,6 +122,7 @@ function KuraProduct() {
         setToastMsg(`AGREGADO: ${prod.title}`);
         setTimeout(() => setToastMsg(''), 3000);
         trackEvent('add_to_cart', { productId: prod.id, productTitle: prod.title, price: getPrice(prod) });
+        gaEvent('add_to_cart', { currency: GA_CURRENCY, value: getPrice(prod), items: gaItems([{ ...prod, selectedSize: sizeToSave }]) });
     };
 
     const openProduct = (p) => { window.location.href = `/producto/${p.id}`; };

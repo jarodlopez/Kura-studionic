@@ -128,6 +128,7 @@ function KuraStudio() {
                 const cached = loadFromCache();
                 if (cached) {
                     setProducts(cached.products); setFilteredProducts(cached.products);
+                    gaEvent('view_item_list', { item_list_name: 'Catálogo', items: gaItems(cached.products.slice(0, 30)) });
                     setStoreConfig(cached.config);
                     setDiscountCodes(cached.codes);
                     if (cached.banners.length > 0) {
@@ -139,6 +140,7 @@ function KuraStudio() {
                     const prodSnap = await db.collection("products").get();
                     const items = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setProducts(items); setFilteredProducts(items);
+                    gaEvent('view_item_list', { item_list_name: 'Catálogo', items: gaItems(items.slice(0, 30)) });
 
                     const confSnap = await db.collection("settings").doc("store").get();
                     const confData = confSnap.exists ? confSnap.data() : {};
@@ -193,6 +195,7 @@ function KuraStudio() {
     };
 
     const openProduct = (product) => {
+        gaEvent('select_item', { item_list_name: 'Catálogo', items: gaItems([product]) });
         window.location.href = `/producto/${product.id}`;
     };
 

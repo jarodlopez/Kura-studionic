@@ -37,6 +37,13 @@ function CheckoutApp() {
     });
     const [paid, setPaid] = useState(false);
 
+    // GA4: begin_checkout al entrar a la página con carrito (y sin orden pendiente)
+    useEffect(() => {
+        if (cart.length > 0 && !activeOrder) {
+            gaEvent('begin_checkout', { currency: GA_CURRENCY, value: gaValue(cart), coupon: meta.appliedDiscount?.code || undefined, items: gaItems(cart) });
+        }
+    }, []);
+
     useEffect(() => {
         db.collection("discountCodes").get().then(snap => {
             setDiscountCodes(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -95,6 +102,7 @@ function CheckoutApp() {
             };
             await db.collection("orders").doc(orderNum).set(order);
             trackEvent('checkout_started', { itemCount: cart.length, subtotal: cartSubtotal });
+            gaEvent('add_shipping_info', { currency: GA_CURRENCY, value: gaValue(cart), coupon: appliedDiscount?.code || undefined, shipping_tier: shippingZoneLabel, items: gaItems(cart) });
 
             if (appliedDiscount) {
                 db.collection("discountCodes").doc(appliedDiscount.id).update({
@@ -114,7 +122,27 @@ function CheckoutApp() {
         setIsSubmitting(false);
     };
 
-    const handlePaid = () => { localStorage.removeItem(PENDING_KEY); setPaid(true); };
+    const handlePaid = () => {
+        // GA4 purchase: se dispara cuando el cliente sube el comprobante (pago por transferencia).
+        try {
+            const o = activeOrder;
+            if (o) {
+                const flag = 'kura_ga_purchase_' + o.orderNumber;
+                if (!localStorage.getItem(flag)) {
+                    localStorage.setItem(flag, '1');
+                    gaEvent('purchase', {
+                        transaction_id: o.orderNumber,
+                        currency: GA_CURRENCY,
+                        value: (o.total || 0) - (o.shippingCost || 0),
+                        shipping: o.shippingCost || 0,
+                        coupon: o.discountCode || undefined,
+                        items: gaItems(o.items),
+                    });
+                }
+            }
+        } catch (e) {}
+        localStorage.removeItem(PENDING_KEY); setPaid(true);
+    };
     const handleCancelOrder = async () => {
         if (!window.confirm('¿Seguro que quieres cancelar esta orden? Perderás el progreso del pago.')) return;
         // Marca la orden como cancelada en Firestore para que no quede "viva" en el admin.

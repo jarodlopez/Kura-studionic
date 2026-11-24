@@ -27,6 +27,24 @@ window.getOrCreateSessionId = () => {
 // navegador no puede falsificar) y la deduplica en usuarios únicos confiables.
 // keepalive permite que el evento se envíe aunque la página esté navegando
 // (clave para checkout_started justo antes de cambiar de página).
+// ===== Google Analytics 4 (e-commerce) =====
+// Envía un evento a GA4 si gtag está cargado; nunca rompe la UX.
+window.GA_CURRENCY = 'NIO';
+window.gaEvent = (name, params = {}) => {
+    try { if (typeof window.gtag === 'function') window.gtag('event', name, params); } catch (e) {}
+};
+// Convierte un producto del catálogo/carrito al formato items[] de GA4.
+window.gaItem = (p) => ({
+    item_id: p.id,
+    item_name: p.title,
+    item_category: p.category || undefined,
+    item_variant: p.selectedSize || undefined,
+    price: getPrice(p),
+    quantity: 1,
+});
+window.gaItems = (list) => (list || []).map(window.gaItem);
+window.gaValue = (list) => (list || []).reduce((a, p) => a + (getPrice(p) || 0), 0);
+
 window.trackEvent = async (type, data = {}) => {
     try {
         await fetch('/api/track', {
